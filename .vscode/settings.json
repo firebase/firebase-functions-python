@@ -9,5 +9,6 @@
   "editor.formatOnSave": true,
   "python.linting.lintOnSave": true,
   "python.linting.mypyEnabled": true,
+  "mypy.dmypyExecutable": "${workspaceFolder}/.env/bin/dmypy",
   "files.autoSave": "afterDelay"
 }
