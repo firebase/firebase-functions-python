@@ -45,3 +45,5 @@ jobs:
           pip install -r requirements.txt
       - name: Lint with pylint
         run: pylint $(git ls-files '*.py')
+      - name: Lint with mypy
+        run: python -m mypy .
