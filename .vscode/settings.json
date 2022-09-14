@@ -1,0 +1,13 @@
+{
+  "python.linting.enabled": true,
+  "python.linting.pylintEnabled": false,
+  "python.formatting.provider": "yapf",
+  "python.formatting.yapfArgs": ["--style", "{based_on_style: google, indent_width: 4}"],
+  "python.linting.pylintPath": "pylint",
+  "python.envFile": "${workspaceFolder}/.env",
+  "python.defaultInterpreterPath": "${workspaceFolder}/.env/bin/python3.10",
+  "editor.formatOnSave": true,
+  "python.linting.lintOnSave": true,
+  "python.linting.mypyEnabled": true,
+  "files.autoSave": "afterDelay"
+}

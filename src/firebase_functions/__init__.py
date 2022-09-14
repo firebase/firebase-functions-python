@@ -1,0 +1,3 @@
+"""
+Firebase Functions for Python.
+"""
