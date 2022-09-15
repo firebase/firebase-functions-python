@@ -1,0 +1,14 @@
+[tool.pytest.ini_options]
+pythonpath = [
+  ".", "src/",
+]
+[tool.coverage]
+    [tool.coverage.run]
+    omit = [
+        '__init__.py',
+        'tests/*',
+        '*/tests/*',
+    ]
+
+    [tool.coverage.report]
+    skip_empty = true
