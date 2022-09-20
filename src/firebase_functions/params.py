@@ -137,7 +137,7 @@ class ResourceInput:
 
     type: str
     """
-    The resouce type. Currently, only type:"storage.googleapis.com/Bucket" is supported.
+    The resource type. Currently, only type:"storage.googleapis.com/Bucket" is supported.
     """
 
 
@@ -313,7 +313,7 @@ DATABASE_URL = StringParam(
 
 DATABASE_INSTANCE = StringParam(
     "DATABASE_INSTANCE",
-    description="The Firebase projet's default Realtime Database instance name",
+    description="The Firebase project's default Realtime Database instance name",
 )
 
 EXTENSION_ID = StringParam(
