@@ -114,8 +114,10 @@ class ManifestRequiredApi(_typing.TypedDict):
 class ManifestStack:
     endpoints: dict[str, ManifestEndpoint]
     specVersion: str = "v1alpha1"
-    params: _typing.Optional[list[_params.Param]] = _dataclasses.field(
-        default_factory=list[_params.Param])
+    params: _typing.Optional[list[_params.Param |
+                                  _params.SecretParam]] = _dataclasses.field(
+                                      default_factory=list[_params.Param |
+                                                           _params.SecretParam])
     requiredApis: list[ManifestRequiredApi] = _dataclasses.field(
         default_factory=list[ManifestRequiredApi])
 
@@ -188,7 +190,8 @@ def _dict_to_spec(data: dict) -> dict:
 
 
 def _manifest_to_spec(manifest: ManifestStack) -> dict:
+    params = manifest.params
     out: dict = _dataclass_to_spec(manifest)
-    if "params" in out:
-        out["params"] = list(map(_param_to_spec, out["params"]))
+    if params is not None:
+        out["params"] = list(map(_param_to_spec, params))
     return out
