@@ -49,24 +49,20 @@ full_endpoint_dict = {
     }],
 }
 
-full_stack = _manifest.ManifestStack(endpoints={"test": full_endpoint},
-                                     params=[
-                                         _params.BoolParam("bool_test",
-                                                           default=False),
-                                         _params.IntParam(
-                                             "int_test",
-                                             description="int_description"),
-                                         _params.FloatParam("float_test",
-                                                            immutable=True),
-                                         _params.SecretParam("secret_test"),
-                                         _params.StringParam("string_test"),
-                                         _params.ListParam("list_test",
-                                                           default=["1", "2", "3"]),
-                                     ],
-                                     requiredApis=[{
-                                         "api": "test_api",
-                                         "reason": "testing"
-                                     }])
+full_stack = _manifest.ManifestStack(
+    endpoints={"test": full_endpoint},
+    params=[
+        _params.BoolParam("bool_test", default=False),
+        _params.IntParam("int_test", description="int_description"),
+        _params.FloatParam("float_test", immutable=True),
+        _params.SecretParam("secret_test"),
+        _params.StringParam("string_test"),
+        _params.ListParam("list_test", default=["1", "2", "3"]),
+    ],
+    requiredApis=[{
+        "api": "test_api",
+        "reason": "testing"
+    }])
 
 full_stack_dict = {
     "specVersion": "v1alpha1",

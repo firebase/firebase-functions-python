@@ -78,7 +78,7 @@ class VpcSettings(_typing.TypedDict):
 
 @_dataclasses.dataclass(frozen=True)
 class ManifestEndpoint:
-    """An definition of a function as appears in the Manifest."""
+    """A definition of a function as appears in the Manifest."""
 
     entryPoint: _typing.Optional[str] = None
     region: _typing.Optional[list[str]] = _dataclasses.field(
