@@ -184,7 +184,7 @@ def _dataclass_to_spec(data) -> dict:
 
 
 def _dict_to_spec(data: dict) -> dict:
-    return _dict_factory([(k, v) for k, v in data.items()])
+    return _dict_factory(list(data.items()))
 
 
 def _manifest_to_spec(manifest: ManifestStack) -> dict:
