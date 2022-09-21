@@ -2,110 +2,193 @@
 
 # We're ignoring pylint's warning about names since we want
 # the manifest to match the container specification.
-
 # pylint: disable=invalid-name
 
-from dataclasses import dataclass
-from typing import TypedDict, Optional, Union
-from typing_extensions import NotRequired, Required
+import dataclasses as _dataclasses
+import typing as _typing
+import typing_extensions as _typing_extensions
 
-from firebase_functions.params import Expression, Param
-
-
-class SecretEnvironmentVariable(TypedDict):
-    key: Required[str]
-    secret: NotRequired[str]
+import firebase_functions.params as _params
 
 
-class HttpsTrigger(TypedDict):
+class SecretEnvironmentVariable(_typing.TypedDict):
+    key: _typing_extensions.Required[str]
+    secret: _typing_extensions.NotRequired[str]
+
+
+class HttpsTrigger(_typing.TypedDict):
     """
     Trigger definition for arbitrary HTTPS endpoints.
     """
-    invoker: NotRequired[list[str]]
+    invoker: _typing_extensions.NotRequired[list[str]]
     """
     Which service account should be able to trigger this function. No value means "make public"
     on create and don't do anything on update.
     """
 
 
-class CallableTrigger(TypedDict):
+class CallableTrigger(_typing.TypedDict):
     """
     Trigger definitions for RPCs servers using the HTTP protocol defined at
     https://firebase.google.com/docs/functions/callable-reference
     """
 
 
-class EventTrigger(TypedDict):
+class EventTrigger(_typing.TypedDict):
     """
     Trigger definitions for endpoints that listen to CloudEvents emitted by
     other systems (or legacy Google events for GCF gen 1)
     """
-    eventFilters: NotRequired[dict[str, Union[str, Expression[str]]]]
-    eventFilterPathPatterns: NotRequired[dict[str, Union[str, Expression[str]]]]
-    channel: NotRequired[str]
-    eventType: Required[str]
-    retry: Required[Union[bool, Expression[bool]]]
-    region: NotRequired[str]
-    serviceAccountEmail: NotRequired[str]
+    eventFilters: _typing_extensions.NotRequired[dict[str, str |
+                                                      _params.Expression[str]]]
+    eventFilterPathPatterns: _typing_extensions.NotRequired[dict[
+        str, str | _params.Expression[str]]]
+    channel: _typing_extensions.NotRequired[str]
+    eventType: _typing_extensions.Required[str]
+    retry: _typing_extensions.Required[bool | _params.Expression[bool]]
+    region: _typing_extensions.NotRequired[str]
+    serviceAccountEmail: _typing_extensions.NotRequired[str]
 
 
-class RetryConfig(TypedDict):
-    retryCount: NotRequired[Union[int, Expression[int]]]
-    maxRetrySeconds: NotRequired[Union[str, Expression[str]]]
-    minBackoffSeconds: NotRequired[Union[str, Expression[str]]]
-    maxBackoffSeconds: NotRequired[Union[str, Expression[str]]]
-    maxDoublings: NotRequired[Union[int, Expression[int]]]
+class RetryConfig(_typing.TypedDict):
+    retryCount: _typing_extensions.NotRequired[int | _params.Expression[int]]
+    maxRetrySeconds: _typing_extensions.NotRequired[str |
+                                                    _params.Expression[str]]
+    minBackoffSeconds: _typing_extensions.NotRequired[str |
+                                                      _params.Expression[str]]
+    maxBackoffSeconds: _typing_extensions.NotRequired[str |
+                                                      _params.Expression[str]]
+    maxDoublings: _typing_extensions.NotRequired[int | _params.Expression[int]]
 
 
-class ScheduleTrigger(TypedDict):
-    schedule: NotRequired[Union[str, Expression[str]]]
-    timeZone: NotRequired[Union[str, Expression[str]]]
-    retryConfig: NotRequired[RetryConfig]
+class ScheduleTrigger(_typing.TypedDict):
+    schedule: _typing_extensions.NotRequired[str | _params.Expression[str]]
+    timeZone: _typing_extensions.NotRequired[str | _params.Expression[str]]
+    retryConfig: _typing_extensions.NotRequired[RetryConfig]
 
 
-class BlockingTrigger(TypedDict):
-    eventType: Required[str]
+class BlockingTrigger(_typing.TypedDict):
+    eventType: _typing_extensions.Required[str]
 
 
-class VpcSettings(TypedDict):
-    connector: Required[Union[str, Expression[str]]]
-    egressSettings: NotRequired[str]
+class VpcSettings(_typing.TypedDict):
+    connector: _typing_extensions.Required[str | _params.Expression[str]]
+    egressSettings: _typing_extensions.NotRequired[str]
 
 
-@dataclass(frozen=True)
+@_dataclasses.dataclass(frozen=True)
 class ManifestEndpoint:
     """An definition of a function as appears in the Manifest."""
 
-    entryPoint: Optional[str] = None
-    region: Optional[list[str]] = None
-    platform: Optional[str] = "gcfv2"
-    availableMemoryMb: Union[int, Expression[int], None] = None
-    maxInstances: Union[int, Expression[int], None] = None
-    minInstances: Union[int, Expression[int], None] = None
-    concurrency: Union[int, Expression[int], None] = None
-    serviceAccountEmail: Optional[str] = None
-    timeoutSeconds: Union[int, Expression[int], None] = None
-    cpu: Union[int, str] = "gcf_gen1"
-    vpc: Optional[VpcSettings] = None
-    labels: Optional[dict[str, str]] = None
-    ingressSettings: Optional[str] = None
-    environmentVariables: Optional[dict[str, str]] = None
-    secretEnvironmentVariables: Optional[list[SecretEnvironmentVariable]] = None
-    httpsTrigger: Optional[HttpsTrigger] = None
-    callableTrigger: Optional[CallableTrigger] = None
-    eventTrigger: Optional[EventTrigger] = None
-    scheduleTrigger: Optional[ScheduleTrigger] = None
-    blockingTrigger: Optional[BlockingTrigger] = None
+    entryPoint: _typing.Optional[str] = None
+    region: _typing.Optional[list[str]] = _dataclasses.field(
+        default_factory=list[str])
+    platform: _typing.Optional[str] = "gcfv2"
+    availableMemoryMb: int | _params.Expression[int] | None = None
+    maxInstances: int | _params.Expression[int] | None = None
+    minInstances: int | _params.Expression[int] | None = None
+    concurrency: int | _params.Expression[int] | None = None
+    serviceAccountEmail: _typing.Optional[str] = None
+    timeoutSeconds: int | _params.Expression[int] | None = None
+    cpu: int | str = "gcf_gen1"
+    vpc: _typing.Optional[VpcSettings] = None
+    labels: _typing.Optional[dict[str, str]] = None
+    ingressSettings: _typing.Optional[str] = None
+    environmentVariables: _typing.Optional[dict[str, str]] = None
+    secretEnvironmentVariables: _typing.Optional[
+        list[SecretEnvironmentVariable]] = _dataclasses.field(
+            default_factory=list[SecretEnvironmentVariable])
+    httpsTrigger: _typing.Optional[HttpsTrigger] = None
+    callableTrigger: _typing.Optional[CallableTrigger] = None
+    eventTrigger: _typing.Optional[EventTrigger] = None
+    scheduleTrigger: _typing.Optional[ScheduleTrigger] = None
+    blockingTrigger: _typing.Optional[BlockingTrigger] = None
 
 
-class ManifestRequiredApi(TypedDict):
-    api: Required[str]
-    reason: Required[str]
+class ManifestRequiredApi(_typing.TypedDict):
+    api: _typing_extensions.Required[str]
+    reason: _typing_extensions.Required[str]
 
 
-@dataclass(frozen=True)
+@_dataclasses.dataclass(frozen=True)
 class ManifestStack:
     endpoints: dict[str, ManifestEndpoint]
     specVersion: str = "v1alpha1"
-    params: Optional[list[Param]] = None
-    requiredApis: list[ManifestRequiredApi] = []
+    params: _typing.Optional[list[_params.Param]] = _dataclasses.field(
+        default_factory=list[_params.Param])
+    requiredApis: list[ManifestRequiredApi] = _dataclasses.field(
+        default_factory=list[ManifestRequiredApi])
+
+
+def _param_to_spec(
+        param: _params.Param | _params.SecretParam) -> dict[str, _typing.Any]:
+    spec_dict: dict[str, _typing.Any] = {
+        "name": param.name,
+        "label": param.label,
+        "description": param.description,
+        "immutable": param.immutable,
+    }
+
+    if isinstance(param, _params.Param):
+        spec_dict["default"] = param.default
+        # TODO spec representation of inputs
+
+    if isinstance(param, _params.BoolParam):
+        spec_dict["type"] = "boolean"
+    elif isinstance(param, _params.IntParam):
+        spec_dict["type"] = "int"
+    elif isinstance(param, _params.FloatParam):
+        spec_dict["type"] = "float"
+    elif isinstance(param, _params.SecretParam):
+        spec_dict["type"] = "secret"
+    elif isinstance(param, _params.ListParam):
+        spec_dict["type"] = "list"
+        if spec_dict["default"] is not None:
+            spec_dict["default"] = ",".join(spec_dict["default"])
+    elif isinstance(param, _params.StringParam):
+        spec_dict["type"] = "string"
+    else:
+        raise NotImplementedError("Unsupported param type.")
+
+    return _dict_to_spec(spec_dict)
+
+
+def _object_to_spec(data) -> object:
+    if isinstance(data, _params.Expression):
+        return data.to_cel()
+    elif _dataclasses.is_dataclass(data):
+        return _dataclass_to_spec(data)
+    elif isinstance(data, list):
+        return list(map(_object_to_spec, data))
+    elif isinstance(data, dict):
+        return _dict_to_spec(data)
+    else:
+        return data
+
+
+def _dict_factory(data: list[_typing.Tuple[str, _typing.Any]]) -> dict:
+    out: dict = {}
+    for key, value in data:
+        if value is not None:
+            out[key] = _object_to_spec(value)
+    return out
+
+
+def _dataclass_to_spec(data) -> dict:
+    out: dict = {}
+    for field in _dataclasses.fields(data):
+        value = _object_to_spec(getattr(data, field.name))
+        if value is not None:
+            out[field.name] = value
+    return out
+
+
+def _dict_to_spec(data: dict) -> dict:
+    return _dict_factory([(k, v) for k, v in data.items()])
+
+
+def _manifest_to_spec(manifest: ManifestStack) -> dict:
+    out: dict = _dataclass_to_spec(manifest)
+    if "params" in out:
+        out["params"] = list(map(_param_to_spec, out["params"]))
+    return out
