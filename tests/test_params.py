@@ -1,4 +1,4 @@
-"""BoolParam unit tests."""
+"""Param unit tests."""
 from os import environ
 
 import pytest
