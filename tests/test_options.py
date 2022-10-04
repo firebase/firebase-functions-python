@@ -2,46 +2,40 @@
 Options unit tests.
 """
 from firebase_functions import options
+# pylint: disable=protected-access
 
 
 def test_set_global_options():
     """
-    Testing if setting the global options actually change the values.
+    Testing if setting a global option internally change the values.
     """
-    options.set_global_options(max_instances=1)
+    assert options._GLOBAL_OPTIONS.max_instances is None, "option should not already be set"
+    options.set_global_options(max_instances=2)
+    assert options._GLOBAL_OPTIONS.max_instances == 2, "option was not set"
 
-    assert options.GLOBAL_OPTIONS.max_instances == 1
 
-
-def test_https_options():
+def test_global_options_merged_with_provider_options():
     """
-    Testing if setting the global options actually change the values.
+    Testing a global option is used when no provider option is set.
     """
-    options.set_global_options(max_instances=1)
-
-    assert options.GLOBAL_OPTIONS.max_instances == 1
-
-    https_options_1 = options.HttpsOptions()
-
-    assert https_options_1.max_instances == options.GLOBAL_OPTIONS.max_instances
-
-    https_options_2 = options.HttpsOptions(max_instances=3)
-
-    assert https_options_2.max_instances != options.GLOBAL_OPTIONS.max_instances
+    options.set_global_options(max_instances=66)
+    common_options = options._CommonOptions()
+    pubsub_options = options._PubSubOptions(options=common_options, topic="foo")
+    pubsub_options_dict = pubsub_options.asdict_with_global_options()
+    assert (pubsub_options_dict["topic"] == "foo"
+           ), "'topic' property missing from dict"
+    assert "options" not in pubsub_options_dict, "'options' key should not exist in dict"
+    assert (pubsub_options_dict["max_instances"] == 66
+           ), "provider option did not update using the global option"
 
 
-def test_pubsub_options():
+def test_https_options_removes_cors():
     """
-    Testing if setting the global options actually change the values.
+    Testing _HttpsOptions strips out the 'cors' property when converted to a dict.
     """
-    options.set_global_options(max_instances=1)
-
-    assert options.GLOBAL_OPTIONS.max_instances == 1
-
-    pubsub_options_1 = options.PubSubOptions()
-
-    assert pubsub_options_1.max_instances == options.GLOBAL_OPTIONS.max_instances
-
-    pubsub_options_2 = options.PubSubOptions(topic="Hi", max_instances=3)
-
-    assert pubsub_options_2.max_instances != options.GLOBAL_OPTIONS.max_instances
+    common_options = options._CommonOptions()
+    https_options = options._HttpsOptions(
+        options=common_options, cors=options.CorsOptions(cors_origins="*"))
+    assert https_options.cors.cors_origins == "*", "cors options were not set"
+    https_options_dict = https_options.asdict_with_global_options()
+    assert "cors" not in https_options_dict, "'cors' key should not exist in dict"

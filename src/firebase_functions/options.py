@@ -1,339 +1,305 @@
 """
-Module for options that can be used to configure Cloud Functions
+Module for options that can be used to configure Firebase Cloud Functions
 deployments.
 """
 
-from enum import Enum
-from dataclasses import dataclass
-from typing import List, Optional, Union
+import enum as _enum
+import dataclasses as _dataclasses
+import re as _re
+import typing as _typing
 
-from firebase_functions.params import IntParam, SecretParam, StringParam, Expression
+from firebase_functions.params import SecretParam, Expression
 
 
-class Sentinel:
-    """Class for USE_DEFAULT."""
+class _Sentinel:
+    """Internal class for USE_DEFAULT."""
 
     def __init__(self, description):
         self.description = description
 
 
-USE_DEFAULT = Sentinel("Value used to reset an option to factory defaults")
-""" Used to reset a function option to factory default. """
+USE_DEFAULT = _Sentinel("Value used to reset an option to factory defaults")
+"""Used to reset an option to its factory default."""
 
 
-class VpcEgressSettings(str, Enum):
+class VpcEgressSettings(str, _enum.Enum):
     """Valid settings for VPC egress."""
 
     PRIVATE_RANGES_ONLY = "PRIVATE_RANGES_ONLY"
     ALL_TRAFFIC = "ALL_TRAFFIC"
 
 
-@dataclass(frozen=True)
-class VpcOptions:
-    """Configuration for a virtual private cloud (VPC).
-
-    Attributes:
-      connector: The ID of the connector to use. For maximal portability,
-          prefer just an <id> instead of
-          'projects/<project>/locations/<region>/connectors/<id>'.
-      egress_setting: What kinds of outgoing connections can be established.
-    """
-
-    connector: str
-    egress_settings: VpcEgressSettings
-
-
-class IngressSettings(str, Enum):
-    """What kind of traffic can access this Cloud Function."""
+class IngressSettings(str, _enum.Enum):
+    """What kind of traffic can access the Cloud Function."""
 
     ALLOW_ALL = "ALLOW_ALL"
     ALLOW_INTERNAL_ONLY = "ALLOW_INTERNAL_ONLY"
     ALLOW_INTERNAL_AND_GCLB = "ALLOW_INTERNAL_AND_GCLB"
 
 
-class Memory(int, Enum):
-    """Valid memory settings."""
+@_dataclasses.dataclass(frozen=True)
+class CorsOptions:
+    """
+    CORS options for Https functions.
+    Internally this maps to Flask-Cors configuration see:
+    https://flask-cors.corydolphin.com/en/latest/configuration.html
+    """
 
+    cors_origins: str | list[str] | _re.Pattern | None = None
+    """
+    The origin(s) to allow requests from. An origin configured here that matches the value of
+    the Origin header in a preflight OPTIONS request is returned as the value of the
+    Access-Control-Allow-Origin response header.
+    """
+
+    cors_methods: str | list[str] | None = None
+    """
+    The method(s) which the allowed origins are allowed to access.
+    These are included in the Access-Control-Allow-Methods response headers
+    to the preflight OPTIONS requests.
+    """
+
+
+class Memory(int, _enum.Enum):
+    """
+    Available memory options supported by Cloud Functions.
+    """
+
+    MB_128 = 128
     MB_256 = 256
     MB_512 = 512
     GB_1 = 1 << 10
     GB_2 = 2 << 10
     GB_4 = 4 << 10
     GB_8 = 8 << 10
+    GB_16 = 16 << 10
+    GB_32 = 32 << 10
 
 
-@dataclass()
-class GlobalOptions:
-    """Options available for all function types in a codebase.
-
-    Attributes:
-        region: (str) Region to deploy functions. Defaults to us-central1.
-        memory: MB to allocate to function. Defaults to Memory.MB_256
-        timeout_sec: Seconds before a function fails with a timeout error.
-            Defaults to 60s.
-        min_instances: Count of function instances that should be reserved at all
-            time. Instances will be billed while idle. Defaults to 0.
-        max_instances: Maximum count of function instances that can be created.
-            Defaults to 1000.
-        vpc: Configuration for a virtual private cloud. Defaults to no VPC.
-        ingress: Configuration for what IP addresses can invoke a function.
-            Defaults to all traffic.
-        service_account: The service account a function should run as. Defaults to
-            the default compute service account.
+class SupportedRegion(str, _enum.Enum):
+    """
+    All regions supported by Cloud Functions v2.
     """
 
-    instance: str | Expression[str] | Sentinel | None  = None
-    allowed_origins: str | Expression[str] | Sentinel | None  = None
-    allowed_methods: str | Expression[str] | Sentinel | None  = None
-    region: str | Expression[str] | Sentinel | None  = None
-    memory: int | Expression[int] | Sentinel | None  = None
-    timeout_sec:  int | Expression[int] |  Sentinel  | None  = None
-    min_instances:  int | Expression[int] |  Sentinel | None  = None
-    max_instances:  int | Expression[int] |  Sentinel | None  = None
-    concurrency: int | Expression[int] | Sentinel | None = None
-    cpu: int | str | Sentinel = "gcf_gen1"
-    vpc_connector_egress_settings: VpcEgressSettings | Sentinel | None = None
-    vpc: VpcOptions | Sentinel | None = None
-    ingress: IngressSettings | Sentinel | None = None
-    service_account: str | Sentinel | None = None
-    secrets: List[str] | SecretParam | Sentinel | None = None
-    labels: Union[str, Expression[str], None] = None
-
-    def metadata(self):
-        return {
-            "instance": self.instance,
-            "allowed_origins": self.allowed_methods,
-            "allowed_methods": self.allowed_methods,
-            "region": self.region,
-            "memory": self.memory,
-            "timeout_sec": self.timeout_sec,
-            "min_instances": self.min_instances,
-            "max_instances": self.max_instances,
-            "concurrency": self.concurrency,
-            "cpu": self.cpu,
-            "vpc_connector_egress_settings": self.vpc_connector_egress_settings,
-            "vpc": self.vpc,
-            "ingress": self.ingress,
-            "service_account": self.service_account,
-            "labels": self.labels,
-        }
+    ASIA_NORTHEAST1 = "asia-northeast1"
+    EUROPE_NORTH1 = "europe-north1"
+    EUROPE_WEST1 = "europe-west1"
+    EUROPE_WEST4 = "europe-west4"
+    US_CENTRAL1 = "us-central1"
+    US_EAST1 = "us-east1"
+    US_WEST1 = "us-west1"
 
 
-GLOBAL_OPTIONS = GlobalOptions()
-
-
-class HttpsOptions(GlobalOptions):
-    """Options available for all function types in a codebase.
-
-    Attributes:
-        region: (StringParam) Region to deploy functions. Defaults to us-central1.
-        memory: MB to allocate to function. Defaults to Memory.MB_256
-        timeout_sec: Seconds before a function fails with a timeout error.
-            Defaults to 60s.
-        min_instances: Count of function instances that should be reserved at all
-            time. Instances will be billed while idle. Defaults to 0.
-        max_instances: Maximum count of function instances that can be created.
-            Defaults to 1000.
-        vpc: Configuration for a virtual private cloud. Defaults to no VPC.
-        ingress: Configuration for what IP addresses can invoke a function.
-            Defaults to all traffic.
-        service_account: The service account a function should run as. Defaults to
-            the default compute service account.
+@_dataclasses.dataclass(frozen=True)
+class _CommonOptions:
+    """
+    _CommonOptions are options that can be set on any function or globally.
+    Internal use only.
     """
 
-    allow_invalid_app_check_token: Optional[bool] = False
-
-    invoker: Optional[list[str]] = None
-
-    def __init__(
-        self,
-        max_instances=None,
-        min_instances=None,
-        timeout_sec=None,
-        memory=None,
-        region=None,
-        allowed_origins=None,
-        allowed_methods=None,
-        service_account=None,
-        vpc=None,
-        vpc_connector_egress_settings=None,
-        ingress=None,
-        secrets=None,
-        allow_invalid_app_check_token=False,
-        invoker=None,
-    ):
-        super().__init__()
-        self.max_instances = max_instances or GLOBAL_OPTIONS.max_instances
-        self.allowed_methods = allowed_methods or GLOBAL_OPTIONS.allowed_methods
-        self.allowed_origins = allowed_origins or GLOBAL_OPTIONS.allowed_origins
-        self.ingress = ingress or GLOBAL_OPTIONS.ingress
-        self.region = region or GLOBAL_OPTIONS.region
-        self.memory = memory or GLOBAL_OPTIONS.memory
-        self.timeout_sec = timeout_sec or GLOBAL_OPTIONS.timeout_sec
-        self.min_instances = min_instances or GLOBAL_OPTIONS.min_instances
-        self.vpc = vpc or GLOBAL_OPTIONS.vpc
-        self.vpc_connector_egress_settings = (
-            vpc_connector_egress_settings or
-            GLOBAL_OPTIONS.vpc_connector_egress_settings)
-        self.service_account = service_account or GLOBAL_OPTIONS.service_account
-        self.secrets = secrets or GLOBAL_OPTIONS.secrets
-        self.allow_invalid_app_check_token = allow_invalid_app_check_token
-        invoker_list = []
-        if invoker is not None:
-            if isinstance(invoker, str):
-                invoker_list.append(invoker)
-            else:
-                invoker_list.extend(invoker)
-        self.invoker = invoker_list
-
-
-class PubSubOptions(GlobalOptions):
-    """Options available for all Pub/Sub function types in a codebase.
-
-    Attributes:
-        topic: The name of the Pub/Sub topic.
-        region: (StringParam) Region to deploy functions. Defaults to us-central1.
-        memory: MB to allocate to function. Defaults to Memory.MB_256
-        timeout_sec: Seconds before a function fails with a timeout error.
-            Defaults to 60s.
-        min_instances: Count of function instances that should be reserved at all
-            time. Instances will be billed while idle. Defaults to 0.
-        max_instances: Maximum count of function instances that can be created.
-            Defaults to 1000.
-        vpc: Configuration for a virtual private cloud. Defaults to no VPC.
-        ingress: Configuration for what IP addresses can invoke a function.
-            Defaults to all traffic.
-        service_account: The service account a function should run as. Defaults to
-            the default compute service account.
+    region: SupportedRegion | str | _Sentinel | None = None
+    """
+    Region where functions should be deployed.
+    HTTP functions can override and specify more than one region.
     """
 
-    topic: Optional[str] = None
-    retry: Optional[bool] = None
-
-    def __init__(
-        self,
-        max_instances=None,
-        min_instances=None,
-        timeout_sec=None,
-        memory=None,
-        region=None,
-        allowed_origins=None,
-        allowed_methods=None,
-        service_account=None,
-        vpc=None,
-        vpc_connector_egress_settings=None,
-        ingress=None,
-        secrets=None,
-        topic=None,
-        retry=None,
-    ):
-        super().__init__()
-
-        self.max_instances = max_instances or GLOBAL_OPTIONS.max_instances
-        self.allowed_methods = allowed_methods or GLOBAL_OPTIONS.allowed_methods
-        self.allowed_origins = allowed_origins or GLOBAL_OPTIONS.allowed_origins
-        self.ingress = ingress or GLOBAL_OPTIONS.ingress
-        self.region = region or GLOBAL_OPTIONS.region
-        self.memory = memory or GLOBAL_OPTIONS.memory
-        self.timeout_sec = timeout_sec or GLOBAL_OPTIONS.timeout_sec
-        self.min_instances = min_instances or GLOBAL_OPTIONS.min_instances
-        self.vpc = vpc or GLOBAL_OPTIONS.vpc
-        self.vpc_connector_egress_settings = (
-            vpc_connector_egress_settings or
-            GLOBAL_OPTIONS.vpc_connector_egress_settings)
-        self.service_account = service_account or GLOBAL_OPTIONS.service_account
-        self.secrets = secrets or GLOBAL_OPTIONS.secrets
-        self.topic = topic
-        self.retry = retry or False
-
-
-class ReferenceOptions(GlobalOptions):
-    """Options available for all function types in a codebase.
-
-    Attributes:
-        region: (StringParam) Region to deploy functions. Defaults to us-central1.
-        memory: MB to allocate to function. Defaults to Memory.MB_256
-        timeout_sec: Seconds before a function fails with a timeout error.
-            Defaults to 60s.
-        min_instances: Count of function instances that should be reserved at all
-            time. Instances will be billed while idle. Defaults to 0.
-        max_instances: Maximum count of function instances that can be created.
-            Defaults to 1000.
-        vpc: Configuration for a virtual private cloud. Defaults to no VPC.
-        ingress: Configuration for what IP addresses can invoke a function.
-            Defaults to all traffic.
-        service_account: The service account a function should run as. Defaults to
-            the default compute service account.
+    memory: int | Memory | Expression[int] | _Sentinel | None = None
+    """
+    Amount of memory to allocate to a function.
+    A value of USE_DEFAULT restores the defaults of 256MB.
     """
 
-    def __init__(
-        self,
-        reference=None,
-        instance=None,
-        region=None,
-        memory=None,
-        timeout_sec=None,
-        min_instances=None,
-        max_instances=None,
-        concurrency=None,
-        cpu=None,
-        vpc_connector_egress_settings=None,
-        service_account=None,
-        labels=None,
-        allowed_origins=None,
-        allowed_methods=None,
-        vpc=None,
-        ingress=None,
-        secrets=None,
-        retry=None,
-    ):
-        super().__init__()
-        self.reference = reference or GLOBAL_OPTIONS.reference
-        self.instance = instance or GLOBAL_OPTIONS.instance
-        self.region = region or GLOBAL_OPTIONS.region
-        self.memory = memory or GLOBAL_OPTIONS.memory
-        self.timeout_sec = timeout_sec or GLOBAL_OPTIONS.timeout_sec
-        self.max_instances = max_instances or GLOBAL_OPTIONS.max_instances
-        self.min_instances = min_instances or GLOBAL_OPTIONS.min_instances
-        self.concurrency = concurrency or GLOBAL_OPTIONS.concurrency
-        self.cpu = cpu or GLOBAL_OPTIONS.cpu
-        self.vpc_connector_egress_settings = (
-            vpc_connector_egress_settings or
-            GLOBAL_OPTIONS.vpc_connector_egress_settings)
-        self.service_account = service_account or GLOBAL_OPTIONS.service_account
-        self.labels = labels or GLOBAL_OPTIONS.labels
-        self.allowed_methods = allowed_methods or GLOBAL_OPTIONS.allowed_methods
-        self.allowed_origins = allowed_origins or GLOBAL_OPTIONS.allowed_origins
-        self.ingress = ingress or GLOBAL_OPTIONS.ingress
-        self.vpc = vpc or GLOBAL_OPTIONS.vpc
-        self.secrets = secrets or GLOBAL_OPTIONS.secrets
-        self.retry = retry or False
+    timeout_sec: int | Expression[int] | _Sentinel | None = None
+    """
+    Timeout for the function in sections, possible values are 0 to 540.
+    HTTPS functions can specify a higher timeout.
+    A value of USE_DEFAULT restores the default of 60s
+    The minimum timeout for a gen 2 function is 1s. The maximum timeout for a
+    function depends on the type of function: Event handling functions have a
+    maximum timeout of 540s (9 minutes). HTTPS and callable functions have a
+    maximum timeout of 36,00s (1 hour). Task queue functions have a maximum
+    timeout of 1,800s (30 minutes)
+    """
+
+    min_instances: int | Expression[int] | _Sentinel | None = None
+    """
+    Min number of actual instances to be running at a given time.
+    Instances will be billed for memory allocation and 10% of CPU allocation
+    while idle.
+    A value of USE_DEFAULT restores the default min instances.
+    """
+
+    max_instances: int | Expression[int] | _Sentinel | None = None
+    """
+    Max number of instances to be running in parallel.
+    A value of USE_DEFAULT restores the default max instances.
+    """
+
+    concurrency: int | Expression[int] | _Sentinel | None = None
+    """
+    Number of requests a function can serve at once.
+    Can only be applied to functions running on Cloud Functions v2.
+    A value of USE_DEFAULT restores the default concurrency (80 when CPU >= 1, 1 otherwise).
+    Concurrency cannot be set to any value other than 1 if `cpu` is less than 1.
+    The maximum value for concurrency is 1,000.
+    """
+
+    cpu: int | _typing.Literal["gcf_gen1"] | _Sentinel = "gcf_gen1"
+    """
+    Fractional number of CPUs to allocate to a function.
+    Defaults to 1 for functions with <= 2GB RAM and increases for larger memory sizes.
+    This is different from the defaults when using the gcloud utility and is different from
+    the fixed amount assigned in Google Cloud Functions generation 1.
+    To revert to the CPU amounts used in gcloud or in Cloud Functions generation 1, set this
+    to the value "gcf_gen1"
+    """
+
+    vpc_connector: str | _Sentinel | None = None
+    """
+    Connect cloud function to specified VPC connector.
+    A value of USE_DEFAULT removes the VPC connector.
+    """
+
+    vpc_connector_egress_settings: VpcEgressSettings | _Sentinel | None = None
+    """
+    Egress settings for VPC connector.
+    A value of USE_DEFAULT turns off VPC connector egress settings.
+    """
+
+    service_account: str | _Sentinel | None = None
+    """
+    Specific service account for the function to run as.
+    A value of USE_DEFAULT restores the default service account.
+    """
+
+    ingress: IngressSettings | _Sentinel | None = None
+    """
+    Ingress settings which control where this function can be called from.
+    A value of USE_DEFAULT turns off ingress settings.
+    """
+
+    labels: dict[str, str] | None = None
+    """
+    User labels to set on the function.
+    """
+
+    secrets: list[str] | list[SecretParam] | _Sentinel | None = None
+    """
+    Secrets to bind to a function.
+    """
+
+
+_GLOBAL_OPTIONS = _CommonOptions()
+"""The current default options for all functions. Internal use only."""
+
+
+@_dataclasses.dataclass(frozen=True)
+class _ProviderOptions:
+    """
+    Base class for provider specific options.
+    """
+
+    # We don't inherit _CommonOptions since some options can be overloaded
+    # with new types which will break inheritance.
+    options: _CommonOptions
+    """
+    Base options.
+    """
+
+    def asdict_with_global_options(self) -> dict:
+        """
+        Returns the provider options merged with globally defined options.
+        """
+        provider_options = _dataclasses.asdict(self)
+        # Copy base options to root of provider options.
+        provider_options = {**provider_options["options"], **provider_options}
+        del provider_options["options"]
+        global_options = _dataclasses.asdict(_GLOBAL_OPTIONS)
+        merged_options: dict = {**global_options, **provider_options}
+        # None values in the providers options should fallback to
+        # global options.
+        for key in provider_options:
+            if provider_options[key] is None and key in global_options:
+                merged_options[key] = global_options[key]
+        # None values are automatically stripped out in ManifestEndpoint generation.
+
+        # TODO how should _Sentinel values be translated to spec?
+        return merged_options
+
+
+@_dataclasses.dataclass(frozen=True)
+class _PubSubOptions(_ProviderOptions):
+    """
+    Options specific to Pub/Sub function types.
+    Internal use only.
+    """
+
+    topic: str
+    """
+    The Pub/Sub topic to watch for message events.
+    """
+
+    retry: _typing.Optional[bool] = None
+    """
+    Whether failed executions should be delivered again.
+    """
+
+
+@_dataclasses.dataclass(frozen=True)
+class _HttpsOptions(_ProviderOptions):
+    """
+    Options specific to Http function types.
+    Internal use only.
+    """
+
+    region: SupportedRegion | str | list[SupportedRegion | str] | None = None
+    """
+    Region(s) where functions should be deployed.
+    HTTP functions can override and specify more than one region unlike others function types.
+    """
+
+    invoker: str | list[str] | _typing.Literal["public",
+                                               "private"] | None = None
+    """
+    Invoker to set access control on https functions.
+    """
+
+    cors: _typing.Optional[CorsOptions] = None
+    """
+    Optionally set CORS options for Https functions.
+    """
+
+    def asdict_with_global_options(self) -> dict:
+        """
+        Returns the Https options merged with globally defined options and
+        client only options like "cors" removed.
+        """
+        merged_options = super().asdict_with_global_options()
+        del merged_options["cors"]
+        return merged_options
 
 
 def set_global_options(
     *,
-    instance: Union[None, str, Expression[str], Sentinel] = None,
-    region: Optional[str] = None,
-    memory: Union[None, int, Sentinel] = None,
-    timeout_sec: Union[None, int, Sentinel] = None,
-    min_instances: Union[None, int, Sentinel] = None,
-    max_instances: Union[None, int, Sentinel] = None,
-    concurrency: Union[None, int, Sentinel] = None,
-    cpu: Union[None, int, str, Sentinel] = "gcf_gen1",
-    vpc_connector_egress_settings: Union[None, VpcEgressSettings,
-                                         Sentinel] = None,
-    vpc: Union[None, VpcOptions, Sentinel] = None,
-    ingress: Union[None, IngressSettings, Sentinel] = None,
-    service_account: Union[None, str, Sentinel] = None,
-    labels: Union[str, Expression[str]] = None,
-    allowed_origins: Union[StringParam, str,
-                           None] = None,  # TODO should we add Sentinel?
-    allowed_methods: Union[StringParam, str,
-                           None] = None  # TODO should we add Sentinel?
+    region: SupportedRegion | str | _Sentinel | None = None,
+    memory: int | Memory | Expression[int] | _Sentinel | None = None,
+    timeout_sec: int | Expression[int] | _Sentinel | None = None,
+    min_instances: int | Expression[int] | _Sentinel | None = None,
+    max_instances: int | Expression[int] | _Sentinel | None = None,
+    concurrency: int | Expression[int] | _Sentinel | None = None,
+    cpu: int | _typing.Literal["gcf_gen1"] | _Sentinel = "gcf_gen1",
+    vpc_connector: str | _Sentinel | None = None,
+    vpc_connector_egress_settings: VpcEgressSettings | _Sentinel | None = None,
+    service_account: str | _Sentinel | None = None,
+    ingress: IngressSettings | _Sentinel | None = None,
+    labels: dict[str, str] | None = None,
+    secrets: list[str] | list[SecretParam] | _Sentinel | None = None,
 ):
-    global GLOBAL_OPTIONS
-    GLOBAL_OPTIONS = GlobalOptions(
-        instance=instance,
+    """
+    Sets default options for all functions.
+    """
+    global _GLOBAL_OPTIONS
+    _GLOBAL_OPTIONS = _CommonOptions(
         region=region,
         memory=memory,
         timeout_sec=timeout_sec,
@@ -341,11 +307,10 @@ def set_global_options(
         max_instances=max_instances,
         concurrency=concurrency,
         cpu=cpu,
+        vpc_connector=vpc_connector,
         vpc_connector_egress_settings=vpc_connector_egress_settings,
-        vpc=vpc,
-        ingress=ingress,
         service_account=service_account,
+        ingress=ingress,
         labels=labels,
-        allowed_origins=allowed_origins,
-        allowed_methods=allowed_methods,
+        secrets=secrets,
     )
