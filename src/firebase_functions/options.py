@@ -223,7 +223,9 @@ class _ProviderOptions:
                 merged_options[key] = global_options[key]
         # None values are automatically stripped out in ManifestEndpoint generation.
 
-        # TODO how should _Sentinel values be translated to spec?
+        # _Sentinel values are converted to `None` in ManifestEndpoint generation
+        # after other None values are removed - so as to keep them in the generated
+        # YAML output as 'null' values.
         return merged_options
 
 
