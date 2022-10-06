@@ -144,7 +144,7 @@ class _CommonOptions:
     The maximum value for concurrency is 1,000.
     """
 
-    cpu: int | _typing.Literal["gcf_gen1"] | _Sentinel = "gcf_gen1"
+    cpu: int | _typing.Literal["gcf_gen1"] | _Sentinel | None = None
     """
     Fractional number of CPUs to allocate to a function.
     Defaults to 1 for functions with <= 2GB RAM and increases for larger memory sizes.
