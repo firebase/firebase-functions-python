@@ -1,0 +1,9 @@
+{
+  "functions": {
+    "runtime": "python310",
+    "ignore": [
+      "venv",
+      "__pycache__"
+    ]
+  }
+}
