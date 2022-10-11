@@ -5,7 +5,8 @@ from setuptools import find_packages, setup
 
 install_requires = [
     'flask>=2.1.2', 'functions-framework>=3.0.0', 'firebase-admin>=6.0.0',
-    'pyyaml>=6.0', 'typing-extensions>=4.3.0', 'cloudevents>=1.6.1'
+    'pyyaml>=6.0', 'typing-extensions>=4.3.0', 'cloudevents>=1.6.1',
+    'flask-cors>=3.0.10', 'pyjwt[crypto]>=2.5.0'
 ]
 
 setup(

@@ -1,0 +1,39 @@
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.11.0/firebase-app.js";
+  import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/9.11.0/firebase-auth.js";
+  import { getFunctions, httpsCallableFromURL } from "https://www.gstatic.com/firebasejs/9.11.0/firebase-functions.js";
+  import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/9.11.0/firebase-app-check.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyCZ2C2_0jQIkQItbiJ4IGbL8OLObbK2mY0",
+    authDomain: "python-functions-testing.firebaseapp.com",
+    databaseURL: "https://python-functions-testing-default-rtdb.europe-west1.firebasedatabase.app",
+    projectId: "python-functions-testing",
+    storageBucket: "python-functions-testing.appspot.com",
+    messagingSenderId: "441947996129",
+    appId: "1:441947996129:web:227004b738ba64f04edca0",
+  };
+
+  // Initialize Firebase
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const functions = getFunctions(app, "europe-west1");
+  const appCheck = initializeAppCheck(app, {
+    provider: new ReCaptchaV3Provider('6LfhlHEiAAAAAPsyTqZOo89ohj7QQdUtTxg4NlWo'),
+    isTokenAutoRefreshEnabled: true
+  });
+
+  signInAnonymously(auth).then(() => {
+    const onCallExample = httpsCallableFromURL(functions, 'https://on-call-example-4afum6lama-ew.a.run.app');
+    onCallExample({ "hello": "world" })
+    // onCallExample("error_test") // Uncomment to test `HttpsError`
+      .then((result) => {
+        const data = result.data;
+        console.log('Got response', data);
+      }).catch(error => {
+        console.log('Got error code:', error.code);
+        console.log('Got error message:', error.message);
+        console.log('Got error details:', error.details);
+      })
+  });
+</script>

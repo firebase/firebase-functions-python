@@ -1,11 +1,14 @@
 """
 Example Firebase Functions written in Python
 """
-from firebase_functions import db, options
+from firebase_functions import db, options, https
+from firebase_admin import initialize_app
+
+initialize_app()
 
 options.set_global_options(
     region=options.SupportedRegion.EUROPE_WEST1,
-    memory=options.MemoryOption.MB_256,
+    memory=options.MemoryOption.MB_128,
 )
 
 
@@ -30,3 +33,21 @@ def on_deleted_example(event: db.DatabaseEvent[object]) -> None:
 @db.on_value_updated(reference="hello")
 def on_updated_example(event: db.DatabaseEvent[db.Change[object]]) -> None:
     print("Hello from db updated event:", event)
+
+
+@https.on_request()
+def on_request_example(req: https.Request) -> https.Response:
+    print("on request function data:", req.data)
+    return https.Response("Hello from https on request function example")
+
+
+@https.on_call()
+def on_call_example(req: https.CallableRequest):
+    print("on call function data:", req)
+    if req.data == "error_test":
+        raise https.HttpsError(
+            https.FunctionsErrorCode.INVALID_ARGUMENT,
+            "This is a test",
+            "This is some details of the test",
+        )
+    return "Hello from https on call function example"
