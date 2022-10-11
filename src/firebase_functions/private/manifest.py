@@ -9,6 +9,8 @@ import typing as _typing
 import typing_extensions as _typing_extensions
 
 import firebase_functions.params as _params
+import firebase_functions.private.util as _util
+from enum import Enum as _Enum
 
 
 class SecretEnvironmentVariable(_typing.TypedDict):
@@ -46,8 +48,6 @@ class EventTrigger(_typing.TypedDict):
     channel: _typing_extensions.NotRequired[str]
     eventType: _typing_extensions.Required[str]
     retry: _typing_extensions.Required[bool | _params.Expression[bool]]
-    region: _typing_extensions.NotRequired[str]
-    serviceAccountEmail: _typing_extensions.NotRequired[str]
 
 
 class RetryConfig(_typing.TypedDict):
@@ -72,7 +72,7 @@ class BlockingTrigger(_typing.TypedDict):
 
 
 class VpcSettings(_typing.TypedDict):
-    connector: _typing_extensions.Required[str | _params.Expression[str]]
+    connector: _typing_extensions.Required[str]
     egressSettings: _typing_extensions.NotRequired[str]
 
 
@@ -84,19 +84,19 @@ class ManifestEndpoint:
     region: _typing.Optional[list[str]] = _dataclasses.field(
         default_factory=list[str])
     platform: _typing.Optional[str] = "gcfv2"
-    availableMemoryMb: int | _params.Expression[int] | None = None
-    maxInstances: int | _params.Expression[int] | None = None
-    minInstances: int | _params.Expression[int] | None = None
-    concurrency: int | _params.Expression[int] | None = None
-    serviceAccountEmail: _typing.Optional[str] = None
-    timeoutSeconds: int | _params.Expression[int] | None = None
-    cpu: int | str = "gcf_gen1"
+    availableMemoryMb: int | _params.Expression[
+        int] | _util.Sentinel | None = None
+    maxInstances: int | _params.Expression[int] | _util.Sentinel | None = None
+    minInstances: int | _params.Expression[int] | _util.Sentinel | None = None
+    concurrency: int | _params.Expression[int] | _util.Sentinel | None = None
+    serviceAccountEmail: _typing.Optional[str | _util.Sentinel] = None
+    timeoutSeconds: int | _params.Expression[int] | _util.Sentinel | None = None
+    cpu: int | str | _util.Sentinel | None = None
     vpc: _typing.Optional[VpcSettings] = None
     labels: _typing.Optional[dict[str, str]] = None
-    ingressSettings: _typing.Optional[str] = None
-    environmentVariables: _typing.Optional[dict[str, str]] = None
+    ingressSettings: _typing.Optional[str] | _util.Sentinel = None
     secretEnvironmentVariables: _typing.Optional[
-        list[SecretEnvironmentVariable]] = _dataclasses.field(
+        list[SecretEnvironmentVariable] | _util.Sentinel] = _dataclasses.field(
             default_factory=list[SecretEnvironmentVariable])
     httpsTrigger: _typing.Optional[HttpsTrigger] = None
     callableTrigger: _typing.Optional[CallableTrigger] = None
@@ -118,7 +118,7 @@ class ManifestStack:
                                   _params.SecretParam]] = _dataclasses.field(
                                       default_factory=list[_params.Param |
                                                            _params.SecretParam])
-    requiredApis: list[ManifestRequiredApi] = _dataclasses.field(
+    requiredAPIs: list[ManifestRequiredApi] = _dataclasses.field(
         default_factory=list[ManifestRequiredApi])
 
 
@@ -156,7 +156,9 @@ def _param_to_spec(
 
 
 def _object_to_spec(data) -> object:
-    if isinstance(data, _params.Expression):
+    if isinstance(data, _Enum):
+        return data.value
+    elif isinstance(data, _params.Expression):
         return data.to_cel()
     elif _dataclasses.is_dataclass(data):
         return _dataclass_to_spec(data)
@@ -189,7 +191,7 @@ def _dict_to_spec(data: dict) -> dict:
     return _dict_factory(list(data.items()))
 
 
-def _manifest_to_spec(manifest: ManifestStack) -> dict:
+def manifest_to_spec_dict(manifest: ManifestStack) -> dict:
     params = manifest.params
     out: dict = _dataclass_to_spec(manifest)
     if params is not None:

@@ -1,0 +1,211 @@
+"""
+Module for Cloud Functions that are triggered by the Firebase Realtime Database.
+"""
+# pylint: disable=protected-access
+import dataclasses as _dataclass
+import functools as _functools
+import typing as _typing
+import datetime as _dt
+import firebase_functions.options as _options
+import firebase_functions.private.util as _util
+import firebase_functions.core as _core
+import cloudevents.http as _ce
+from firebase_functions.core import Change  # Exported for user ease of typing events
+
+_event_type_written = "google.firebase.database.ref.v1.written"
+_event_type_created = "google.firebase.database.ref.v1.created"
+_event_type_updated = "google.firebase.database.ref.v1.updated"
+_event_type_deleted = "google.firebase.database.ref.v1.deleted"
+
+
+@_dataclass.dataclass(frozen=True)
+class DatabaseEvent(_core.CloudEvent[_core.T]):
+    """
+    A CloudEvent that contains a DataSnapshot or a Change<DataSnapshot>.
+    """
+
+    firebase_database_host: str
+    """
+    The domain of the database instance.
+    """
+
+    instance: str
+    """
+    The instance ID portion of the fully qualified resource name.
+    """
+
+    reference: str
+    """
+    The database reference path.
+    """
+
+    location: str
+    """
+    The location of the database
+    """
+
+    params: dict[str, str]
+    """
+    An dict containing the values of the path patterns.
+    Only named capture groups are populated - {key}, {key=*}, {key=**}
+    """
+
+
+_E1 = DatabaseEvent[Change[_typing.Any | None]]
+_E2 = DatabaseEvent[_typing.Any | None]
+_C1 = _typing.Callable[[_E1], None]
+_C2 = _typing.Callable[[_E2], None]
+
+
+def _db_endpoint_handler(
+    func: _C1 | _C2,
+    raw: _ce.CloudEvent,
+) -> None:
+    event_attributes = raw._get_attributes()
+    event_data = raw._get_data()
+    # TODO Params are built locally via path pattern which is currently unimplemented
+    params: dict[str, str] = {}
+    database_event_data = event_data["data"]
+    if "delta" in event_data:
+        before = event_data["data"]
+        after = event_data["delta"]
+        # Merge delta into data to generate an 'after' view of the data.
+        if isinstance(before, dict) and isinstance(after, dict):
+            after = _util.prune_nones({**before, **after})
+        database_event_data = _core.Change(
+            before=before,
+            after=after,
+        )
+    database_event = DatabaseEvent(
+        firebase_database_host=event_attributes["firebasedatabasehost"],
+        instance=event_attributes["instance"],
+        reference=event_attributes["ref"],
+        location=event_attributes["location"],
+        specversion=event_attributes["specversion"],
+        id=event_attributes["id"],
+        source=event_attributes["source"],
+        type=event_attributes["type"],
+        time=_dt.datetime.strptime(
+            event_attributes["time"],
+            "%Y-%m-%dT%H:%M:%S.%f%z",
+        ),
+        data=database_event_data,
+        subject=event_attributes["subject"],
+        params=params,
+    )
+    func(database_event)
+
+
+@_util.copy_func_kwargs(_options.DatabaseOptions)
+def on_value_written(**kwargs) -> _typing.Callable[[_C1], _C1]:
+    """
+    Event handler which triggers when data is created, updated, or deleted in Realtime Database.
+    Example::
+      @on_value_written(reference="*")
+      def example(event: DatabaseEvent[Change[object]]) -> None:
+          pass
+
+    """
+    options = _options.DatabaseOptions(**kwargs)
+
+    def on_value_written_inner_decorator(func: _C1):
+
+        @_functools.wraps(func)
+        def on_value_written_wrapped(raw: _ce.CloudEvent):
+            return _db_endpoint_handler(func, raw)
+
+        _util.set_func_endpoint_attr(
+            on_value_written_wrapped,
+            options._endpoint(event_type=_event_type_written,
+                              func_name=func.__name__),
+        )
+        return on_value_written_wrapped
+
+    return on_value_written_inner_decorator
+
+
+@_util.copy_func_kwargs(_options.DatabaseOptions)
+def on_value_updated(**kwargs) -> _typing.Callable[[_C1], _C1]:
+    """
+    Event handler which triggers when data is updated in Realtime Database.
+
+    Example::
+      @on_value_updated(reference="*")
+      def example(event: DatabaseEvent[Change[object]]) -> None:
+          pass
+
+    """
+    options = _options.DatabaseOptions(**kwargs)
+
+    def on_value_updated_inner_decorator(func: _C1):
+
+        @_functools.wraps(func)
+        def on_value_updated_wrapped(raw: _ce.CloudEvent):
+            return _db_endpoint_handler(func, raw)
+
+        _util.set_func_endpoint_attr(
+            on_value_updated_wrapped,
+            options._endpoint(event_type=_event_type_updated,
+                              func_name=func.__name__),
+        )
+        return on_value_updated_wrapped
+
+    return on_value_updated_inner_decorator
+
+
+@_util.copy_func_kwargs(_options.DatabaseOptions)
+def on_value_created(**kwargs) -> _typing.Callable[[_C2], _C2]:
+    """
+    Event handler which triggers when data is created in Realtime Database.
+
+    Example::
+      @on_value_created(reference="*")
+      def example(event: DatabaseEvent[object]) -> None:
+          pass
+
+    """
+    options = _options.DatabaseOptions(**kwargs)
+
+    def on_value_created_inner_decorator(func: _C2):
+
+        @_functools.wraps(func)
+        def on_value_created_wrapped(raw: _ce.CloudEvent):
+            return _db_endpoint_handler(func, raw)
+
+        _util.set_func_endpoint_attr(
+            on_value_created_wrapped,
+            options._endpoint(event_type=_event_type_created,
+                              func_name=func.__name__),
+        )
+        return on_value_created_wrapped
+
+    return on_value_created_inner_decorator
+
+
+@_util.copy_func_kwargs(_options.DatabaseOptions)
+def on_value_deleted(**kwargs) -> _typing.Callable[[_C2], _C2]:
+    """
+    Event handler which triggers when data is deleted in Realtime Database.
+
+    Example::
+      @on_value_deleted(reference="*")
+      def example(event: DatabaseEvent[object]) -> None:
+          pass
+
+    """
+    options = _options.DatabaseOptions(**kwargs)
+
+    def on_value_deleted_inner_decorator(func: _C2):
+
+        @_functools.wraps(func)
+        def on_value_deleted_wrapped(raw: _ce.CloudEvent):
+            return _db_endpoint_handler(func, raw)
+
+        _util.set_func_endpoint_attr(
+            on_value_deleted_wrapped,
+            options._endpoint(event_type=_event_type_deleted,
+                              func_name=func.__name__),
+        )
+        return on_value_deleted_wrapped
+
+    return on_value_deleted_inner_decorator

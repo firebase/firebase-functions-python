@@ -1,6 +1,6 @@
 """Manifest unit tests."""
 
-import firebase_functions.manifest as _manifest
+import firebase_functions.private.manifest as _manifest
 import firebase_functions.params as _params
 
 full_endpoint = _manifest.ManifestEndpoint(
@@ -17,7 +17,6 @@ full_endpoint = _manifest.ManifestEndpoint(
     },
     serviceAccountEmail="root@",
     ingressSettings="ALLOW_ALL",
-    cpu="gcf_gen1",
     labels={
         "hello": "world",
     },
@@ -40,7 +39,6 @@ full_endpoint_dict = {
     },
     "serviceAccountEmail": "root@",
     "ingressSettings": "ALLOW_ALL",
-    "cpu": "gcf_gen1",
     "labels": {
         "hello": "world",
     },
@@ -59,7 +57,7 @@ full_stack = _manifest.ManifestStack(
         _params.StringParam("string_test"),
         _params.ListParam("list_test", default=["1", "2", "3"]),
     ],
-    requiredApis=[{
+    requiredAPIs=[{
         "api": "test_api",
         "reason": "testing"
     }])
@@ -92,7 +90,7 @@ full_stack_dict = {
         "name": "list_test",
         "type": "list"
     }],
-    "requiredApis": [{
+    "requiredAPIs": [{
         "api": "test_api",
         "reason": "testing"
     }]
@@ -104,8 +102,7 @@ class TestManifestStack:
 
     def test_stack_to_dict(self):
         """Generic check that all ManifestStack values convert to dict."""
-        # pylint: disable=protected-access
-        stack_dict = _manifest._manifest_to_spec(full_stack)
+        stack_dict = _manifest.manifest_to_spec_dict(full_stack)
         assert (stack_dict == full_stack_dict
                ), "Generated manifest spec dict does not match expected dict."
 
@@ -133,7 +130,6 @@ class TestManifestEndpoint:
             vpc={"connector": _params.SecretParam("secret")})
         expressions_expected_dict = {
             "platform": "gcfv2",
-            "cpu": "gcf_gen1",
             "region": [],
             "secretEnvironmentVariables": [],
             "availableMemoryMb": "{{ params.large ? 1024 : 256 }}",
@@ -160,7 +156,6 @@ class TestManifestEndpoint:
         )
         expressions_expected_dict = {
             "platform": "gcfv2",
-            "cpu": "gcf_gen1",
             "region": [],
             "secretEnvironmentVariables": [],
         }
