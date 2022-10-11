@@ -197,6 +197,11 @@ class RuntimeOptions:
                 merged_options[key] = global_options[key]
         # None values are automatically stripped out in ManifestEndpoint generation.
 
+        if self.labels is not None and _GLOBAL_OPTIONS.labels is not None:
+            merged_options["labels"] = {**_GLOBAL_OPTIONS.labels, **self.labels}
+        if merged_options["labels"] is None:
+            merged_options["labels"] = {}
+
         # _util.Sentinel values are converted to `None` in ManifestEndpoint generation
         # after other None values are removed - so as to keep them in the generated
         # YAML output as 'null' values.
@@ -337,12 +342,6 @@ class HttpsOptions(RuntimeOptions):
     Internal use only.
     """
 
-    region: SupportedRegion | str | list[SupportedRegion | str] | None = None
-    """
-    Region(s) where functions should be deployed.
-    HTTP functions can override and specify more than one region unlike others function types.
-    """
-
     invoker: str | list[str] | _typing.Literal["public",
                                                "private"] | None = None
     """
@@ -362,6 +361,42 @@ class HttpsOptions(RuntimeOptions):
         merged_options = super()._asdict_with_global_options()
         del merged_options["cors"]
         return merged_options
+
+    def _endpoint(
+        self,
+        **kwargs,
+    ) -> _manifest.ManifestEndpoint:
+        kwargs_merged: dict[str, _typing.Any] = {
+            **_dataclasses.asdict(super()._endpoint(**kwargs)),
+        }
+
+        if "callable" in kwargs and kwargs["callable"] is True:
+            labels = _typing.cast(dict[str, str], kwargs_merged["labels"])
+            labels["deployment-callable"] = "true"
+            kwargs_merged["labels"] = labels
+            kwargs_merged["callableTrigger"] = _manifest.CallableTrigger()
+        else:
+            https_trigger = _manifest.HttpsTrigger()
+            if self.invoker is not None:
+                invoker = self.invoker
+                if isinstance(invoker, str):
+                    invoker = [invoker]
+                assert len(
+                    invoker
+                ) > 1, "HttpsOptions: Invalid option for invoker - must be a non-empty list."
+                assert "" not in invoker, (
+                    "HttpsOptions: Invalid option for invoker - must be a non-empty string."
+                )
+                if len(invoker) > 1:
+                    assert "private" not in invoker and "public" not in invoker, (
+                        # pylint: disable=line-too-long
+                        "HttpsOptions: Cannot have 'public' or 'private' in a list of service accounts."
+                    )
+                https_trigger["invoker"] = invoker
+            kwargs_merged["httpsTrigger"] = https_trigger
+
+        return _manifest.ManifestEndpoint(
+            **_typing.cast(_typing.Dict, kwargs_merged))
 
 
 _GLOBAL_OPTIONS = RuntimeOptions()

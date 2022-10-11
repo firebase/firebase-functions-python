@@ -22,6 +22,7 @@ class HttpsTrigger(_typing.TypedDict):
     """
     Trigger definition for arbitrary HTTPS endpoints.
     """
+
     invoker: _typing_extensions.NotRequired[list[str]]
     """
     Which service account should be able to trigger this function. No value means "make public"
