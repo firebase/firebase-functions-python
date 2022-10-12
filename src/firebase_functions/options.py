@@ -202,19 +202,18 @@ class RuntimeOptions:
         """
         Returns the provider options merged with globally defined options.
         """
-        provider_options = _dataclasses.asdict(self)
-        global_options = _dataclasses.asdict(_GLOBAL_OPTIONS)
+        # We don't use dataclasses.asdict with a custom dict factory since
+        # it internally converts dataclasses to dicts automatically but
+        # we don't want that since we want to represent certain dataclasses
+        # (such as params) differently (not as a dict) when converting to
+        # a manifest representation.
+        provider_options = _manifest._dict_to_spec(self.__dict__)
+        global_options = _manifest._dict_to_spec(_GLOBAL_OPTIONS.__dict__)
         merged_options: dict = {**global_options, **provider_options}
-        # None values in the providers options should fallback to
-        # global options.
-        for key in provider_options:
-            if provider_options[key] is None and key in global_options:
-                merged_options[key] = global_options[key]
-        # None values are automatically stripped out in ManifestEndpoint generation.
 
         if self.labels is not None and _GLOBAL_OPTIONS.labels is not None:
             merged_options["labels"] = {**_GLOBAL_OPTIONS.labels, **self.labels}
-        if merged_options["labels"] is None:
+        if "labels" not in merged_options:
             merged_options["labels"] = {}
 
         # _util.Sentinel values are converted to `None` in ManifestEndpoint generation
@@ -374,7 +373,10 @@ class HttpsOptions(RuntimeOptions):
         client only options like "cors" removed.
         """
         merged_options = super()._asdict_with_global_options()
-        del merged_options["cors"]
+        # "cors" is only used locally by the functions framework
+        # and is not used in the manifest.
+        if "cors" in merged_options:
+            del merged_options["cors"]
         return merged_options
 
     def _endpoint(
