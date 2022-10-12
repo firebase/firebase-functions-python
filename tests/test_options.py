@@ -17,6 +17,7 @@
 Options unit tests.
 """
 from firebase_functions import options
+from firebase_functions import params
 # pylint: disable=protected-access
 
 
@@ -52,3 +53,15 @@ def test_https_options_removes_cors():
     assert https_options.cors.cors_origins == "*", "cors options were not set"
     https_options_dict = https_options._asdict_with_global_options()
     assert "cors" not in https_options_dict, "'cors' key should not exist in dict"
+
+
+def test_options_asdict_uses_cel_representation():
+    """
+    Test Param or Expression option values are converted to their
+    CEL values for manifest representation.
+    """
+    int_param = params.IntParam("min")
+    https_options_dict = options.HttpsOptions(
+        min_instances=int_param)._asdict_with_global_options()
+    assert https_options_dict["min_instances"] == int_param.to_cel(
+    ), "param was not converted to CEL string"
