@@ -23,20 +23,21 @@ class TestBoolParams:
 
     def test_bool_param_value_true_or_false(self):
         """Testing if bool params correctly returns a true or false value."""
+        bool_param = params.BoolParam("BOOL_VALUE_TEST1")
         for value_true, value_false in zip(["true", "t", "1", "y", "yes"],
                                            ["false", "f", "0", "n", "no"]):
-            environ["BOOL_VALUE_TEST"] = value_true
-            assert (params.BoolParam("BOOL_VALUE_TEST").value() is
+            environ["BOOL_VALUE_TEST1"] = value_true
+            assert (bool_param.value() is
                     True), "Failure, params returned False"
-            environ["BOOL_VALUE_TEST"] = value_false
-            assert (params.BoolParam("BOOL_VALUE_TEST").value() is
+            environ["BOOL_VALUE_TEST1"] = value_false
+            assert (bool_param.value() is
                     False), "Failure, params returned True"
 
     def test_bool_param_value_error(self):
         """Testing if bool params throws a value error if invalid value."""
         with pytest.raises(ValueError):
-            environ["BOOL_VALUE_TEST"] = "bad_value"
-            params.BoolParam("BOOL_VALUE_TEST").value()
+            environ["BOOL_VALUE_TEST2"] = "bad_value"
+            params.BoolParam("BOOL_VALUE_TEST2").value()
 
     def test_bool_param_empty_default(self):
         """Testing if bool params defaults to False if no value and no default."""
@@ -45,17 +46,19 @@ class TestBoolParams:
 
     def test_bool_param_default(self):
         """Testing if bool params defaults to provided default value."""
-        assert (params.BoolParam("BOOL_DEFAULT_TEST", default=False).value() is
+        assert (params.BoolParam("BOOL_DEFAULT_TEST_FALSE",
+                                 default=False).value() is
                 False), "Failure, params returned True"
-        assert (params.BoolParam("BOOL_DEFAULT_TEST", default=True).value() is
+        assert (params.BoolParam("BOOL_DEFAULT_TEST_TRUE",
+                                 default=True).value() is
                 True), "Failure, params returned False"
 
     def test_bool_param_equality(self):
         """Test bool equality."""
-        assert (params.BoolParam("BOOL_TEST",
+        assert (params.BoolParam("BOOL_TEST1",
                                  default=False).equals(False).value() is
                 True), "Failure, equality check returned False"
-        assert (params.BoolParam("BOOL_TEST",
+        assert (params.BoolParam("BOOL_TEST2",
                                  default=True).equals(False).value() is
                 False), "Failure, equality check returned False"
 
@@ -71,20 +74,21 @@ class TestFloatParams:
 
     def test_float_param_empty_default(self):
         """Testing if float params defaults to empty float if no value and no default."""
-        assert params.FloatParam("FLOAT_DEFAULT_TEST").value() == float(), \
+        assert params.FloatParam("FLOAT_DEFAULT_TEST1").value() == float(), \
             "Failure, params value is not float"
 
     def test_float_param_default(self):
         """Testing if float param defaults to provided default value."""
-        assert params.FloatParam("FLOAT_DEFAULT_TEST", default=float(456.789)).value() == 456.789, \
+        assert params.FloatParam("FLOAT_DEFAULT_TEST2",
+        default=float(456.789)).value() == 456.789, \
             "Failure, params default value != 456.789"
 
     def test_float_param_equality(self):
         """Test float equality."""
-        assert (params.FloatParam("FLOAT_TEST",
+        assert (params.FloatParam("FLOAT_TEST1",
                                   default=123.456).equals(123.456).value() is
                 True), "Failure, equality check returned False"
-        assert (params.FloatParam("FLOAT_TEST",
+        assert (params.FloatParam("FLOAT_TEST2",
                                   default=456.789).equals(123.456).value() is
                 False), "Failure, equality check returned False"
 
@@ -100,19 +104,19 @@ class TestIntParams:
 
     def test_int_param_empty_default(self):
         """Testing if int param defaults to empty int if no value and no default."""
-        assert params.IntParam("INT_DEFAULT_TEST").value() == int(
+        assert params.IntParam("INT_DEFAULT_TEST1").value() == int(
         ), "Failure, params value is not int"
 
     def test_int_param_default(self):
         """Testing if int param defaults to provided default value."""
-        assert params.IntParam("INT_DEFAULT_TEST", default=456).value() == 456, \
+        assert params.IntParam("INT_DEFAULT_TEST2", default=456).value() == 456, \
             "Failure, params default value != 456"
 
     def test_int_param_equality(self):
         """Test int equality."""
-        assert (params.IntParam("INT_TEST", default=123).equals(123).value() is
+        assert (params.IntParam("INT_TEST1", default=123).equals(123).value() is
                 True), "Failure, equality check returned False"
-        assert (params.IntParam("INT_TEST", default=456).equals(123).value() is
+        assert (params.IntParam("INT_TEST2", default=456).equals(123).value() is
                 False), "Failure, equality check returned False"
 
 
@@ -133,21 +137,22 @@ class TestStringParams:
 
     def test_string_param_empty_default(self):
         """Testing if string param defaults to empty string if no value and no default."""
-        assert params.StringParam("STRING_DEFAULT_TEST").value() == str(), \
+        assert params.StringParam("STRING_DEFAULT_TEST1").value() == str(), \
             "Failure, params value is not a string"
 
     def test_string_param_default(self):
         """Testing if string param defaults to provided default value."""
-        assert (params.StringParam("STRING_DEFAULT_TEST", default="string_override_default").value()
+        assert (params.StringParam("STRING_DEFAULT_TEST2",
+        default="string_override_default").value()
                 == "string_override_default"), \
             'Failure, params default value != "string_override_default"'
 
     def test_string_param_equality(self):
         """Test string equality."""
-        assert (params.StringParam("STRING_TEST",
+        assert (params.StringParam("STRING_TEST1",
                                    default="123").equals("123").value() is
                 True), "Failure, equality check returned False"
-        assert (params.StringParam("STRING_TEST",
+        assert (params.StringParam("STRING_TEST2",
                                    default="456").equals("123").value() is
                 False), "Failure, equality check returned False"
 
@@ -157,30 +162,30 @@ class TestListParams:
 
     def test_list_param_value(self):
         """Testing if list param correctly returns list values."""
-        environ["LIST_VALUE_TEST"] = "item1,item2"
-        assert params.ListParam("LIST_VALUE_TEST").value() == ["item1","item2"], \
+        environ["LIST_VALUE_TEST1"] = "item1,item2"
+        assert params.ListParam("LIST_VALUE_TEST1").value() == ["item1","item2"], \
             'Failure, params value != ["item1","item2"]'
 
     def test_list_param_filter_empty_strings(self):
         """Testing if list param correctly returns list values wth empty strings excluded."""
-        environ["LIST_VALUE_TEST"] = ",,item1,item2,,,item3,"
-        assert params.ListParam("LIST_VALUE_TEST").value() == ["item1","item2", "item3"], \
+        environ["LIST_VALUE_TEST2"] = ",,item1,item2,,,item3,"
+        assert params.ListParam("LIST_VALUE_TEST2").value() == ["item1","item2", "item3"], \
             'Failure, params value != ["item1","item2", "item3"]'
 
     def test_list_param_empty_default(self):
         """Testing if list param defaults to an empty list if no value and no default."""
-        assert params.ListParam("LIST_DEFAULT_TEST").value() == [], \
+        assert params.ListParam("LIST_DEFAULT_TEST1").value() == [], \
             "Failure, params value is not an empty list"
 
     def test_list_param_default(self):
         """Testing if list param defaults to the provided default value."""
-        assert (params.ListParam("LIST_DEFAULT_TEST", default=["1", "2"]).value()
+        assert (params.ListParam("LIST_DEFAULT_TEST2", default=["1", "2"]).value()
                 == ["1", "2"]), \
             'Failure, params default value != ["1", "2"]'
 
     def test_list_param_equality(self):
         """Test list equality."""
-        assert (params.ListParam("LIST_TEST", default=["123"]).equals(
+        assert (params.ListParam("LIST_TEST1", default=["123"]).equals(
             ["123"]).value() is True), "Failure, equality check returned False"
-        assert (params.ListParam("LIST_TEST", default=["456"]).equals(
+        assert (params.ListParam("LIST_TEST2", default=["456"]).equals(
             ["123"]).value() is False), "Failure, equality check returned False"

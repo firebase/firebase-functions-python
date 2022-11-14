@@ -47,6 +47,9 @@ def _quote_if_string(literal: _T) -> _T:
     return literal if not isinstance(literal, str) else f'"{literal}"'
 
 
+_params: dict[str, Expression] = {}
+
+
 @_dataclasses.dataclass(frozen=True)
 class TernaryExpression(Expression[_T], _typing.Generic[_T]):
     test: Expression[bool]
@@ -210,6 +213,11 @@ class Param(Expression[_T]):
             raise ValueError(
                 "Parameter names must only use uppercase letters, numbers and "
                 "underscores, e.g. 'UPPER_SNAKE_CASE'.")
+        if self.name in _params:
+            raise ValueError(
+                f"Duplicate Parameter Error: The parameter '{self.name}' has already been declared."
+            )
+        _params[self.name] = self
 
 
 @_dataclasses.dataclass(frozen=True)
@@ -247,6 +255,11 @@ class SecretParam(Expression[str]):
             raise ValueError(
                 "Parameter names must only use uppercase letters, numbers and "
                 "underscores, e.g. 'UPPER_SNAKE_CASE'.")
+        if self.name in _params:
+            raise ValueError(
+                f"Duplicate Parameter Error: The parameter '{self.name}' has already been declared."
+            )
+        _params[self.name] = self
 
     def value(self) -> str:
         """Current value of this parameter."""
