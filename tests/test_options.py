@@ -11,8 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-
 """
 Options unit tests.
 """
@@ -60,7 +58,7 @@ def test_options_asdict_uses_cel_representation():
     Test Param or Expression option values are converted to their
     CEL values for manifest representation.
     """
-    int_param = params.IntParam("min")
+    int_param = params.IntParam("MIN")
     https_options_dict = options.HttpsOptions(
         min_instances=int_param)._asdict_with_global_options()
     assert https_options_dict["min_instances"] == int_param.to_cel(
