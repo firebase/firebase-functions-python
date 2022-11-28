@@ -1,12 +1,27 @@
+# Copyright 2022 Google Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 """
 Cloud functions to handle events from Google Cloud Pub/Sub.
 """
-
+# pylint: disable=protected-access
 import dataclasses as _dataclasses
+import datetime as _dt
 import functools as _functools
 import typing as _typing
 import json as _json
 import base64 as _base64
+import cloudevents.http as _ce
 
 import firebase_functions.options as _options
 import firebase_functions.private.util as _util
@@ -45,7 +60,7 @@ class Message(_typing.Generic[T]):
     """
 
     @property
-    def json(self) -> _typing.Optional[_core.T]:
+    def json(self) -> _typing.Optional[T]:
         try:
             if self.data is not None:
                 return _json.loads(_base64.b64decode(self.data).decode("utf-8"))
@@ -58,13 +73,13 @@ class Message(_typing.Generic[T]):
 
 
 @_dataclasses.dataclass(frozen=True)
-class MessagePublishedData(_typing.Generic[_core.T]):
+class MessagePublishedData(_typing.Generic[T]):
     """
     The interface published in a Pub/Sub publish subscription.
 
     'T' Type representing `Message.data`'s JSON format.
     """
-    message: Message[_core.T]
+    message: Message[T]
     """
     Google Cloud Pub/Sub message.
     """
@@ -75,7 +90,88 @@ class MessagePublishedData(_typing.Generic[_core.T]):
     """
 
 
-_E1 = DatabaseEvent[Change[_typing.Any | None]]
-_E2 = DatabaseEvent[_typing.Any | None]
+_E1 = CloudEvent[MessagePublishedData[T]]
 _C1 = _typing.Callable[[_E1], None]
-_C2 = _typing.Callable[[_E2], None]
+
+
+def _message_handler(
+    func: _C1,
+    raw: _ce.CloudEvent,
+) -> None:
+    event_attributes = raw._get_attributes()
+    event_data = raw._get_data()
+    event_dict = {"data": event_data, **event_attributes}
+    data = event_dict["data"]
+    message_dict = data["message"]
+
+    time = _dt.datetime.strptime(
+        event_dict["time"],
+        "%Y-%m-%dT%H:%M:%S.%f%z",
+    )
+
+    publish_time = _dt.datetime.strptime(
+        message_dict["publish_time"],
+        "%Y-%m-%dT%H:%M:%S.%f%z",
+    )
+
+    # Convert the UTC string into a datetime object
+    event_dict["time"] = time
+    message_dict["publish_time"] = publish_time
+
+    # Pop unnecessary keys from the message data
+    # (we get these keys from the snake case alternatives that are provided)
+    message_dict.pop("messageId", None)
+    message_dict.pop("publishTime", None)
+
+    # `orderingKey` doesn't come with a snake case alternative,
+    # there is no `ordering_key` in the raw request.
+    ordering_key = message_dict.pop("orderingKey", None)
+
+    message: MessagePublishedData = MessagePublishedData(
+        message=Message(
+            **message_dict,
+            ordering_key=ordering_key,
+        ),
+        subscription=data["subscription"],
+    )
+
+    event_dict["data"] = message
+
+    event: CloudEvent[MessagePublishedData] = CloudEvent(
+        data=event_dict["data"],
+        id=event_dict["id"],
+        source=event_dict["source"],
+        specversion=event_dict["specversion"],
+        subject=event_dict["subject"] if "subject" in event_dict else None,
+        time=event_dict["time"],
+        type=event_dict["type"],
+    )
+
+    func(event)
+
+
+@_util.copy_func_kwargs(_options.PubSubOptions)
+def on_message_published(**kwargs) -> _typing.Callable[[_C1], _C1]:
+    """
+    Event handler which triggers on a message being published to a Pub/Sub topic.
+    Example::
+      @on_message_published(topic="hello-world")
+      def example(event: CloudEvent[MessagePublishedData[object]]) -> None:
+          pass
+
+    """
+    options = _options.PubSubOptions(**kwargs)
+
+    def on_message_published_inner_decorator(func: _C1):
+
+        @_functools.wraps(func)
+        def on_message_published_wrapped(raw: _ce.CloudEvent):
+            return _message_handler(func, raw)
+
+        _util.set_func_endpoint_attr(
+            on_message_published_wrapped,
+            options._endpoint(func_name=func.__name__),
+        )
+        return on_message_published_wrapped
+
+    return on_message_published_inner_decorator
