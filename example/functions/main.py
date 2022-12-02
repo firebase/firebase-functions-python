@@ -1,7 +1,7 @@
 """
 Example Firebase Functions written in Python
 """
-from firebase_functions import db, options, https
+from firebase_functions import db, options, https, params
 from firebase_admin import initialize_app
 
 initialize_app()
@@ -9,6 +9,7 @@ initialize_app()
 options.set_global_options(
     region=options.SupportedRegion.EUROPE_WEST1,
     memory=options.MemoryOption.MB_128,
+    min_instances=params.IntParam("MIN", default=3),
 )
 
 

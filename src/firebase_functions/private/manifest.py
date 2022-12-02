@@ -11,8 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-
 """Specs for the served functions.yaml of the user's functions"""
 
 # We're ignoring pylint's warning about names since we want
@@ -130,10 +128,8 @@ class ManifestRequiredApi(_typing.TypedDict):
 class ManifestStack:
     endpoints: dict[str, ManifestEndpoint]
     specVersion: str = "v1alpha1"
-    params: _typing.Optional[list[_params.Param |
-                                  _params.SecretParam]] = _dataclasses.field(
-                                      default_factory=list[_params.Param |
-                                                           _params.SecretParam])
+    params: list[_typing.Any] | None = _dataclasses.field(
+        default_factory=list[_typing.Any])
     requiredAPIs: list[ManifestRequiredApi] = _dataclasses.field(
         default_factory=list[ManifestRequiredApi])
 

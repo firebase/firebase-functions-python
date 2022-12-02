@@ -132,12 +132,13 @@ class TestManifestEndpoint:
 
     def test_endpoint_expressions(self):
         """Check Expression values convert to CEL strings."""
+        max_param = _params.IntParam("MAX")
         expressions_test = _manifest.ManifestEndpoint(
             availableMemoryMb=_params.TernaryExpression(
-                _params.BoolParam("LARGE"), 1024, 256),
-            minInstances=_params.StringParam("LARGE").equals("yes").then(6, 1),
-            maxInstances=_params.IntParam("MAX").compare(">", 6).then(
-                6, _params.IntParam("MAX")),
+                _params.BoolParam("LARGE_BOOL"), 1024, 256),
+            minInstances=_params.StringParam("LARGE_STR").equals("yes").then(
+                6, 1),
+            maxInstances=max_param.compare(">", 6).then(6, max_param),
             timeoutSeconds=_params.IntParam("WORLD"),
             concurrency=_params.IntParam("BAR"),
             vpc={"connector": _params.SecretParam("SECRET")})
@@ -145,8 +146,8 @@ class TestManifestEndpoint:
             "platform": "gcfv2",
             "region": [],
             "secretEnvironmentVariables": [],
-            "availableMemoryMb": "{{ params.LARGE ? 1024 : 256 }}",
-            "minInstances": "{{ params.LARGE == \"yes\" ? 6 : 1 }}",
+            "availableMemoryMb": "{{ params.LARGE_BOOL ? 1024 : 256 }}",
+            "minInstances": "{{ params.LARGE_STR == \"yes\" ? 6 : 1 }}",
             "maxInstances": "{{ params.MAX > 6 ? 6 : params.MAX }}",
             "timeoutSeconds": "{{ params.WORLD }}",
             "concurrency": "{{ params.BAR }}",

@@ -11,8 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-
 """
 Module used to serve Firebase functions locally and remotely.
 """
@@ -29,6 +27,7 @@ from flask import Flask
 from flask import Response
 
 from firebase_functions.private import manifest as _manifest
+from firebase_functions import params as _params
 from firebase_functions.private import util as _util
 
 
@@ -72,8 +71,9 @@ def functions_as_yaml(functions: dict) -> str:
         endpoint = function.__firebase_endpoint__
         # v2 function name(s) can only contain lower case letters, numbers, hyphens
         endpoints[name.replace("_", "-").lower()] = endpoint
-
-    manifest_stack = _manifest.ManifestStack(endpoints=endpoints)
+    manifest_stack = _manifest.ManifestStack(endpoints=endpoints,
+                                             params=list(
+                                                 _params._params.values()))
     manifest_spec = _manifest.manifest_to_spec_dict(manifest_stack)
     manifest_spec_with_sentinels = to_spec(manifest_spec)
 
