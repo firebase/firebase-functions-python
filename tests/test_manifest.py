@@ -11,8 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-
 """Manifest unit tests."""
 
 import firebase_functions.private.manifest as _manifest
@@ -65,12 +63,12 @@ full_endpoint_dict = {
 full_stack = _manifest.ManifestStack(
     endpoints={"test": full_endpoint},
     params=[
-        _params.BoolParam("bool_test", default=False),
-        _params.IntParam("int_test", description="int_description"),
-        _params.FloatParam("float_test", immutable=True),
-        _params.SecretParam("secret_test"),
-        _params.StringParam("string_test"),
-        _params.ListParam("list_test", default=["1", "2", "3"]),
+        _params.BoolParam("BOOL_TEST", default=False),
+        _params.IntParam("INT_TEST", description="int_description"),
+        _params.FloatParam("FLOAT_TEST", immutable=True),
+        _params.SecretParam("SECRET_TEST"),
+        _params.StringParam("STRING_TEST"),
+        _params.ListParam("LIST_TEST", default=["1", "2", "3"]),
     ],
     requiredAPIs=[{
         "api": "test_api",
@@ -83,26 +81,26 @@ full_stack_dict = {
         "test": full_endpoint_dict
     },
     "params": [{
-        "name": "bool_test",
+        "name": "BOOL_TEST",
         "type": "boolean",
         "default": False,
     }, {
-        "name": "int_test",
+        "name": "INT_TEST",
         "type": "int",
         "description": "int_description"
     }, {
-        "name": "float_test",
+        "name": "FLOAT_TEST",
         "type": "float",
         "immutable": True,
     }, {
-        "name": "secret_test",
+        "name": "SECRET_TEST",
         "type": "secret"
     }, {
-        "name": "string_test",
+        "name": "STRING_TEST",
         "type": "string"
     }, {
         "default": "1,2,3",
-        "name": "list_test",
+        "name": "LIST_TEST",
         "type": "list"
     }],
     "requiredAPIs": [{
@@ -136,24 +134,24 @@ class TestManifestEndpoint:
         """Check Expression values convert to CEL strings."""
         expressions_test = _manifest.ManifestEndpoint(
             availableMemoryMb=_params.TernaryExpression(
-                _params.BoolParam("large"), 1024, 256),
-            minInstances=_params.StringParam("large").equals("yes").then(6, 1),
-            maxInstances=_params.IntParam("max").compare(">", 6).then(
-                6, _params.IntParam("max")),
-            timeoutSeconds=_params.IntParam("world"),
-            concurrency=_params.IntParam("bar"),
-            vpc={"connector": _params.SecretParam("secret")})
+                _params.BoolParam("LARGE"), 1024, 256),
+            minInstances=_params.StringParam("LARGE").equals("yes").then(6, 1),
+            maxInstances=_params.IntParam("MAX").compare(">", 6).then(
+                6, _params.IntParam("MAX")),
+            timeoutSeconds=_params.IntParam("WORLD"),
+            concurrency=_params.IntParam("BAR"),
+            vpc={"connector": _params.SecretParam("SECRET")})
         expressions_expected_dict = {
             "platform": "gcfv2",
             "region": [],
             "secretEnvironmentVariables": [],
-            "availableMemoryMb": "{{ params.large ? 1024 : 256 }}",
-            "minInstances": "{{ params.large == \"yes\" ? 6 : 1 }}",
-            "maxInstances": "{{ params.max > 6 ? 6 : params.max }}",
-            "timeoutSeconds": "{{ params.world }}",
-            "concurrency": "{{ params.bar }}",
+            "availableMemoryMb": "{{ params.LARGE ? 1024 : 256 }}",
+            "minInstances": "{{ params.LARGE == \"yes\" ? 6 : 1 }}",
+            "maxInstances": "{{ params.MAX > 6 ? 6 : params.MAX }}",
+            "timeoutSeconds": "{{ params.WORLD }}",
+            "concurrency": "{{ params.BAR }}",
             "vpc": {
-                "connector": "{{ params.secret }}"
+                "connector": "{{ params.SECRET }}"
             }
         }
         # pylint: disable=protected-access

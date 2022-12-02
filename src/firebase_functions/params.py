@@ -11,13 +11,12 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-
 """Module for params that can make Cloud Functions codebases generic."""
 
 import abc as _abc
 import dataclasses as _dataclasses
 import os as _os
+import re as _re
 import typing as _typing
 
 _T = _typing.TypeVar("_T", str, int, float, bool, list)
@@ -188,7 +187,8 @@ class Param(Expression[_T]):
     deployments.
     """
 
-    input: _typing.Union[TextInput, ResourceInput, SelectInput[_T]] = TextInput()
+    input: _typing.Union[TextInput, ResourceInput,
+                         SelectInput[_T]] = TextInput()
     """
     The type of input that is required for this param, e.g. TextInput.
     """
@@ -204,6 +204,12 @@ class Param(Expression[_T]):
 
     def __str__(self) -> str:
         return f"params.{self.name}"
+
+    def __post_init__(self):
+        if not _re.match(r"^[A-Z0-9_]+$", self.name):
+            raise ValueError(
+                "Parameter names must only use uppercase letters, numbers and "
+                "underscores, e.g. 'UPPER_SNAKE_CASE'.")
 
 
 @_dataclasses.dataclass(frozen=True)
@@ -235,6 +241,12 @@ class SecretParam(Expression[str]):
 
     def __str__(self):
         return f"params.{self.name}"
+
+    def __post_init__(self):
+        if not _re.match(r"^[A-Z0-9_]+$", self.name):
+            raise ValueError(
+                "Parameter names must only use uppercase letters, numbers and "
+                "underscores, e.g. 'UPPER_SNAKE_CASE'.")
 
     def value(self) -> str:
         """Current value of this parameter."""
