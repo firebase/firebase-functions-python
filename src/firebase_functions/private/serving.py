@@ -20,6 +20,7 @@ import inspect
 import enum
 import yaml
 import importlib
+import sys
 from os import kill, getpid
 from signal import SIGTERM
 
@@ -32,6 +33,7 @@ from firebase_functions.private import util as _util
 
 
 def get_functions():
+    sys.path.insert(0, os.getcwd())
     spec = importlib.util.spec_from_file_location("main", "main.py")
     if spec is not None and spec.loader is not None:
         module = importlib.util.module_from_spec(spec)
