@@ -315,6 +315,42 @@ class PubSubOptions(RuntimeOptions):
 
 
 @_dataclasses.dataclass(frozen=True, kw_only=True)
+class StorageOptions(RuntimeOptions):
+    """
+    Options specific to Storage function types.
+    Internal use only.
+    """
+
+    bucket: _typing.Optional[str] = None
+    """
+    The name of the bucket to watch for Storage events.
+    """
+
+    def _endpoint(
+        self,
+        **kwargs,
+    ) -> _manifest.ManifestEndpoint:
+        assert kwargs["event_type"] is not None
+        # TODO get bucket from admin sdk if no bucket set
+        event_filters: _typing.Any = {
+            "bucket": self.bucket,
+        }
+        event_trigger = _manifest.EventTrigger(
+            eventType=kwargs["event_type"],
+            retry=False,
+            eventFilters=event_filters,
+        )
+
+        kwargs_merged = {
+            **_dataclasses.asdict(super()._endpoint(**kwargs)),
+            "eventTrigger":
+                event_trigger,
+        }
+        return _manifest.ManifestEndpoint(
+            **_typing.cast(_typing.Dict, kwargs_merged))
+
+
+@_dataclasses.dataclass(frozen=True, kw_only=True)
 class DatabaseOptions(RuntimeOptions):
     """
     Options specific to Database function types.
