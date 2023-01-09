@@ -15,18 +15,18 @@
 
 import os
 from functions_framework import create_app
-from functions_framework._http.gunicorn import GunicornApplication
+from functions_framework._http.flask import FlaskApplication
 
 # Environment variables:
 #   FUNCTION_TARGET
 #   FUNCTION_SOURCE
-#   FUNCTION_SIGNATURE_TYPE  = "http", "event", "cloudevent" - default "http"
+#   FUNCTION_SIGNATURE_TYPE = "http", "event", "cloudevent" - default "http"
 #   HOST
 
 
 def create_server(bind):
     app = create_app()
-    GunicornApplication(app, "", "", False, options={"host": bind}).run()
+    FlaskApplication(app, bind, None, True).run()
 
 
 def main():
