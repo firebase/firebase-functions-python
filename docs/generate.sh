@@ -25,8 +25,8 @@
 # Prerequisites:
 #   Install the required Python modules:
 #     pip install sphinx sphinxcontrib-napoleon
-# . On OSX, install getopt
-# .   brew install gnu-getopt
+# . On OSX, install getopt:
+# .   :brew install gnu-getopt
 #
 # Example:
 #   generate.sh \
