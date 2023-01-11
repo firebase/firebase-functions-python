@@ -106,10 +106,12 @@ class FiresiteHTMLTranslator(html.HTMLTranslator):
         self.body.append(self.starttag(node, 'aside', CLASS='note'))
 
     def depart_note(self, node):
+        # pylint: disable=unused-argument
         self.body.append('</aside>\n\n')
 
     def visit_warning(self, node):
         self.body.append(self.starttag(node, 'aside', CLASS='caution'))
 
     def depart_warning(self, node):
+        # pylint: disable=unused-argument
         self.body.append('</aside>\n\n')
