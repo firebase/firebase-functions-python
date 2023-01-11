@@ -1,0 +1,30 @@
+{#
+    basic/layout.html
+    ~~~~~~~~~~~~~~~~~
+
+    Master layout template for Sphinx themes.
+
+    :copyright: Copyright 2007-2016 by the Sphinx team, see AUTHORS.
+    :license: BSD, see LICENSE for details.
+#}
+<!DOCTYPE html>
+<html devsite>
+  <head>
+    <meta name="project_path" value="/_project.yaml" />
+    <meta name="book_path" value="/docs/reference/_book.yaml" />
+    <meta name="page_type" value="reference" />
+    <meta name="translation" value="disabled">
+    <link rel="stylesheet" type="text/css" href="https://www.gstatic.com/devrel-devsite/prod/vc890b700b898929d6a9586ce333c0fb7d88f26c0e62aab16b11d9d648f110bfc/firebase/css/app.css">
+    <link rel="stylesheet" type="text/css" href="https://firebase.google.com/styles/sphinx.css">
+  </head>
+  <body>
+{%- block header %}{% endblock %}
+
+{%- block content %}
+{%- block document %}
+{% block body %} {% endblock %}
+{%- endblock %}
+{%- endblock %}
+
+  </body>
+</html>
