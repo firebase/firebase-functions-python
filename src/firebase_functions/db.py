@@ -115,7 +115,11 @@ def _db_endpoint_handler(
 def on_value_written(**kwargs) -> _typing.Callable[[_C1], _C1]:
     """
     Event handler which triggers when data is created, updated, or deleted in Realtime Database.
-    Example::
+
+    Example:
+
+    .. code-block:: python
+
       @on_value_written(reference="*")
       def example(event: DatabaseEvent[Change[object]]) -> None:
           pass
@@ -144,7 +148,10 @@ def on_value_updated(**kwargs) -> _typing.Callable[[_C1], _C1]:
     """
     Event handler which triggers when data is updated in Realtime Database.
 
-    Example::
+    Example:
+
+    .. code-block:: python
+
       @on_value_updated(reference="*")
       def example(event: DatabaseEvent[Change[object]]) -> None:
           pass
@@ -173,11 +180,13 @@ def on_value_created(**kwargs) -> _typing.Callable[[_C2], _C2]:
     """
     Event handler which triggers when data is created in Realtime Database.
 
-    Example::
-      @on_value_created(reference="*")
-      def example(event: DatabaseEvent[object]) -> None:
-          pass
+    Example:
 
+    .. code-block:: python
+
+        @on_value_created(reference="*")
+        def example(event):
+          pass
     """
     options = _options.DatabaseOptions(**kwargs)
 
@@ -202,7 +211,10 @@ def on_value_deleted(**kwargs) -> _typing.Callable[[_C2], _C2]:
     """
     Event handler which triggers when data is deleted in Realtime Database.
 
-    Example::
+    Example:
+
+    .. code-block:: python
+
       @on_value_deleted(reference="*")
       def example(event: DatabaseEvent[object]) -> None:
           pass

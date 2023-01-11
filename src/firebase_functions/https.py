@@ -412,7 +412,11 @@ def on_request(**kwargs) -> _typing.Callable[[_C1], _C1]:
     """
     Handler which handles HTTPS requests.
     Requires a function that takes a Request and Response object, same signature as an Flask app.
-    Example::
+
+    Example:
+
+    .. code-block:: python
+
       @on_request()
       def example(request: Request) -> Response:
           pass
@@ -445,7 +449,11 @@ def on_call(**kwargs) -> _typing.Callable[[_C2], _C2]:
     """
     Declares a callable method for clients to call using a Firebase SDK.
     Requires a function that takes a CallableRequest.
-    Example::
+
+    Example:
+
+    .. code-block:: python
+
       @on_call()
       def example(request: CallableRequest) -> Any:
           pass
