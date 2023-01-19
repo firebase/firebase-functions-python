@@ -205,74 +205,59 @@ def _message_handler(
 ) -> None:
     event_attributes = raw._get_attributes()
     event_data = raw.get_data()
-    event_dict = {"data": event_data, **event_attributes}
-    data = event_dict["data"]
-    message_dict: dict = data["message"]
+    data = event_data["data"]
 
-    time = _dt.datetime.strptime(
-        event_dict["time"],
-        "%Y-%m-%dT%H:%M:%S.%f%z",
-    )
-
-    publish_time = _dt.datetime.strptime(
-        message_dict["publish_time"],
-        "%Y-%m-%dT%H:%M:%S.%f%z",
-    )
-
-    # Convert the UTC string into a datetime object
-    event_dict["time"] = time
-    message_dict["publish_time"] = publish_time
-
-    # Pop unnecessary keys from the message data
-    # (we get these keys from the snake case alternatives that are provided)
-    message_dict.pop("messageId", None)
-    message_dict.pop("publishTime", None)
+    print(event_attributes)
+    print(event_data)
+    print(data)
 
     message: StorageObjectData = StorageObjectData(
         # Required fields:
-        bucket=message_dict["bucket"],
-        generation=message_dict["generation"],
-        id=message_dict["id"],
-        metageneration=message_dict["metageneration"],
-        name=message_dict["name"],
-        size=message_dict["size"],
-        storage_class=message_dict["storageClass"],
+        bucket=data["bucket"],
+        generation=data["generation"],
+        id=data["id"],
+        metageneration=data["metageneration"],
+        name=data["name"],
+        size=data["size"],
+        storage_class=data["storageClass"],
         # Optional fields:
-        cache_control=message_dict.get("cacheControl"),
-        component_count=message_dict.get("componentCount"),
-        content_disposition=message_dict.get("contentDisposition"),
-        content_encoding=message_dict.get("contentEncoding"),
-        content_language=message_dict.get("contentLanguage"),
-        content_type=message_dict.get("contentType"),
-        crc32c=message_dict.get("crc32c"),
-        etag=message_dict.get("etag"),
-        kind=message_dict.get("kind"),
-        md5_hash=message_dict.get("md5Hash"),
-        media_link=message_dict.get("mediaLink"),
-        metadata=message_dict.get("metadata"),
-        self_link=message_dict.get("selfLink"),
-        time_created=message_dict.get("timeCreated"),
-        time_deleted=message_dict.get("timeDeleted"),
-        time_storage_class_updated=message_dict.get("timeStorageClassUpdated"),
-        updated=message_dict.get("updated"),
+        cache_control=data.get("cacheControl"),
+        component_count=data.get("componentCount"),
+        content_disposition=data.get("contentDisposition"),
+        content_encoding=data.get("contentEncoding"),
+        content_language=data.get("contentLanguage"),
+        content_type=data.get("contentType"),
+        crc32c=data.get("crc32c"),
+        etag=data.get("etag"),
+        kind=data.get("kind"),
+        md5_hash=data.get("md5Hash"),
+        media_link=data.get("mediaLink"),
+        metadata=data.get("metadata"),
+        self_link=data.get("selfLink"),
+        time_created=data.get("timeCreated"),
+        time_deleted=data.get("timeDeleted"),
+        time_storage_class_updated=data.get("timeStorageClassUpdated"),
+        updated=data.get("updated"),
         # Custom type fields:
         customer_encryption=CustomerEncryption(
-            encryption_algorithm=message_dict["customerEncryption"]
+            encryption_algorithm=data["customerEncryption"]
             ["encryptionAlgorithm"],
-            key_sha256=message_dict["customerEncryption"]["keySha256"],
-        ) if message_dict.get("customerEncryption") is not None else None,
+            key_sha256=data["customerEncryption"]["keySha256"],
+        ) if data.get("customerEncryption") is not None else None,
     )
 
-    event_dict["data"] = message
-
     event: CloudEvent[StorageObjectData] = CloudEvent(
-        data=event_dict["data"],
-        id=event_dict["id"],
-        source=event_dict["source"],
-        specversion=event_dict["specversion"],
-        subject=event_dict["subject"] if "subject" in event_dict else None,
-        time=event_dict["time"],
-        type=event_dict["type"],
+        data=message,
+        id=event_attributes["id"],
+        source=event_attributes["source"],
+        specversion=event_attributes["specversion"],
+        subject=event_attributes["subject"]
+        if "subject" in event_attributes else None,
+        time=_dt.datetime.strptime(
+            event_attributes["time"],
+            "%Y-%m-%dT%H:%M:%S.%f%z",
+        ),
+        type=event_attributes["type"],
     )
 
     func(event)
