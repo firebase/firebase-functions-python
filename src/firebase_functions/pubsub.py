@@ -99,7 +99,7 @@ def _message_handler(
     raw: _ce.CloudEvent,
 ) -> None:
     event_attributes = raw._get_attributes()
-    event_data = raw._get_data()
+    event_data = raw.get_data()
     event_dict = {"data": event_data, **event_attributes}
     data = event_dict["data"]
     message_dict = data["message"]
