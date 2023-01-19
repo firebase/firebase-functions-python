@@ -204,11 +204,9 @@ def _message_handler(
     raw: _ce.CloudEvent,
 ) -> None:
     event_attributes = raw._get_attributes()
-    event_data = raw.get_data()
-    data = event_data["data"]
+    data = raw.get_data()
 
     print(event_attributes)
-    print(event_data)
     print(data)
 
     message: StorageObjectData = StorageObjectData(
