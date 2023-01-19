@@ -203,8 +203,10 @@ def _message_handler(
     func: _C1,
     raw: _ce.CloudEvent,
 ) -> None:
+    print("Type >>>>> ", type(raw))
+    raw = _ce.CloudEvent(raw)
+    print("Type >>>>> ", type(raw))
     print("Received event: ", raw)
-
     event_attributes = raw._get_attributes()
     event_data = raw._get_data()
     event_dict = {"data": event_data, **event_attributes}
