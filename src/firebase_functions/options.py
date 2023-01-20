@@ -98,6 +98,25 @@ class SupportedRegion(str, _enum.Enum):
     US_WEST1 = "us-west1"
 
 
+class RateLimits():
+    """
+    How congestion control should be applied to the function.
+    """
+    max_concurrent_dispaches: int | Expression[
+        int] | _util.Sentinel | None = None
+    """
+    The maximum number of requests that can be outstanding at a time.
+    If left unspecified, will default to 1000.
+    """
+
+    max_dispatches_per_second: int | Expression[
+        int] | _util.Sentinel | None = None
+    """
+    The maximum number of requests that can be invoked per second.
+    If left unspecified, will default to 500.
+    """
+
+
 @_dataclasses.dataclass(frozen=True, kw_only=True)
 class RuntimeOptions:
     """
@@ -273,6 +292,47 @@ class RuntimeOptions:
         )
 
         return endpoint
+
+
+@_dataclasses.dataclass(frozen=True, kw_only=True)
+class TaskQueueOptions(RuntimeOptions):
+    """
+    Options specific to Tasks function types.
+    Internal use only.
+    """
+
+    retry_limit: _typing.Optional[_manifest.RetryConfig] = None
+    """
+    How a task should be retried in the event of a non-2xx return.
+    """
+
+    invoker: _typing.Optional[str | list[str] |
+                              _typing.Literal["private"]] = None
+    """
+    Who can enqueue tasks for this function.
+
+    Note:
+        If left unspecified, only service accounts which have
+        `roles/cloudtasks.enqueuer` and `roles/cloudfunctions.invoker`
+        will have permissions.
+    """
+
+    omit: _typing.Optional[bool | Expression[bool]] = None
+    """
+    If true, do not deploy or emulate this function.
+    """
+
+    def _endpoint(
+        self,
+        **kwargs,
+    ) -> _manifest.ManifestEndpoint:
+        kwargs_merged = {
+            **_dataclasses.asdict(super()._endpoint(**kwargs)),
+            "taskQueueTrigger":
+                _manifest.TaskQueueTrigger(),
+        }
+        return _manifest.ManifestEndpoint(
+            **_typing.cast(_typing.Dict, kwargs_merged))
 
 
 @_dataclasses.dataclass(frozen=True, kw_only=True)

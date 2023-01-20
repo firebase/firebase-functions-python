@@ -50,6 +50,13 @@ class CallableTrigger(_typing.TypedDict):
     """
 
 
+class TaskQueueTrigger(_typing.TypedDict):
+    """
+    Trigger definitions for RPCs servers using the HTTP protocol defined at
+    https://firebase.google.com/docs/functions/callable-reference
+    """
+
+
 class EventTrigger(_typing.TypedDict):
     """
     Trigger definitions for endpoints that listen to CloudEvents emitted by
@@ -117,6 +124,7 @@ class ManifestEndpoint:
     eventTrigger: _typing.Optional[EventTrigger] = None
     scheduleTrigger: _typing.Optional[ScheduleTrigger] = None
     blockingTrigger: _typing.Optional[BlockingTrigger] = None
+    taskQueueTrigger: _typing.Optional[TaskQueueTrigger] = None
 
 
 class ManifestRequiredApi(_typing.TypedDict):
