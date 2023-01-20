@@ -29,14 +29,11 @@ _C = _typing.Callable[[CallableRequest[_typing.Any]], _typing.Any]
 @_util.copy_func_kwargs(_options.TaskQueueOptions)
 def on_task_dipached(**kwargs) -> _typing.Callable[[_C], Response]:
     """
-    Event handler sent only when a bucket has enabled object versioning.
-    This event indicates that the live version of an object has become an
-    archived version, either because it was archived or because it was
-    overwritten by the upload of an object of the same name.
+    A handler for tasks.
 
     Example::
       @tasks.on_task_dipached(retry_limit=5)
-      def on_task_dipached_example(req: tasks.Request) -> tasks.Response:
+      def on_task_dipached_example(req: tasks.CallableRequest):
         pass
 
     """
