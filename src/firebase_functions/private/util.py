@@ -54,7 +54,7 @@ def set_func_endpoint_attr(
 def set_required_apis_attr(func: _typing.Callable[P, _typing.Any],
                            required_apis: list):
     """Set the required APIs for the current function."""
-    setattr(func, "requiredAPIs", required_apis)
+    setattr(func, "__required_apis", required_apis)
 
 
 def prune_nones(obj: dict) -> dict:

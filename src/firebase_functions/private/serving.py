@@ -67,11 +67,14 @@ def to_spec(data: dict) -> dict:
 
 def functions_as_yaml(functions: dict) -> str:
     endpoints: dict[str, _manifest.ManifestEndpoint] = {}
+    required_apis: list[_manifest.ManifestRequiredApi] = []
     for name, function in functions.items():
         endpoint = function.__firebase_endpoint__
         # v2 function name(s) can only contain lower case letters, numbers, hyphens
         endpoints[name.replace("_", "-").lower()] = endpoint
+        required_apis.append(function.__required_apis)
     manifest_stack = _manifest.ManifestStack(endpoints=endpoints,
+                                             requiredAPIs=required_apis,
                                              params=list(
                                                  _params._params.values()))
     manifest_spec = _manifest.manifest_to_spec_dict(manifest_stack)
