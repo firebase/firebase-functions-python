@@ -45,16 +45,20 @@ def copy_func_kwargs(
 
 
 def set_func_endpoint_attr(
-        func: _typing.Callable[P, _typing.Any],
-        endpoint: _typing.Any) -> _typing.Callable[P, _typing.Any]:
+    func: _typing.Callable[P, _typing.Any],
+    endpoint: _typing.Any,
+) -> _typing.Callable[P, _typing.Any]:
     setattr(func, "__firebase_endpoint__", endpoint)
     return func
 
 
-def set_required_apis_attr(func: _typing.Callable[P, _typing.Any],
-                           required_apis: list):
+def set_required_apis_attr(
+    func: _typing.Callable[P, _typing.Any],
+    required_apis: list,
+):
     """Set the required APIs for the current function."""
     setattr(func, "__required_apis", required_apis)
+    return func
 
 
 def prune_nones(obj: dict) -> dict:

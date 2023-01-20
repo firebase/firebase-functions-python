@@ -73,7 +73,10 @@ def functions_as_yaml(functions: dict) -> str:
         # v2 function name(s) can only contain lower case letters, numbers, hyphens
         endpoints[name.replace("_", "-").lower()] = endpoint
         if hasattr(function, "__required_apis"):
-            required_apis.append(function.__required_apis)
+            if isinstance(function.__required_apis, list):
+                required_apis.extend(function.__required_apis)
+            else:
+                required_apis.append(function.__required_apis)
     manifest_stack = _manifest.ManifestStack(endpoints=endpoints,
                                              requiredAPIs=required_apis,
                                              params=list(
