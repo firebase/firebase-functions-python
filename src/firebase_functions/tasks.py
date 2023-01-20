@@ -49,6 +49,10 @@ def on_task_dipached(**kwargs) -> _typing.Callable[[_C], Response]:
             on_task_dipached_wrapped,
             options._endpoint(func_name=func.__name__),
         )
+        _util.set_required_apis_attr(
+            on_task_dipached_wrapped,
+            options._required_apis(),
+        )
         return on_task_dipached_wrapped
 
     return on_task_dipached_decorator

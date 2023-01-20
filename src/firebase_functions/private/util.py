@@ -11,8 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-
 """
 Module for internal utilities.
 """
@@ -51,6 +49,12 @@ def set_func_endpoint_attr(
         endpoint: _typing.Any) -> _typing.Callable[P, _typing.Any]:
     setattr(func, "__firebase_endpoint__", endpoint)
     return func
+
+
+def set_required_apis_attr(func: _typing.Callable[P, _typing.Any],
+                           required_apis: list):
+    """Set the required APIs for the current function."""
+    setattr(func, "requiredAPIs", required_apis)
 
 
 def prune_nones(obj: dict) -> dict:

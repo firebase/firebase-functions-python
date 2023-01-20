@@ -334,6 +334,14 @@ class TaskQueueOptions(RuntimeOptions):
         return _manifest.ManifestEndpoint(
             **_typing.cast(_typing.Dict, kwargs_merged))
 
+    def _required_apis(self) -> list[_manifest.ManifestRequiredApi]:
+        return [
+            _manifest.ManifestRequiredApi(
+                api="cloudtasks.googleapis.com",
+                reason="Task Queues",
+            )
+        ]
+
 
 @_dataclasses.dataclass(frozen=True, kw_only=True)
 class PubSubOptions(RuntimeOptions):
