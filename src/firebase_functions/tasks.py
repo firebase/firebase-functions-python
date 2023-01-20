@@ -17,16 +17,17 @@
 import typing as _typing
 import functools as _functools
 
-from flask import Request
+from flask import Request, Response
 
 import firebase_functions.options as _options
 import firebase_functions.private.util as _util
+from firebase_functions.https import CallableRequest, _on_call_handler
 
-_C = _typing.Callable[[Request], None]
+_C = _typing.Callable[[CallableRequest[_typing.Any]], _typing.Any]
 
 
 @_util.copy_func_kwargs(_options.TaskQueueOptions)
-def on_task_dipached(**kwargs) -> _typing.Callable[[_C], None]:
+def on_task_dipached(**kwargs) -> _typing.Callable[[_C], Response]:
     """
     Event handler sent only when a bucket has enabled object versioning.
     This event indicates that the live version of an object has become an
@@ -34,9 +35,9 @@ def on_task_dipached(**kwargs) -> _typing.Callable[[_C], None]:
     overwritten by the upload of an object of the same name.
 
     Example::
-      @on_object_archived()
-      def example(event: CloudEvent[StorageObjectData]) -> None:
-          pass
+      @tasks.on_task_dipached(retry_limit=5)
+      def on_task_dipached_example(req: tasks.Request) -> tasks.Response:
+        pass
 
     """
     options = _options.TaskQueueOptions(**kwargs)
@@ -44,9 +45,8 @@ def on_task_dipached(**kwargs) -> _typing.Callable[[_C], None]:
     def on_task_dipached_decorator(func: _C):
 
         @_functools.wraps(func)
-        def on_task_dipached_wrapped(request: Request) -> None:
-            print(request)
-            return func(request)
+        def on_task_dipached_wrapped(request: Request) -> Response:
+            return _on_call_handler(func, request)
 
         _util.set_func_endpoint_attr(
             on_task_dipached_wrapped,
