@@ -1,18 +1,15 @@
-# Welcome to Cloud Functions for Firebase for Python!
-# To get started, simply uncomment the below code or create your own.
-# Deploy with `firebase deploy`
+"""Basic Pub/Sub example."""
 
-# from firebase_functions import https
-# from firebase_admin import initialize_app
+from firebase_functions import pubsub
+from firebase_admin import initialize_app
 
-# initialize_app()
+initialize_app()
 
 
-# @https.on_request()
-# def on_request_example(req: https.Request) -> https.Response:
-#     return https.Response("Hello world!")
-
-
-# @https.on_call()
-# def on_call_example(req: https.CallableRequest):
-#     return "Hello world!"
+@pubsub.on_message_published(topic="hello")
+def on_message_published_example(
+        event: pubsub.CloudEvent[pubsub.MessagePublishedData]) -> None:
+    """
+    This function will be triggered when a message is published to the topic.
+    """
+    print("Hello from pubsub event:", event)

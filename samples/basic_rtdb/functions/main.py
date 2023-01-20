@@ -1,18 +1,17 @@
-# Welcome to Cloud Functions for Firebase for Python!
-# To get started, simply uncomment the below code or create your own.
-# Deploy with `firebase deploy`
+"""Basic RTDB triggers example."""
 
-# from firebase_functions import https
-# from firebase_admin import initialize_app
+from firebase_functions import options, db
+from firebase_admin import initialize_app
 
-# initialize_app()
+initialize_app()
 
 
-# @https.on_request()
-# def on_request_example(req: https.Request) -> https.Response:
-#     return https.Response("Hello world!")
-
-
-# @https.on_call()
-# def on_call_example(req: https.CallableRequest):
-#     return "Hello world!"
+@db.on_value_written(
+    reference="hello",
+    region=options.SupportedRegion.EUROPE_WEST1,
+)
+def on_write_example(event: db.DatabaseEvent[db.Change[object]]) -> None:
+    """
+    This function will be triggered when a value is written to the database.
+    """
+    print("Hello from db write event:", event)

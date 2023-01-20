@@ -1,2 +1,8 @@
 # firebase-functions-python
-git+https://github.com/firebase/firebase-functions-python.git@8-storage#egg=firebase-functions
+
+# Relative path during development
+./../../../
+# Switching to git upon deployment
+# git+https://github.com/firebase/firebase-functions-python.git@main#egg=firebase-functions
+
+firebase-admin >= 6.0.1
