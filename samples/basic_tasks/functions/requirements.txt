@@ -1,0 +1,5 @@
+# firebase-functions-python
+git+https://github.com/invertase/firebase-functions-python2.git@10-tasks#egg=firebase-functions
+# ../../../
+firebase-admin >= 6.0.1
+google-cloud-tasks
