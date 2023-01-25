@@ -72,8 +72,7 @@ def functions_as_yaml(functions: dict) -> str:
         # v2 function name(s) can only contain lower case letters, numbers, hyphens
         endpoints[name.replace("_", "-").lower()] = endpoint
     manifest_stack = _manifest.ManifestStack(endpoints=endpoints,
-                                             params=list(
-                                                 _params._params.values()))
+                                             params=list(()))
     manifest_spec = _manifest.manifest_to_spec_dict(manifest_stack)
     manifest_spec_with_sentinels = to_spec(manifest_spec)
 
