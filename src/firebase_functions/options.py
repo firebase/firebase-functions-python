@@ -11,8 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-
 """
 Module for options that can be used to configure Firebase Cloud Functions
 deployments.
@@ -293,6 +291,27 @@ class PubSubOptions(RuntimeOptions):
     """
     The Pub/Sub topic to watch for message events.
     """
+
+    def _endpoint(
+        self,
+        **kwargs,
+    ) -> _manifest.ManifestEndpoint:
+        event_filters: _typing.Any = {
+            "topic": self.topic,
+        }
+        event_trigger = _manifest.EventTrigger(
+            eventType="google.cloud.pubsub.topic.v1.messagePublished",
+            retry=False,
+            eventFilters=event_filters,
+        )
+
+        kwargs_merged = {
+            **_dataclasses.asdict(super()._endpoint(**kwargs)),
+            "eventTrigger":
+                event_trigger,
+        }
+        return _manifest.ManifestEndpoint(
+            **_typing.cast(_typing.Dict, kwargs_merged))
 
 
 @_dataclasses.dataclass(frozen=True, kw_only=True)
