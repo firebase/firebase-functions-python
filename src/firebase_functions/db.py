@@ -77,7 +77,7 @@ def _db_endpoint_handler(
     raw: _ce.CloudEvent,
 ) -> None:
     event_attributes = raw._get_attributes()
-    event_data = raw._get_data()
+    event_data = raw.get_data()
     # TODO Params are built locally via path pattern which is currently unimplemented
     params: dict[str, str] = {}
     database_event_data = event_data["data"]

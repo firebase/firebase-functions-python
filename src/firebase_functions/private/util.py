@@ -54,7 +54,7 @@ def set_func_endpoint_attr(
 
 
 def prune_nones(obj: dict) -> dict:
-    for key in obj:
+    for key in list(obj.keys()):
         if obj[key] is None:
             del obj[key]
         elif isinstance(obj[key], dict):
