@@ -27,7 +27,7 @@ def test_firebase_config_loads_from_env_json():
     Testing firebase_config can be read from the
     FIREBASE_CONFIG env var as a JSON string.
     """
-    environ["FIREBASE_CONFIG"] = '{"storageBucket": "%s"}' % test_bucket
+    environ["FIREBASE_CONFIG"] = f'{{"storageBucket": "{test_bucket}"}}'
     assert firebase_config().storage_bucket == test_bucket, (
         "Failure, firebase_config did not load from env variable.")
 
