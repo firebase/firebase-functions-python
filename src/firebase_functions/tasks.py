@@ -27,32 +27,32 @@ _C = _typing.Callable[[CallableRequest[_typing.Any]], _typing.Any]
 
 
 @_util.copy_func_kwargs(_options.TaskQueueOptions)
-def on_task_dispached(**kwargs) -> _typing.Callable[[_C], Response]:
+def on_task_dispatched(**kwargs) -> _typing.Callable[[_C], Response]:
     """
     A handler for tasks.
 
     Example::
-      @tasks.on_task_dispached(retry_limit=5)
-      def on_task_dispached_example(req: tasks.CallableRequest):
+      @tasks.on_task_dispatched()
+      def on_task_dispatched_example(req: tasks.CallableRequest):
         pass
 
     """
     options = _options.TaskQueueOptions(**kwargs)
 
-    def on_task_dispached_decorator(func: _C):
+    def on_task_dispatched_decorator(func: _C):
 
         @_functools.wraps(func)
-        def on_task_dispached_wrapped(request: Request) -> Response:
+        def on_task_dispatched_wrapped(request: Request) -> Response:
             return _on_call_handler(func, request)
 
         _util.set_func_endpoint_attr(
-            on_task_dispached_wrapped,
+            on_task_dispatched_wrapped,
             options._endpoint(func_name=func.__name__),
         )
         _util.set_required_apis_attr(
-            on_task_dispached_wrapped,
+            on_task_dispatched_wrapped,
             options._required_apis(),
         )
-        return on_task_dispached_wrapped
+        return on_task_dispatched_wrapped
 
-    return on_task_dispached_decorator
+    return on_task_dispatched_decorator

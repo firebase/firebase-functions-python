@@ -98,11 +98,12 @@ class SupportedRegion(str, _enum.Enum):
     US_WEST1 = "us-west1"
 
 
+@_dataclasses.dataclass(frozen=True)
 class RateLimits():
     """
     How congestion control should be applied to the function.
     """
-    max_concurrent_dispaches: int | Expression[
+    max_concurrent_dispatches: int | Expression[
         int] | _util.Sentinel | None = None
     """
     The maximum number of requests that can be outstanding at a time.
@@ -114,6 +115,42 @@ class RateLimits():
     """
     The maximum number of requests that can be invoked per second.
     If left unspecified, will default to 500.
+    """
+
+
+@_dataclasses.dataclass(frozen=True)
+class RetryConfig():
+    """
+    How a task should be retried in the event of a non-2xx return.
+    """
+
+    max_attempts: int | Expression[int] | _util.Sentinel | None = None
+    """
+    The maximum number of times a request should be attempted.
+    If left unspecified, will default to 3.
+    """
+
+    max_retry_seconds: int | Expression[int] | _util.Sentinel | None = None
+    """
+    The maximum amount of time for retrying failed task.
+    If left unspecified will retry indefinitely.
+    """
+
+    max_backoff_seconds: int | Expression[int] | _util.Sentinel | None = None
+    """
+    The maximum amount of time to wait between attempts.
+    If left unspecified will default to 1hr.
+    """
+
+    max_doublings: int | Expression[int] | _util.Sentinel | None = None
+    """
+    The maximum number of times to double the backoff between
+    retries. If left unspecified will default to 16.
+    """
+
+    min_backoff_seconds: int | Expression[int] | _util.Sentinel | None = None
+    """
+    The minimum time to wait between attempts.
     """
 
 
@@ -298,12 +335,16 @@ class RuntimeOptions:
 class TaskQueueOptions(RuntimeOptions):
     """
     Options specific to Tasks function types.
-    Internal use only.
     """
 
-    retry_limit: _typing.Optional[_manifest.RetryConfig] = None
+    retry_config: _typing.Optional[RetryConfig] = None
     """
     How a task should be retried in the event of a non-2xx return.
+    """
+
+    rate_limits: _typing.Optional[RateLimits] = None
+    """
+    How congestion control should be applied to the function.
     """
 
     invoker: _typing.Optional[str | list[str] |
@@ -317,19 +358,30 @@ class TaskQueueOptions(RuntimeOptions):
         will have permissions.
     """
 
-    omit: _typing.Optional[bool | Expression[bool]] = None
-    """
-    If true, do not deploy or emulate this function.
-    """
-
     def _endpoint(
         self,
         **kwargs,
     ) -> _manifest.ManifestEndpoint:
+        rate_limits: _manifest.RateLimits | None = _manifest.RateLimits(
+            maxConcurrentDispatches=self.rate_limits.max_concurrent_dispatches,
+            maxDispatchesPerSecond=self.rate_limits.max_dispatches_per_second,
+        ) if self.rate_limits is not None else None
+
+        retry_config: _manifest.RetryConfig | None = _manifest.RetryConfig(
+            maxAttempts=self.retry_config.max_attempts,
+            maxRetrySeconds=self.retry_config.max_retry_seconds,
+            maxBackoffSeconds=self.retry_config.max_backoff_seconds,
+            maxDoublings=self.retry_config.max_doublings,
+            minBackoffSeconds=self.retry_config.min_backoff_seconds,
+        ) if self.retry_config is not None else None
+
         kwargs_merged = {
             **_dataclasses.asdict(super()._endpoint(**kwargs)),
             "taskQueueTrigger":
-                _manifest.TaskQueueTrigger(),
+                _manifest.TaskQueueTrigger(
+                    rateLimits=rate_limits,
+                    retryConfig=retry_config,
+                ),
         }
         return _manifest.ManifestEndpoint(
             **_typing.cast(_typing.Dict, kwargs_merged))

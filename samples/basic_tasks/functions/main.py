@@ -6,29 +6,33 @@ import json
 from firebase_admin import initialize_app
 from google.cloud import tasks_v2
 from firebase_functions import tasks, https
-from firebase_functions.options import SupportedRegion
+from firebase_functions.options import SupportedRegion, RetryConfig, RateLimits
 
 app = initialize_app()
 
 
-@tasks.on_task_dispached(retry_limit=5, region=SupportedRegion.US_CENTRAL1)
-def on_task_dispached_function(req: tasks.CallableRequest):
+@tasks.on_task_dispatched(
+    retry_config=RetryConfig(max_attempts=5),
+    rate_limits=RateLimits(max_concurrent_dispatches=10),
+    region=SupportedRegion.US_CENTRAL1,
+)
+def on_task_dispatched_function(req: tasks.CallableRequest):
     """
-    The endpoint which will be excuted by the enqueued task.
+    The endpoint which will be executed by the enqueued task.
     """
     print(req)
 
 
 @https.on_request()
-def enqueue_task(req: https.Request) -> https.Response:
+def enqueue_task() -> https.Response:
     """
-    Enqueues a task to the queue `on_task_dispached_function`.
+    Enqueues a task to the queue `on_task_dispatched_function`.
     """
     client = tasks_v2.CloudTasksClient()
 
-    # The URL of the `on_task_dispached_function` function.
+    # The URL of the `on_task_dispatched_function` function.
     # Must be set to the URL of the deployed function.
-    url = "https://on-task-dispached-function-4afum6lama-uc.a.run.app"
+    url = "https://on-task-dispatched-function-4afum6lama-uc.a.run.app"
 
     payload: dict = {
         "name": "John Doe",
@@ -50,7 +54,7 @@ def enqueue_task(req: https.Request) -> https.Response:
     parent = client.queue_path(
         app.project_id,
         SupportedRegion.US_CENTRAL1,
-        on_task_dispached_function.__name__.replace("_", "-"),
+        on_task_dispatched_function.__name__.replace("_", "-"),
     )
 
     client.create_task(request={"parent": parent, "task": task})
