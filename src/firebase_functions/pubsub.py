@@ -103,6 +103,8 @@ def _message_handler(
     event_dict = {"data": event_data, **event_attributes}
     data = event_dict["data"]
     message_dict = data["message"]
+    print(event_data)
+    print(message_dict)
 
     time = _dt.datetime.strptime(
         event_dict["time"],
