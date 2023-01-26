@@ -206,9 +206,6 @@ def _message_handler(
     event_attributes = raw._get_attributes()
     data: _typing.Any = raw.get_data()
 
-    print(event_attributes)
-    print(data)
-
     message: StorageObjectData = StorageObjectData(
         # Required fields:
         bucket=data["bucket"],
