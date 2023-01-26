@@ -2,13 +2,16 @@
   "python.linting.enabled": true,
   "python.linting.pylintEnabled": false,
   "python.formatting.provider": "yapf",
-  "python.formatting.yapfArgs": ["--style", "{based_on_style: google, indent_width: 4}"],
+  "python.formatting.yapfArgs": [
+    "--style",
+    "{based_on_style: google, indent_width: 4}"
+  ],
   "python.linting.pylintPath": "pylint",
-  "python.envFile": "${workspaceFolder}/.env",
-  "python.defaultInterpreterPath": "${workspaceFolder}/.env/bin/python3.10",
+  "python.envFile": "${workspaceFolder}/venv",
+  "python.defaultInterpreterPath": "${workspaceFolder}/venv/bin/python3.10",
   "editor.formatOnSave": true,
   "python.linting.lintOnSave": true,
   "python.linting.mypyEnabled": true,
-  "mypy.dmypyExecutable": "${workspaceFolder}/.env/bin/dmypy",
+  "mypy.dmypyExecutable": "${workspaceFolder}/venv/bin/dmypy",
   "files.autoSave": "afterDelay"
 }
