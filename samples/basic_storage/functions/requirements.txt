@@ -1,8 +1,8 @@
-# firebase-functions-python
-
-# Relative path during development
+# Not published yet,
+# firebase-functions-python >= 0.0.1
+# so we use a relative path during development:
 ./../../../
-# Switching to git upon deployment
+# Or switch to git ref for deployment testing:
 # git+https://github.com/firebase/firebase-functions-python.git@main#egg=firebase-functions
 
 firebase-admin >= 6.0.1
