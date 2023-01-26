@@ -209,6 +209,8 @@ class Param(Expression[_T]):
         return f"params.{self.name}"
 
     def __post_init__(self):
+        if isinstance(self, _DefaultStringParam):
+            return
         if not _re.match(r"^[A-Z0-9_]+$", self.name):
             raise ValueError(
                 "Parameter names must only use uppercase letters, numbers and "
@@ -339,24 +341,36 @@ class ListParam(Param[list]):
         return []
 
 
-PROJECT_ID = StringParam("GCLOUD_PROJECT",
-                         description="The active Firebase project")
+@_dataclasses.dataclass(frozen=True)
+class _DefaultStringParam(StringParam):
+    """
+    Internal use only.
+    This is a parameter that is available by default in all functions.
+    These are excluded from the list of parameters that are prompted to the user.
+    """
 
-STORAGE_BUCKET = StringParam(
+
+PROJECT_ID = _DefaultStringParam(
+    "GCLOUD_PROJECT",
+    description="The active Firebase project",
+)
+
+STORAGE_BUCKET = _DefaultStringParam(
     "STORAGE_BUCKET",
-    description="The default Cloud Storage for Firebase bucket")
+    description="The default Cloud Storage for Firebase bucket",
+)
 
-DATABASE_URL = StringParam(
+DATABASE_URL = _DefaultStringParam(
     "DATABASE_URL",
     description="The Firebase project's default Realtime Database instance URL",
 )
 
-DATABASE_INSTANCE = StringParam(
+DATABASE_INSTANCE = _DefaultStringParam(
     "DATABASE_INSTANCE",
     description="The Firebase project's default Realtime Database instance name",
 )
 
-EXTENSION_ID = StringParam(
+EXTENSION_ID = _DefaultStringParam(
     "EXT_INSTANCE_ID",
     label="Extension instance ID",
     description="When a function is running as part of an extension, "
