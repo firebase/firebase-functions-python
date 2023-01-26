@@ -189,3 +189,30 @@ class TestListParams:
             ["123"]).value() is True), "Failure, equality check returned False"
         assert (params.ListParam("LIST_TEST2", default=["456"]).equals(
             ["123"]).value() is False), "Failure, equality check returned False"
+
+
+class TestParamsManifest:
+    """
+    Tests any created params are tracked for the purposes
+    of outputting to the generated manifest.
+    """
+
+    def test_params_stored(self):
+        """Testing if params are internally stored."""
+        environ["TEST_STORING"] = "TEST_STORING_VALUE"
+        param = params.StringParam("TEST_STORING")
+        assert param.value() == "TEST_STORING_VALUE", \
+            'Failure, params value != "TEST_STORING_VALUE"'
+        # pylint: disable=protected-access
+        assert params._params["TEST_STORING"] == param, \
+            "Failure, param was not stored"
+
+    def test_default_params_not_stored(self):
+        """Testing if default params are skipped from being stored."""
+        environ["GCLOUD_PROJECT"] = "python-testing-project"
+
+        assert params.PROJECT_ID.value() == "python-testing-project", \
+            'Failure, params value != "python-testing-project"'
+        # pylint: disable=protected-access
+        assert params._params.get("GCLOUD_PROJECT") is None, \
+            "Failure, default param was stored when it should not have been"
