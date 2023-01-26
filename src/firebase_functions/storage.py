@@ -204,7 +204,7 @@ def _message_handler(
     raw: _ce.CloudEvent,
 ) -> None:
     event_attributes = raw._get_attributes()
-    data = raw.get_data()
+    data: _typing.Any = raw.get_data()
 
     print(event_attributes)
     print(data)
