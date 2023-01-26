@@ -331,9 +331,18 @@ class StorageOptions(RuntimeOptions):
         **kwargs,
     ) -> _manifest.ManifestEndpoint:
         assert kwargs["event_type"] is not None
-        # TODO get bucket from admin sdk if no bucket set
+        bucket = self.bucket
+        if bucket is None:
+            firebase_config = _util.firebase_config()
+            if firebase_config is not None:
+                bucket = firebase_config.storage_bucket
+        if bucket is None:
+            raise ValueError(
+                "Missing bucket name. If you are unit testing, please specify a bucket name"
+                " by providing a bucket name directly to the event handler or by setting the"
+                " FIREBASE_CONFIG environment variable.")
         event_filters: _typing.Any = {
-            "bucket": self.bucket,
+            "bucket": bucket,
         }
         event_trigger = _manifest.EventTrigger(
             eventType=kwargs["event_type"],
