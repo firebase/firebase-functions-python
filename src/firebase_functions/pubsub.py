@@ -103,8 +103,6 @@ def _message_handler(
     event_dict = {"data": event_data, **event_attributes}
     data = event_dict["data"]
     message_dict = data["message"]
-    print(event_data)
-    print(message_dict)
 
     time = _dt.datetime.strptime(
         event_dict["time"],
@@ -128,6 +126,9 @@ def _message_handler(
     # `orderingKey` doesn't come with a snake case alternative,
     # there is no `ordering_key` in the raw request.
     ordering_key = message_dict.pop("orderingKey", None)
+
+    # Include empty attributes property if missing
+    message_dict["attributes"] = message_dict.get("attributes", {})
 
     message: MessagePublishedData = MessagePublishedData(
         message=Message(
