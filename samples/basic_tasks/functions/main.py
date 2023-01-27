@@ -16,15 +16,15 @@ app = initialize_app()
     rate_limits=RateLimits(max_concurrent_dispatches=10),
     region=SupportedRegion.US_CENTRAL1,
 )
-def on_task_dispatched_function(req: tasks.CallableRequest):
+def on_task_dispatched_example(req: tasks.CallableRequest):
     """
     The endpoint which will be executed by the enqueued task.
     """
-    print(req)
+    print(req.data)
 
 
 @https.on_request()
-def enqueue_task() -> https.Response:
+def enqueue_task(req: https.Request) -> https.Response:
     """
     Enqueues a task to the queue `on_task_dispatched_function`.
     """
@@ -32,11 +32,9 @@ def enqueue_task() -> https.Response:
 
     # The URL of the `on_task_dispatched_function` function.
     # Must be set to the URL of the deployed function.
-    url = "https://on-task-dispatched-function-4afum6lama-uc.a.run.app"
+    url = "https://on-task-dispatched-example-4afum6lama-uc.a.run.app"
 
-    payload: dict = {
-        "name": "John Doe",
-    }
+    payload: dict = req.data
     task: tasks_v2.Task = tasks_v2.Task(
         **{
             "http_request": {
@@ -54,7 +52,7 @@ def enqueue_task() -> https.Response:
     parent = client.queue_path(
         app.project_id,
         SupportedRegion.US_CENTRAL1,
-        on_task_dispatched_function.__name__.replace("_", "-"),
+        on_task_dispatched_example.__name__.replace("_", "-"),
     )
 
     client.create_task(request={"parent": parent, "task": task})
