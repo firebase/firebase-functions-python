@@ -37,7 +37,7 @@ def get_functions():
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
     else:
-        raise Exception(
+        raise FileNotFoundError(
             "Firebase Functions for Python could not find the main.py file in your project."
         )
     functions = inspect.getmembers(module, inspect.isfunction)
