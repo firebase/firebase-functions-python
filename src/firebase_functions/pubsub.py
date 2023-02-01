@@ -67,7 +67,7 @@ class Message(_typing.Generic[T]):
             else:
                 return None
         except Exception as error:
-            raise Exception(
+            raise ValueError(
                 f"Unable to parse Pub/Sub message data as JSON: {error}"
             ) from error
 
