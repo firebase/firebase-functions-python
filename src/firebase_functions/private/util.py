@@ -11,12 +11,12 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-
 """
 Module for internal utilities.
 """
 
+import os as _os
+import json as _json
 import typing as _typing
 import dataclasses as _dataclasses
 import enum as _enum
@@ -243,3 +243,44 @@ def on_call_check_tokens(request: _Request,) -> _OnCallTokenVerification:
                          log_payload)
 
     return verifications
+
+
+@_dataclasses.dataclass(frozen=True)
+class FirebaseConfig():
+    """
+    A collection of configuration options needed to
+    initialize a firebase App.
+    """
+
+    storage_bucket: _typing.Optional[str]
+    """
+    The name of the Google Cloud Storage bucket used for storing application data.
+    This is the bucket name without any prefixes or additions (without "gs://").
+    """
+
+    # TODO more to be added later when they are required
+
+
+def firebase_config() -> None | FirebaseConfig:
+    config_file = _os.getenv("FIREBASE_CONFIG")
+    if not config_file:
+        return None
+    if config_file.startswith("{"):
+        json_str = config_file
+    else:
+        # Firebase Tools will always use a JSON blob in prod, but docs
+        # explicitly state that the user can set the env to a file:
+        # https://firebase.google.com/docs/admin/setup#initialize-without-parameters
+        try:
+            with open(config_file, "r", encoding="utf8") as json_file:
+                json_str = json_file.read()
+        except Exception as err:
+            raise ValueError(
+                f"Unable to read file {config_file}. {err}") from err
+    try:
+        json_data: dict = _json.loads(json_str)
+    except Exception as err:
+        raise ValueError(
+            f'FIREBASE_CONFIG JSON string "{json_str}" is not valid json. {err}'
+        ) from err
+    return FirebaseConfig(storage_bucket=json_data.get("storageBucket"))

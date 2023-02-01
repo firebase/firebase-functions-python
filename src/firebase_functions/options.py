@@ -315,6 +315,51 @@ class PubSubOptions(RuntimeOptions):
 
 
 @_dataclasses.dataclass(frozen=True, kw_only=True)
+class StorageOptions(RuntimeOptions):
+    """
+    Options specific to Storage function types.
+    Internal use only.
+    """
+
+    bucket: _typing.Optional[str] = None
+    """
+    The name of the bucket to watch for Storage events.
+    """
+
+    def _endpoint(
+        self,
+        **kwargs,
+    ) -> _manifest.ManifestEndpoint:
+        assert kwargs["event_type"] is not None
+        bucket = self.bucket
+        if bucket is None:
+            firebase_config = _util.firebase_config()
+            if firebase_config is not None:
+                bucket = firebase_config.storage_bucket
+        if bucket is None:
+            raise ValueError(
+                "Missing bucket name. If you are unit testing, please specify a bucket name"
+                " by providing a bucket name directly to the event handler or by setting the"
+                " FIREBASE_CONFIG environment variable.")
+        event_filters: _typing.Any = {
+            "bucket": bucket,
+        }
+        event_trigger = _manifest.EventTrigger(
+            eventType=kwargs["event_type"],
+            retry=False,
+            eventFilters=event_filters,
+        )
+
+        kwargs_merged = {
+            **_dataclasses.asdict(super()._endpoint(**kwargs)),
+            "eventTrigger":
+                event_trigger,
+        }
+        return _manifest.ManifestEndpoint(
+            **_typing.cast(_typing.Dict, kwargs_merged))
+
+
+@_dataclasses.dataclass(frozen=True, kw_only=True)
 class DatabaseOptions(RuntimeOptions):
     """
     Options specific to Database function types.
