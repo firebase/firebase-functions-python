@@ -34,7 +34,7 @@ _event_type_deleted = "google.firebase.database.ref.v1.deleted"
 
 
 @_dataclass.dataclass(frozen=True)
-class DatabaseEvent(_core.CloudEvent[_core.T]):
+class Event(_core.CloudEvent[_core.T]):
     """
     A CloudEvent that contains a DataSnapshot or a Change<DataSnapshot>.
     """
@@ -66,8 +66,8 @@ class DatabaseEvent(_core.CloudEvent[_core.T]):
     """
 
 
-_E1 = DatabaseEvent[Change[_typing.Any | None]]
-_E2 = DatabaseEvent[_typing.Any | None]
+_E1 = Event[Change[_typing.Any | None]]
+_E2 = Event[_typing.Any | None]
 _C1 = _typing.Callable[[_E1], None]
 _C2 = _typing.Callable[[_E2], None]
 
@@ -91,7 +91,7 @@ def _db_endpoint_handler(
             before=before,
             after=after,
         )
-    database_event = DatabaseEvent(
+    database_event = Event(
         firebase_database_host=event_attributes["firebasedatabasehost"],
         instance=event_attributes["instance"],
         reference=event_attributes["ref"],
@@ -121,7 +121,7 @@ def on_value_written(**kwargs) -> _typing.Callable[[_C1], _C1]:
     .. code-block:: python
 
       @on_value_written(reference="*")
-      def example(event: DatabaseEvent[Change[object]]) -> None:
+      def example(event: Event[Change[object]]) -> None:
           pass
 
     """
@@ -153,7 +153,7 @@ def on_value_updated(**kwargs) -> _typing.Callable[[_C1], _C1]:
     .. code-block:: python
 
       @on_value_updated(reference="*")
-      def example(event: DatabaseEvent[Change[object]]) -> None:
+      def example(event: Event[Change[object]]) -> None:
           pass
 
     """
@@ -216,7 +216,7 @@ def on_value_deleted(**kwargs) -> _typing.Callable[[_C2], _C2]:
     .. code-block:: python
 
       @on_value_deleted(reference="*")
-      def example(event: DatabaseEvent[object]) -> None:
+      def example(event: Event[object]) -> None:
           pass
 
     """
