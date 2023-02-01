@@ -127,6 +127,9 @@ def _message_handler(
     # there is no `ordering_key` in the raw request.
     ordering_key = message_dict.pop("orderingKey", None)
 
+    # Include empty attributes property if missing
+    message_dict["attributes"] = message_dict.get("attributes", {})
+
     message: MessagePublishedData = MessagePublishedData(
         message=Message(
             **message_dict,
