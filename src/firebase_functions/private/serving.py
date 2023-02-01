@@ -69,8 +69,7 @@ def functions_as_yaml(functions: dict) -> str:
     endpoints: dict[str, _manifest.ManifestEndpoint] = {}
     for name, function in functions.items():
         endpoint = function.__firebase_endpoint__
-        # v2 function name(s) can only contain lower case letters, numbers, hyphens
-        endpoints[name.replace("_", "-").lower()] = endpoint
+        endpoints[name] = endpoint
     manifest_stack = _manifest.ManifestStack(endpoints=endpoints,
                                              params=list(
                                                  _params._params.values()))
