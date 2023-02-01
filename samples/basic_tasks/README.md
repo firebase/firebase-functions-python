@@ -1,6 +1,6 @@
 # IAM Policy
 
-When a queued task calls the function `on_task_dispached_example` from the sample, yoou will face permission errors.
+When a queued task calls the function `on_task_dispatched_example` from the sample, you will face permission errors.
 
 First, the service account has to be granted the following permissions `cloudtasks.enqueuer` in order to enqueue tasks:
 
@@ -10,7 +10,7 @@ gcloud projects add-iam-policy-binding python-functions-testing \
   --role=roles/cloudtasks.enqueuer
 ```
 
-Then, the service account has to be granted the following permissions `cloudfunctions.invoker` in order to call the `on_task_dispached_example` function:
+Then, the service account has to be granted the following permissions `cloudfunctions.invoker` in order to call the `on_task_dispatched_example` function:
 
 ```bash
 gcloud functions add-iam-policy-binding on-task-dispatched-example \

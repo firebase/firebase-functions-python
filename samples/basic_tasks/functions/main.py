@@ -25,7 +25,7 @@ def on_task_dispatched_example(req: tasks.CallableRequest):
     print(req.data)
 
 
-# To enqueu a task, you can use the following function.
+# To enqueue a task, you can use the following function.
 # e.g.
 # curl -X POST -H "Content-Type: application/json" \
 #   -d '{"data": "Hello World!"}' \
