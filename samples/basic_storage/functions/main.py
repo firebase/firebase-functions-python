@@ -10,7 +10,7 @@ initialize_app()
 
 
 @storage.on_object_finalized()
-def on_object_finalized_example(event: CloudEvent[StorageObjectData]):
+def onobjectfinalizedexample(event: CloudEvent[StorageObjectData]):
     """
     This function will be triggered when a new object is created in the bucket.
     """
@@ -18,7 +18,7 @@ def on_object_finalized_example(event: CloudEvent[StorageObjectData]):
 
 
 @storage.on_object_archived()
-def on_object_archived_example(event: CloudEvent[StorageObjectData]):
+def onobjectarchivedexample(event: CloudEvent[StorageObjectData]):
     """
     This function will be triggered when an object is archived in the bucket.
     """
@@ -26,7 +26,7 @@ def on_object_archived_example(event: CloudEvent[StorageObjectData]):
 
 
 @storage.on_object_deleted()
-def on_object_deleted_example(event: CloudEvent[StorageObjectData]):
+def onobjectdeletedexample(event: CloudEvent[StorageObjectData]):
     """
     This function will be triggered when an object is deleted in the bucket.
     """
@@ -34,7 +34,7 @@ def on_object_deleted_example(event: CloudEvent[StorageObjectData]):
 
 
 @storage.on_object_metadata_updated()
-def on_object_metadata_updated_example(event: CloudEvent[StorageObjectData]):
+def onobjectmetadataupdatedexample(event: CloudEvent[StorageObjectData]):
     """
     This function will be triggered when an object's metadata is updated in the bucket.
     """
