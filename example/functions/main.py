@@ -17,22 +17,22 @@ options.set_global_options(
     reference="hello",
     region=options.SupportedRegion.EUROPE_WEST1,
 )
-def onwriteexample(event: db.DatabaseEvent[db.Change[object]]) -> None:
+def onwriteexample(event: db.Event[db.Change[object]]) -> None:
     print("Hello from db write event:", event)
 
 
 @db.on_value_created(reference="hello/{any_thing_here}/bar")
-def oncreatedexample(event: db.DatabaseEvent[object]) -> None:
+def oncreatedexample(event: db.Event[object]) -> None:
     print("Hello from db create event:", event)
 
 
 @db.on_value_deleted(reference="hello/{any_thing_here}/bar")
-def ondeletedexample(event: db.DatabaseEvent[object]) -> None:
+def ondeletedexample(event: db.Event[object]) -> None:
     print("Hello from db delete event:", event)
 
 
 @db.on_value_updated(reference="hello")
-def onupdatedexample(event: db.DatabaseEvent[db.Change[object]]) -> None:
+def onupdatedexample(event: db.Event[db.Change[object]]) -> None:
     print("Hello from db updated event:", event)
 
 
