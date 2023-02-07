@@ -28,7 +28,7 @@ import firebase_functions.private.util as _util
 import firebase_functions.core as _core
 from functions_framework import logging as _logging
 
-from flask import Request, Response, jsonify as _jsonify
+from flask import Request, Response, make_response as _make_response, jsonify as _jsonify
 from flask_cors import cross_origin as _cross_origin
 
 
@@ -395,7 +395,7 @@ def _on_call_handler(func: _C2, request: Request) -> Response:
                     "Firebase-Instance-ID-Token"),
             )
         result = func(context)
-        return _jsonify(data=result, status=200)
+        return _jsonify(result=result)
     # Disable broad exceptions lint since we want to handle all exceptions here
     # and wrap as an HttpsError.
     # pylint: disable=broad-except
@@ -404,7 +404,7 @@ def _on_call_handler(func: _C2, request: Request) -> Response:
             _logging.error("Unhandled error", err)
             err = HttpsError(FunctionsErrorCode.INTERNAL, "INTERNAL")
         status = err._http_error_code.status
-        return _jsonify(error=err._as_dict(), status=status)
+        return _make_response(_jsonify(error=err._as_dict()), status)
 
 
 @_util.copy_func_kwargs(_options.HttpsOptions)
