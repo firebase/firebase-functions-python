@@ -82,7 +82,7 @@ if [[ "$OUTDIR" == "" ]]; then
 fi
 
 TITLE="Firebase Python SDK for Cloud Functions"
-PY_MODULES='firebase_functions firebase_functions.core firebase_functions.https firebase_functions.params firebase_functions.db'
+PY_MODULES='firebase_functions firebase_functions.core firebase_functions.https firebase_functions.params firebase_functions.db firebase_functions.options firebase_functions.pubsub firebase_functions.storage'
 DEVSITE_PATH='/docs/reference/functions-python'
 
 #

@@ -157,7 +157,11 @@ def _message_handler(
 def on_message_published(**kwargs) -> _typing.Callable[[_C1], _C1]:
     """
     Event handler which triggers on a message being published to a Pub/Sub topic.
-    Example::
+
+    Example:
+
+    .. code-block:: python
+
       @on_message_published(topic="hello-world")
       def example(event: CloudEvent[MessagePublishedData[object]]) -> None:
           pass

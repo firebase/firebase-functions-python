@@ -266,7 +266,10 @@ def on_object_archived(**kwargs) -> _typing.Callable[[_C1], _C1]:
     archived version, either because it was archived or because it was
     overwritten by the upload of an object of the same name.
 
-    Example::
+    Example:
+
+    .. code-block:: python
+
       @on_object_archived()
       def example(event: CloudEvent[StorageObjectData]) -> None:
           pass
@@ -299,7 +302,10 @@ def on_object_finalized(**kwargs) -> _typing.Callable[[_C1], _C1]:
     is successfully created in the bucket. This includes copying or rewriting
     an existing object. A failed upload does not trigger this event.
 
-    Example::
+    Example:
+
+    .. code-block:: python
+
       @on_object_finalized()
       def example(event: CloudEvent[StorageObjectData]) -> None:
           pass
@@ -333,7 +339,10 @@ def on_object_deleted(**kwargs) -> _typing.Callable[[_C1], _C1]:
     sent when an object is archived, even if archival occurs
     via the `storage.objects.delete` method.
 
-    Example::
+    Example:
+
+    .. code-block:: python
+
       @on_object_deleted()
       def example(event: CloudEvent[StorageObjectData]) -> None:
           pass
@@ -363,7 +372,10 @@ def on_object_metadata_updated(**kwargs) -> _typing.Callable[[_C1], _C1]:
     Event handler which fires every time the metadata of an existing object
     changes.
 
-    Example::
+    Example:
+
+    .. code-block:: python
+
       @on_object_metadata_updated()
       def example(event: CloudEvent[StorageObjectData]) -> None:
           pass
