@@ -37,7 +37,7 @@ THEMEPATH=$(dirname $0)/theme
 THEMEPATH=$(realpath "$THEMEPATH")
 
 if [[ $(uname) == "Darwin" ]]; then
-  TEMPARGS=$(/Users/$(id -un)/homebrew/opt/gnu-getopt/bin/getopt -o o:p:b:t: --long out:,pypath:,sphinx-build:,themepath: -- "$@")
+  TEMPARGS=$($(brew --prefix)/opt/gnu-getopt/bin/getopt -o o:p:b:t: --long out:,pypath:,sphinx-build:,themepath: -- "$@")
 else
   TEMPARGS=$(getopt -o o:p:b:t: --long out:,pypath:,sphinx-build:,themepath: -- "$@")
   getopt = getopt
