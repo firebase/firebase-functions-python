@@ -23,9 +23,10 @@ import json as _json
 import base64 as _base64
 import cloudevents.http as _ce
 
-import firebase_functions.options as _options
 import firebase_functions.private.util as _util
+
 from firebase_functions.core import CloudEvent, T
+from firebase_functions.options import PubSubOptions
 
 
 @_dataclasses.dataclass(frozen=True)
@@ -153,17 +154,28 @@ def _message_handler(
     func(event)
 
 
-@_util.copy_func_kwargs(_options.PubSubOptions)
+@_util.copy_func_kwargs(PubSubOptions)
 def on_message_published(**kwargs) -> _typing.Callable[[_C1], _C1]:
     """
     Event handler which triggers on a message being published to a Pub/Sub topic.
-    Example::
+
+    Example:
+
+    .. code-block:: python
+
       @on_message_published(topic="hello-world")
       def example(event: CloudEvent[MessagePublishedData[object]]) -> None:
           pass
 
+    :param \\*\\*kwargs: Pub/Sub options.
+    :type \\*\\*kwargs: as :exc:`firebase_functions.options.PubSubOptions`
+    :rtype: :exc:`typing.Callable`
+            \\[ \\[ :exc:`firebase_functions.core.CloudEvent` \\[
+            :exc:`firebase_functions.pubsub.MessagePublishedData` \\[
+            :exc:`typing.Any` \\] \\] \\], `None` \\]
+            A function that takes a CloudEvent and returns None.
     """
-    options = _options.PubSubOptions(**kwargs)
+    options = PubSubOptions(**kwargs)
 
     def on_message_published_inner_decorator(func: _C1):
 

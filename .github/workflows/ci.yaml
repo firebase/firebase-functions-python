@@ -15,9 +15,9 @@ jobs:
         python: ["3.10"]
 
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v3
       - name: Set up Python ${{ matrix.python }}
-        uses: actions/setup-python@v1
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python }}
       - name: Install dependencies
@@ -38,9 +38,9 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v3
       - name: Set up Python
-        uses: actions/setup-python@v1
+        uses: actions/setup-python@v4
         with:
           python-version: "3.10"
       - name: Install dependencies
@@ -58,3 +58,29 @@ jobs:
         run: |
           source venv/bin/activate
           python3.10 -m mypy .
+
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+      - name: Install dependencies
+        run: |
+          python3.10 -m venv venv
+          source venv/bin/activate 
+          pip3 install --upgrade pip 
+          python3.10 -m pip install -r requirements.txt
+          python3.10 setup.py install
+      - name: Generate Reference Docs
+        run: |
+          source venv/bin/activate
+          mkdir ./docs/build
+          ./docs/generate.sh --out=./docs/build/ --pypath=src/
+      - uses: actions/upload-artifact@v3
+        name: Upload Docs Preview
+        with:
+          name: reference-docs
+          path: ./docs/build/

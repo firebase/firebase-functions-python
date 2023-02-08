@@ -11,8 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-
 """
 Module for Cloud Functions that are triggered by the Firebase Realtime Database.
 """
@@ -21,16 +19,34 @@ import dataclasses as _dataclass
 import functools as _functools
 import typing as _typing
 import datetime as _dt
-import firebase_functions.options as _options
 import firebase_functions.private.util as _util
 import firebase_functions.core as _core
 import cloudevents.http as _ce
-from firebase_functions.core import Change  # Exported for user ease of typing events
+
+from firebase_functions.options import DatabaseOptions
 
 _event_type_written = "google.firebase.database.ref.v1.written"
 _event_type_created = "google.firebase.database.ref.v1.created"
 _event_type_updated = "google.firebase.database.ref.v1.updated"
 _event_type_deleted = "google.firebase.database.ref.v1.deleted"
+
+
+@_dataclass.dataclass(frozen=True)
+class Change(_typing.Generic[_core.T]):
+    """
+    * The Functions interface for events that change state, such as
+    * Realtime Database `on_value_written`.
+    """
+
+    before: _core.T
+    """
+    The state of data before the change.
+    """
+
+    after: _core.T
+    """
+    The state of data after the change.
+    """
 
 
 @_dataclass.dataclass(frozen=True)
@@ -87,7 +103,7 @@ def _db_endpoint_handler(
         # Merge delta into data to generate an 'after' view of the data.
         if isinstance(before, dict) and isinstance(after, dict):
             after = _util.prune_nones({**before, **after})
-        database_event_data = _core.Change(
+        database_event_data = Change(
             before=before,
             after=after,
         )
@@ -111,7 +127,7 @@ def _db_endpoint_handler(
     func(database_event)
 
 
-@_util.copy_func_kwargs(_options.DatabaseOptions)
+@_util.copy_func_kwargs(DatabaseOptions)
 def on_value_written(**kwargs) -> _typing.Callable[[_C1], _C1]:
     """
     Event handler which triggers when data is created, updated, or deleted in Realtime Database.
@@ -124,8 +140,14 @@ def on_value_written(**kwargs) -> _typing.Callable[[_C1], _C1]:
       def example(event: Event[Change[object]]) -> None:
           pass
 
+    :param \\*\\*kwargs: Database options.
+    :type \\*\\*kwargs: as :exc:`firebase_functions.options.DatabaseOptions`
+    :rtype: :exc:`typing.Callable`
+            \\[ \\[ :exc:`firebase_functions.db.Event` \\[
+            :exc:`firebase_functions.db.Change` \\] \\], `None` \\]
+            A function that takes a Database Event and returns None.
     """
-    options = _options.DatabaseOptions(**kwargs)
+    options = DatabaseOptions(**kwargs)
 
     def on_value_written_inner_decorator(func: _C1):
 
@@ -143,7 +165,7 @@ def on_value_written(**kwargs) -> _typing.Callable[[_C1], _C1]:
     return on_value_written_inner_decorator
 
 
-@_util.copy_func_kwargs(_options.DatabaseOptions)
+@_util.copy_func_kwargs(DatabaseOptions)
 def on_value_updated(**kwargs) -> _typing.Callable[[_C1], _C1]:
     """
     Event handler which triggers when data is updated in Realtime Database.
@@ -156,8 +178,14 @@ def on_value_updated(**kwargs) -> _typing.Callable[[_C1], _C1]:
       def example(event: Event[Change[object]]) -> None:
           pass
 
+    :param \\*\\*kwargs: Database options.
+    :type \\*\\*kwargs: as :exc:`firebase_functions.options.DatabaseOptions`
+    :rtype: :exc:`typing.Callable`
+            \\[ \\[ :exc:`firebase_functions.db.Event` \\[
+            :exc:`firebase_functions.db.Change` \\] \\], `None` \\]
+            A function that takes a Database Event and returns None.
     """
-    options = _options.DatabaseOptions(**kwargs)
+    options = DatabaseOptions(**kwargs)
 
     def on_value_updated_inner_decorator(func: _C1):
 
@@ -175,7 +203,7 @@ def on_value_updated(**kwargs) -> _typing.Callable[[_C1], _C1]:
     return on_value_updated_inner_decorator
 
 
-@_util.copy_func_kwargs(_options.DatabaseOptions)
+@_util.copy_func_kwargs(DatabaseOptions)
 def on_value_created(**kwargs) -> _typing.Callable[[_C2], _C2]:
     """
     Event handler which triggers when data is created in Realtime Database.
@@ -185,10 +213,17 @@ def on_value_created(**kwargs) -> _typing.Callable[[_C2], _C2]:
     .. code-block:: python
 
         @on_value_created(reference="*")
-        def example(event):
+        def example(event: Event[object]):
           pass
+
+    :param \\*\\*kwargs: Database options.
+    :type \\*\\*kwargs: as :exc:`firebase_functions.options.DatabaseOptions`
+    :rtype: :exc:`typing.Callable`
+            \\[ \\[ :exc:`firebase_functions.db.Event` \\[
+            :exc:`object` \\] \\], `None` \\]
+            A function that takes a Database Event and returns None.
     """
-    options = _options.DatabaseOptions(**kwargs)
+    options = DatabaseOptions(**kwargs)
 
     def on_value_created_inner_decorator(func: _C2):
 
@@ -206,7 +241,7 @@ def on_value_created(**kwargs) -> _typing.Callable[[_C2], _C2]:
     return on_value_created_inner_decorator
 
 
-@_util.copy_func_kwargs(_options.DatabaseOptions)
+@_util.copy_func_kwargs(DatabaseOptions)
 def on_value_deleted(**kwargs) -> _typing.Callable[[_C2], _C2]:
     """
     Event handler which triggers when data is deleted in Realtime Database.
@@ -219,8 +254,14 @@ def on_value_deleted(**kwargs) -> _typing.Callable[[_C2], _C2]:
       def example(event: Event[object]) -> None:
           pass
 
+    :param \\*\\*kwargs: Database options.
+    :type \\*\\*kwargs: as :exc:`firebase_functions.options.DatabaseOptions`
+    :rtype: :exc:`typing.Callable`
+            \\[ \\[ :exc:`firebase_functions.db.Event` \\[
+            :exc:`object` \\] \\], `None` \\]
+            A function that takes a Database Event and returns None.
     """
-    options = _options.DatabaseOptions(**kwargs)
+    options = DatabaseOptions(**kwargs)
 
     def on_value_deleted_inner_decorator(func: _C2):
 

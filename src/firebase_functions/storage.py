@@ -21,9 +21,9 @@ import functools as _functools
 import typing as _typing
 import cloudevents.http as _ce
 
-import firebase_functions.options as _options
 import firebase_functions.private.util as _util
 from firebase_functions.core import CloudEvent
+from firebase_functions.options import StorageOptions
 
 _event_type_archived = "google.cloud.storage.object.v1.archived"
 _event_type_finalized = "google.cloud.storage.object.v1.finalized"
@@ -258,7 +258,7 @@ def _message_handler(
     func(event)
 
 
-@_util.copy_func_kwargs(_options.StorageOptions)
+@_util.copy_func_kwargs(StorageOptions)
 def on_object_archived(**kwargs) -> _typing.Callable[[_C1], _C1]:
     """
     Event handler sent only when a bucket has enabled object versioning.
@@ -266,13 +266,22 @@ def on_object_archived(**kwargs) -> _typing.Callable[[_C1], _C1]:
     archived version, either because it was archived or because it was
     overwritten by the upload of an object of the same name.
 
-    Example::
+    Example:
+
+    .. code-block:: python
+
       @on_object_archived()
       def example(event: CloudEvent[StorageObjectData]) -> None:
           pass
 
+    :param \\*\\*kwargs: Storage options.
+    :type \\*\\*kwargs: as :exc:`firebase_functions.options.StorageOptions`
+    :rtype: :exc:`typing.Callable`
+            \\[ \\[ :exc:`firebase_functions.core.CloudEvent` \\[
+            :exc:`firebase_functions.storage.StorageObjectData` \\] \\], `None` \\]
+            A function that takes a CloudEvent and returns None.
     """
-    options = _options.StorageOptions(**kwargs)
+    options = StorageOptions(**kwargs)
 
     def on_object_archived_inner_decorator(func: _C1):
 
@@ -290,7 +299,7 @@ def on_object_archived(**kwargs) -> _typing.Callable[[_C1], _C1]:
     return on_object_archived_inner_decorator
 
 
-@_util.copy_func_kwargs(_options.StorageOptions)
+@_util.copy_func_kwargs(StorageOptions)
 def on_object_finalized(**kwargs) -> _typing.Callable[[_C1], _C1]:
     """
     Event handler which fires every time a Google Cloud Storage object
@@ -299,13 +308,22 @@ def on_object_finalized(**kwargs) -> _typing.Callable[[_C1], _C1]:
     is successfully created in the bucket. This includes copying or rewriting
     an existing object. A failed upload does not trigger this event.
 
-    Example::
+    Example:
+
+    .. code-block:: python
+
       @on_object_finalized()
       def example(event: CloudEvent[StorageObjectData]) -> None:
           pass
 
+    :param \\*\\*kwargs: Storage options.
+    :type \\*\\*kwargs: as :exc:`firebase_functions.options.StorageOptions`
+    :rtype: :exc:`typing.Callable`
+            \\[ \\[ :exc:`firebase_functions.core.CloudEvent` \\[
+            :exc:`firebase_functions.storage.StorageObjectData` \\] \\], `None` \\]
+            A function that takes a CloudEvent and returns None.
     """
-    options = _options.StorageOptions(**kwargs)
+    options = StorageOptions(**kwargs)
 
     def on_object_finalized_inner_decorator(func: _C1):
 
@@ -323,7 +341,7 @@ def on_object_finalized(**kwargs) -> _typing.Callable[[_C1], _C1]:
     return on_object_finalized_inner_decorator
 
 
-@_util.copy_func_kwargs(_options.StorageOptions)
+@_util.copy_func_kwargs(StorageOptions)
 def on_object_deleted(**kwargs) -> _typing.Callable[[_C1], _C1]:
     """
     Event handler which fires every time a Google Cloud Storage deletion occurs.
@@ -333,13 +351,22 @@ def on_object_deleted(**kwargs) -> _typing.Callable[[_C1], _C1]:
     sent when an object is archived, even if archival occurs
     via the `storage.objects.delete` method.
 
-    Example::
+    Example:
+
+    .. code-block:: python
+
       @on_object_deleted()
       def example(event: CloudEvent[StorageObjectData]) -> None:
           pass
 
+    :param \\*\\*kwargs: Storage options.
+    :type \\*\\*kwargs: as :exc:`firebase_functions.options.StorageOptions`
+    :rtype: :exc:`typing.Callable`
+            \\[ \\[ :exc:`firebase_functions.core.CloudEvent` \\[
+            :exc:`firebase_functions.storage.StorageObjectData` \\] \\], `None` \\]
+            A function that takes a CloudEvent and returns None.
     """
-    options = _options.StorageOptions(**kwargs)
+    options = StorageOptions(**kwargs)
 
     def on_object_deleted_inner_decorator(func: _C1):
 
@@ -357,19 +384,28 @@ def on_object_deleted(**kwargs) -> _typing.Callable[[_C1], _C1]:
     return on_object_deleted_inner_decorator
 
 
-@_util.copy_func_kwargs(_options.StorageOptions)
+@_util.copy_func_kwargs(StorageOptions)
 def on_object_metadata_updated(**kwargs) -> _typing.Callable[[_C1], _C1]:
     """
     Event handler which fires every time the metadata of an existing object
     changes.
 
-    Example::
+    Example:
+
+    .. code-block:: python
+
       @on_object_metadata_updated()
       def example(event: CloudEvent[StorageObjectData]) -> None:
           pass
 
+    :param \\*\\*kwargs: Storage options.
+    :type \\*\\*kwargs: as :exc:`firebase_functions.options.StorageOptions`
+    :rtype: :exc:`typing.Callable`
+            \\[ \\[ :exc:`firebase_functions.core.CloudEvent` \\[
+            :exc:`firebase_functions.storage.StorageObjectData` \\] \\], `None` \\]
+            A function that takes a CloudEvent and returns None.
     """
-    options = _options.StorageOptions(**kwargs)
+    options = StorageOptions(**kwargs)
 
     def on_object_metadata_updated_inner_decorator(func: _C1):
 
