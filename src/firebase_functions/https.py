@@ -11,8 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-
 """Module for Cloud Functions that listen to HTTPS endpoints.
 These can be raw web requests and Callable RPCs.
 """
@@ -23,11 +21,11 @@ import typing as _typing
 import typing_extensions as _typing_extensions
 import enum as _enum
 import json as _json
-import firebase_functions.options as _options
 import firebase_functions.private.util as _util
 import firebase_functions.core as _core
 from functions_framework import logging as _logging
 
+from firebase_functions.options import HttpsOptions
 from flask import Request, Response, make_response as _make_response, jsonify as _jsonify
 from flask_cors import cross_origin as _cross_origin
 
@@ -407,7 +405,7 @@ def _on_call_handler(func: _C2, request: Request) -> Response:
         return _make_response(_jsonify(error=err._as_dict()), status)
 
 
-@_util.copy_func_kwargs(_options.HttpsOptions)
+@_util.copy_func_kwargs(HttpsOptions)
 def on_request(**kwargs) -> _typing.Callable[[_C1], _C1]:
     """
     Handler which handles HTTPS requests.
@@ -421,8 +419,12 @@ def on_request(**kwargs) -> _typing.Callable[[_C1], _C1]:
       def example(request: Request) -> Response:
           pass
 
+    :param \\*\\*kwargs: Https options.
+    :type \\*\\*kwargs: as :exc:`firebase_functions.options.HttpsOptions`
+    :rtype: :exc:`typing.Callable` \\[ \\[ :exc:`flask.Request` \\], :exc:`flask.Response` \\]
+            A function that takes a :exc:`flask.Request` and returns a :exc:`flask.Response`.
     """
-    options = _options.HttpsOptions(**kwargs)
+    options = HttpsOptions(**kwargs)
 
     def on_request_inner_decorator(func: _C1):
 
@@ -444,7 +446,7 @@ def on_request(**kwargs) -> _typing.Callable[[_C1], _C1]:
     return on_request_inner_decorator
 
 
-@_util.copy_func_kwargs(_options.HttpsOptions)
+@_util.copy_func_kwargs(HttpsOptions)
 def on_call(**kwargs) -> _typing.Callable[[_C2], _C2]:
     """
     Declares a callable method for clients to call using a Firebase SDK.
@@ -456,10 +458,16 @@ def on_call(**kwargs) -> _typing.Callable[[_C2], _C2]:
 
       @on_call()
       def example(request: CallableRequest) -> Any:
-          pass
+          return "Hello World"
 
+    :param \\*\\*kwargs: Https options.
+    :type \\*\\*kwargs: as :exc:`firebase_functions.options.HttpsOptions`
+    :rtype: :exc:`typing.Callable`
+            \\[ \\[ :exc:`firebase_functions.https.CallableRequest` \\[
+            :exc:`object` \\] \\], :exc:`object` \\]
+            A function that takes a CallableRequest and returns an :exc:`object`.
     """
-    options = _options.HttpsOptions(**kwargs)
+    options = HttpsOptions(**kwargs)
 
     def on_call_inner_decorator(func: _C2):
         origins: _typing.Any = "*"
