@@ -45,32 +45,32 @@ fi
 eval set -- "$TEMPARGS"
 
 while true; do
-    case "$1" in
-        -o|--out)
-            OUTDIR=$(realpath "$2")
-            shift 2
-            ;;
-        -p|--pypath)
-            PYTHONPATH=$(realpath "$2"):"$PYTHONPATH"
-            shift 2
-            ;;
-        -b|--sphinx-build)
-            SPHINXBIN=$(realpath "$2")
-            shift 2
-            ;;
-        -t|--themepath)
-            THEMEPATH=$(realpath "$2")
-            shift 2
-            ;;
-        --)
-            shift
-            break
-            ;;
-        *)
-           echo Error
-           exit 1
-           ;;
-    esac
+  case "$1" in
+  -o | --out)
+    OUTDIR=$(realpath "$2")
+    shift 2
+    ;;
+  -p | --pypath)
+    PYTHONPATH=$(realpath "$2"):"$PYTHONPATH"
+    shift 2
+    ;;
+  -b | --sphinx-build)
+    SPHINXBIN=$(realpath "$2")
+    shift 2
+    ;;
+  -t | --themepath)
+    THEMEPATH=$(realpath "$2")
+    shift 2
+    ;;
+  --)
+    shift
+    break
+    ;;
+  *)
+    echo Error
+    exit 1
+    ;;
+  esac
 done
 
 TARGET="$1"
@@ -90,7 +90,7 @@ DEVSITE_PATH='/docs/reference/functions-python'
 #
 PROJDIR=$(mktemp -d)
 echo Created project directory: "$PROJDIR"
-pushd "$PROJDIR" > /dev/null
+pushd "$PROJDIR" >/dev/null
 mkdir _build
 
 cat >conf.py <<EOL
@@ -110,8 +110,8 @@ def setup(app):
   app.set_translator('html', devsite_translator.html.FiresiteHTMLTranslator)
 EOL
 
-for m in ${PY_MODULES};
-do cat >"$m".rst <<EOL
+for m in ${PY_MODULES}; do
+  cat >"$m".rst <<EOL
 ${m} module
 ===============================================================================
 
@@ -133,7 +133,7 @@ ${TITLE}
 EOL
 
 for m in ${PY_MODULES}; do
-  echo "   ${m}" >> index.rst
+  echo "   ${m}" >>index.rst
 done
 
 #
@@ -170,8 +170,8 @@ toc:
   path: ${DEVSITE_PATH}/
 EOL
 for m in ${PY_MODULES}; do
-  echo "- title: ${m}" >> "$TOC"
-  echo "  path: ${DEVSITE_PATH}/${m}" >> "$TOC"
+  echo "- title: ${m}" >>"$TOC"
+  echo "  path: ${DEVSITE_PATH}/${m}" >>"$TOC"
 done
 
-popd > /dev/null
+popd >/dev/null
