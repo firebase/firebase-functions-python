@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # Copyright 2022 Google Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -96,6 +96,7 @@ mkdir _build
 cat >conf.py <<EOL
 import devsite_translator.html
 
+exclude_patterns = ['venv/**']
 extensions = ['sphinx.ext.autodoc', 'sphinx.ext.napoleon']
 source_suffix = '.rst'
 master_doc = 'index'
