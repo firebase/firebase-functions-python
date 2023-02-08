@@ -2,14 +2,14 @@
 Example Firebase Functions for Storage triggers.
 """
 
-from firebase_functions import storage
-from firebase_functions.storage import StorageObjectData, CloudEvent
+from firebase_functions import storage_fn
+from firebase_functions.storage_fn import StorageObjectData, CloudEvent
 from firebase_admin import initialize_app
 
 initialize_app()
 
 
-@storage.on_object_finalized()
+@storage_fn.on_object_finalized()
 def onobjectfinalizedexample(event: CloudEvent[StorageObjectData]):
     """
     This function will be triggered when a new object is created in the bucket.
@@ -17,7 +17,7 @@ def onobjectfinalizedexample(event: CloudEvent[StorageObjectData]):
     print(event)
 
 
-@storage.on_object_archived()
+@storage_fn.on_object_archived()
 def onobjectarchivedexample(event: CloudEvent[StorageObjectData]):
     """
     This function will be triggered when an object is archived in the bucket.
@@ -25,7 +25,7 @@ def onobjectarchivedexample(event: CloudEvent[StorageObjectData]):
     print(event)
 
 
-@storage.on_object_deleted()
+@storage_fn.on_object_deleted()
 def onobjectdeletedexample(event: CloudEvent[StorageObjectData]):
     """
     This function will be triggered when an object is deleted in the bucket.
@@ -33,7 +33,7 @@ def onobjectdeletedexample(event: CloudEvent[StorageObjectData]):
     print(event)
 
 
-@storage.on_object_metadata_updated()
+@storage_fn.on_object_metadata_updated()
 def onobjectmetadataupdatedexample(event: CloudEvent[StorageObjectData]):
     """
     This function will be triggered when an object's metadata is updated in the bucket.
