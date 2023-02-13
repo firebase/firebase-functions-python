@@ -97,7 +97,7 @@ def _db_endpoint_handler(
     event_data: _typing.Any = raw.get_data()
     # TODO Params are built locally via path pattern which is currently unimplemented
     params: dict[str, str] = {}
-    database_event_data = event_data["data"]
+    database_event_data = event_data
     if event_type == _event_type_deleted:
         database_event_data = database_event_data["data"]
     if event_type == _event_type_created:
