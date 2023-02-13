@@ -363,7 +363,8 @@ def _on_call_handler(func: _C2, request: Request,
             raise HttpsError(FunctionsErrorCode.UNAUTHENTICATED,
                              "Unauthenticated")
 
-        if enforce_app_check and token_status.app == _util.OnCallTokenState.INVALID:
+        if enforce_app_check and token_status.app in (
+                _util.OnCallTokenState.MISSING, _util.OnCallTokenState.INVALID):
             raise HttpsError(FunctionsErrorCode.UNAUTHENTICATED,
                              "Unauthenticated")
         if token_status.app == _util.OnCallTokenState.VALID and token_status.app_token is not None:
