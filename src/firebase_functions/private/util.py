@@ -155,7 +155,7 @@ class _OnCallTokenVerification:
     """
 
     app: OnCallTokenState = OnCallTokenState.INVALID
-    app_token: _typing.Optional[dict] = None
+    app_token: _typing.Optional[dict[str, _typing.Any]] = None
     auth: OnCallTokenState = OnCallTokenState.INVALID
     auth_token: _typing.Optional[dict] = None
 

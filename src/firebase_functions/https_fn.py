@@ -25,7 +25,7 @@ import firebase_functions.private.util as _util
 import firebase_functions.core as _core
 from functions_framework import logging as _logging
 
-from firebase_functions.options import HttpsOptions
+from firebase_functions.options import HttpsOptions, _GLOBAL_OPTIONS
 from flask import Request, Response, make_response as _make_response, jsonify as _jsonify
 from flask_cors import cross_origin as _cross_origin
 
@@ -346,7 +346,8 @@ _C1 = _typing.Callable[[Request], Response]
 _C2 = _typing.Callable[[CallableRequest[_typing.Any]], _typing.Any]
 
 
-def _on_call_handler(func: _C2, request: Request) -> Response:
+def _on_call_handler(func: _C2, request: Request,
+                     enforce_app_check: bool) -> Response:
     try:
         if not _util.valid_on_call_request(request):
             _logging.error("Invalid request, unable to process.")
@@ -362,23 +363,21 @@ def _on_call_handler(func: _C2, request: Request) -> Response:
             raise HttpsError(FunctionsErrorCode.UNAUTHENTICATED,
                              "Unauthenticated")
 
-        # TODO support for `allowInvalidAppCheckToken`
-        if token_status.app == _util.OnCallTokenState.INVALID:
+        if enforce_app_check and token_status.app == _util.OnCallTokenState.INVALID:
             raise HttpsError(FunctionsErrorCode.UNAUTHENTICATED,
                              "Unauthenticated")
+        if token_status.app == _util.OnCallTokenState.VALID and token_status.app_token is not None:
+            context = _dataclasses.replace(
+                context,
+                app=AppCheckData(token_status.app_token["sub"],
+                                 token_status.app_token),
+            )
 
         if token_status.auth_token is not None:
             context = _dataclasses.replace(
                 context,
                 auth=AuthData(token_status.auth_token["uid"],
                               token_status.auth_token),
-            )
-
-        if token_status.app_token is not None:
-            context = _dataclasses.replace(
-                context,
-                app=AppCheckData(token_status.app_token["sub"],
-                                 token_status.app_token),
             )
 
         instance_id = request.headers.get("Firebase-Instance-ID-Token")
@@ -474,13 +473,26 @@ def on_call(**kwargs) -> _typing.Callable[[_C2], _C2]:
         if options.cors is not None and options.cors.cors_origins is not None:
             origins = options.cors.cors_origins
 
+        # Default to False.
+        enforce_app_check = False
+        # If the global option is set, use that.
+        if options.enforce_app_check is None and _GLOBAL_OPTIONS.enforce_app_check is not None:
+            enforce_app_check = _GLOBAL_OPTIONS.enforce_app_check
+        # If the global option is not set, use the local option.
+        elif options.enforce_app_check is not None:
+            enforce_app_check = options.enforce_app_check
+
         @_cross_origin(
             methods="POST",
             origins=origins,
         )
         @_functools.wraps(func)
         def on_call_wrapped(request: Request):
-            return _on_call_handler(func, request)
+            return _on_call_handler(
+                func,
+                request,
+                enforce_app_check,
+            )
 
         _util.set_func_endpoint_attr(
             on_call_wrapped,
