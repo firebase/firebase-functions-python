@@ -102,7 +102,7 @@ def _db_endpoint_handler(
         database_event_data = database_event_data["data"]
     if event_type == _event_type_created:
         database_event_data = database_event_data["delta"]
-    if event_type == _event_type_written or event_type == _event_type_updated:
+    if event_type in (_event_type_written, _event_type_updated):
         before = event_data["data"]
         after = event_data["delta"]
         # Merge delta into data to generate an 'after' view of the data.
