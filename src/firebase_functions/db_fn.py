@@ -90,14 +90,19 @@ _C2 = _typing.Callable[[_E2], None]
 
 def _db_endpoint_handler(
     func: _C1 | _C2,
+    event_type: str,
     raw: _ce.CloudEvent,
 ) -> None:
     event_attributes = raw._get_attributes()
     event_data: _typing.Any = raw.get_data()
     # TODO Params are built locally via path pattern which is currently unimplemented
     params: dict[str, str] = {}
-    database_event_data = event_data["data"]
-    if "delta" in event_data:
+    database_event_data = event_data
+    if event_type == _event_type_deleted:
+        database_event_data = database_event_data["data"]
+    if event_type == _event_type_created:
+        database_event_data = database_event_data["delta"]
+    if event_type in (_event_type_written, _event_type_updated):
         before = event_data["data"]
         after = event_data["delta"]
         # Merge delta into data to generate an 'after' view of the data.
@@ -153,7 +158,7 @@ def on_value_written(**kwargs) -> _typing.Callable[[_C1], _C1]:
 
         @_functools.wraps(func)
         def on_value_written_wrapped(raw: _ce.CloudEvent):
-            return _db_endpoint_handler(func, raw)
+            return _db_endpoint_handler(func, _event_type_written, raw)
 
         _util.set_func_endpoint_attr(
             on_value_written_wrapped,
@@ -191,7 +196,7 @@ def on_value_updated(**kwargs) -> _typing.Callable[[_C1], _C1]:
 
         @_functools.wraps(func)
         def on_value_updated_wrapped(raw: _ce.CloudEvent):
-            return _db_endpoint_handler(func, raw)
+            return _db_endpoint_handler(func, _event_type_updated, raw)
 
         _util.set_func_endpoint_attr(
             on_value_updated_wrapped,
@@ -229,7 +234,7 @@ def on_value_created(**kwargs) -> _typing.Callable[[_C2], _C2]:
 
         @_functools.wraps(func)
         def on_value_created_wrapped(raw: _ce.CloudEvent):
-            return _db_endpoint_handler(func, raw)
+            return _db_endpoint_handler(func, _event_type_created, raw)
 
         _util.set_func_endpoint_attr(
             on_value_created_wrapped,
@@ -267,7 +272,7 @@ def on_value_deleted(**kwargs) -> _typing.Callable[[_C2], _C2]:
 
         @_functools.wraps(func)
         def on_value_deleted_wrapped(raw: _ce.CloudEvent):
-            return _db_endpoint_handler(func, raw)
+            return _db_endpoint_handler(func, _event_type_deleted, raw)
 
         _util.set_func_endpoint_attr(
             on_value_deleted_wrapped,

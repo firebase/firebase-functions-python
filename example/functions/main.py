@@ -1,7 +1,7 @@
 """
 Example Firebase Functions written in Python
 """
-from firebase_functions import db_fn, https_fn, options, params, pubsub_fn
+from firebase_functions import https_fn, options, params, pubsub_fn
 from firebase_admin import initialize_app
 
 initialize_app()
@@ -11,29 +11,6 @@ options.set_global_options(
     memory=options.MemoryOption.MB_128,
     min_instances=params.IntParam("MIN", default=3),
 )
-
-
-@db_fn.on_value_written(
-    reference="hello",
-    region=options.SupportedRegion.EUROPE_WEST1,
-)
-def onwriteexample(event: db_fn.Event[db_fn.Change[object]]) -> None:
-    print("Hello from db write event:", event)
-
-
-@db_fn.on_value_created(reference="hello/{any_thing_here}/bar")
-def oncreatedexample(event: db_fn.Event[object]) -> None:
-    print("Hello from db create event:", event)
-
-
-@db_fn.on_value_deleted(reference="hello/{any_thing_here}/bar")
-def ondeletedexample(event: db_fn.Event[object]) -> None:
-    print("Hello from db delete event:", event)
-
-
-@db_fn.on_value_updated(reference="hello")
-def onupdatedexample(event: db_fn.Event[db_fn.Change[object]]) -> None:
-    print("Hello from db updated event:", event)
 
 
 @https_fn.on_request()
