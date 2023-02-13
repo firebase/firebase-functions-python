@@ -196,6 +196,14 @@ class RuntimeOptions:
     Secrets to bind to a function.
     """
 
+    enforce_app_check: bool | None = None
+    """
+    Determines whether Firebase AppCheck is enforced.
+    When true, requests with invalid tokens auto respond with a 401
+    Unauthorized response.
+    When false, requests with invalid tokens set event.app to None.
+    """
+
     def _asdict_with_global_options(self) -> dict:
         """
         Returns the provider options merged with globally defined options.
@@ -438,7 +446,7 @@ class HttpsOptions(RuntimeOptions):
         """
         merged_options = super()._asdict_with_global_options()
         # "cors" is only used locally by the functions framework
-        # and is not used in the manifest.
+        # and is not used in the manifest or in global options.
         if "cors" in merged_options:
             del merged_options["cors"]
         return merged_options
@@ -499,6 +507,7 @@ def set_global_options(
     ingress: IngressSetting | _util.Sentinel | None = None,
     labels: dict[str, str] | None = None,
     secrets: list[str] | list[SecretParam] | _util.Sentinel | None = None,
+    enforce_app_check: bool | None = None,
 ):
     """
     Sets default options for all functions.
@@ -518,4 +527,5 @@ def set_global_options(
         ingress=ingress,
         labels=labels,
         secrets=secrets,
+        enforce_app_check=enforce_app_check,
     )
