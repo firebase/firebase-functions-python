@@ -26,9 +26,9 @@ import firebase_functions.private.util as _util
 import firebase_functions.private.path_pattern as _path_pattern
 from firebase_functions.params import SecretParam, Expression
 
-USE_DEFAULT = _util.Sentinel(
-    "Value used to reset an option to factory defaults")
-"""Used to reset an option to its factory default."""
+RESET_VALUE = _util.Sentinel(
+    "Special configuration value to reset configuration to platform default.")
+"""Special configuration value to reset configuration to platform default."""
 
 
 class VpcEgressSetting(str, _enum.Enum):
@@ -115,14 +115,14 @@ class RuntimeOptions:
     memory: int | MemoryOption | Expression[int] | _util.Sentinel | None = None
     """
     Amount of memory to allocate to a function.
-    A value of USE_DEFAULT restores the defaults of 256MB.
+    A value of RESET_VALUE restores the defaults of 256MB.
     """
 
     timeout_sec: int | Expression[int] | _util.Sentinel | None = None
     """
     Timeout for the function in sections, possible values are 0 to 540.
     HTTPS functions can specify a higher timeout.
-    A value of USE_DEFAULT restores the default of 60s
+    A value of RESET_VALUE restores the default of 60s
     The minimum timeout for a gen 2 function is 1s. The maximum timeout for a
     function depends on the type of function: Event handling functions have a
     maximum timeout of 540s (9 minutes). HTTPS and callable functions have a
@@ -135,20 +135,20 @@ class RuntimeOptions:
     Min number of actual instances to be running at a given time.
     Instances will be billed for memory allocation and 10% of CPU allocation
     while idle.
-    A value of USE_DEFAULT restores the default min instances.
+    A value of RESET_VALUE restores the default min instances.
     """
 
     max_instances: int | Expression[int] | _util.Sentinel | None = None
     """
     Max number of instances to be running in parallel.
-    A value of USE_DEFAULT restores the default max instances.
+    A value of RESET_VALUE restores the default max instances.
     """
 
     concurrency: int | Expression[int] | _util.Sentinel | None = None
     """
     Number of requests a function can serve at once.
     Can only be applied to functions running on Cloud Functions v2.
-    A value of USE_DEFAULT restores the default concurrency (80 when CPU >= 1, 1 otherwise).
+    A value of RESET_VALUE restores the default concurrency (80 when CPU >= 1, 1 otherwise).
     Concurrency cannot be set to any value other than 1 if `cpu` is less than 1.
     The maximum value for concurrency is 1,000.
     """
@@ -163,28 +163,28 @@ class RuntimeOptions:
     to the value "gcf_gen1"
     """
 
-    vpc_connector: str | None = None
+    vpc_connector: str | _util.Sentinel | None = None
     """
     Connect cloud function to specified VPC connector.
-    A value of USE_DEFAULT removes the VPC connector.
+    A value of RESET_VALUE removes the VPC connector.
     """
 
-    vpc_connector_egress_settings: VpcEgressSetting | None = None
+    vpc_connector_egress_settings: VpcEgressSetting | _util.Sentinel | None = None
     """
     Egress settings for VPC connector.
-    A value of USE_DEFAULT turns off VPC connector egress settings.
+    A value of RESET_VALUE turns off VPC connector egress settings.
     """
 
     service_account: str | _util.Sentinel | None = None
     """
     Specific service account for the function to run as.
-    A value of USE_DEFAULT restores the default service account.
+    A value of RESET_VALUE restores the default service account.
     """
 
     ingress: IngressSetting | _util.Sentinel | None = None
     """
     Ingress settings which control where this function can be called from.
-    A value of USE_DEFAULT turns off ingress settings.
+    A value of RESET_VALUE turns off ingress settings.
     """
 
     labels: dict[str, str] | None = None
@@ -205,6 +205,18 @@ class RuntimeOptions:
     When false, requests with invalid tokens set event.app to None.
     """
 
+    preserve_external_changes: bool | None = None
+    """
+    Controls whether function configuration modified outside of function source is preserved.
+    Internally defaults to false.
+
+    When setting configuration available in the underlying platform that is not yet available
+    in the Firebase Functions SDK, we highly recommend setting `preserve_external_changes` to
+    `True`. Otherwise, when the Firebase Functions SDK releases a new version of the SDK
+    with support for the missing configuration, your function's manually configured setting
+    may inadvertently be wiped out.
+    """
+
     def _asdict_with_global_options(self) -> dict:
         """
         Returns the provider options merged with globally defined options.
@@ -222,7 +234,27 @@ class RuntimeOptions:
             merged_options["labels"] = {**_GLOBAL_OPTIONS.labels, **self.labels}
         if "labels" not in merged_options:
             merged_options["labels"] = {}
-
+        preserve_external_changes: bool = merged_options.get(
+            "preserve_external_changes",
+            False,
+        )
+        resettable_options = [
+            "memory",
+            "timeout_sec",
+            "min_instances",
+            "max_instances",
+            "ingress",
+            "concurrency",
+            "service_account",
+            "vpc_connector",
+            "vpc_connector_egress_settings",
+        ]
+        if not preserve_external_changes:
+            for option in resettable_options:
+                if option not in merged_options:
+                    merged_options[option] = RESET_VALUE
+        if "preserve_external_changes" in merged_options:
+            del merged_options["preserve_external_changes"]
         # _util.Sentinel values are converted to `None` in ManifestEndpoint generation
         # after other None values are removed - so as to keep them in the generated
         # YAML output as 'null' values.
@@ -257,10 +289,14 @@ class RuntimeOptions:
             region = [_typing.cast(str, options.region)]
 
         vpc: _manifest.VpcSettings | None = None
-        if options.vpc_connector is not None:
+        if isinstance(options.vpc_connector, str):
             vpc = ({
-                "connector": options.vpc_connector,
-                "egressSettings": options.vpc_connector_egress_settings.value
+                "connector":
+                    options.vpc_connector,
+                "egressSettings":
+                    options.vpc_connector_egress_settings.value if isinstance(
+                        options.vpc_connector_egress_settings, VpcEgressSetting)
+                    else options.vpc_connector_egress_settings
             } if options.vpc_connector_egress_settings is not None else {
                 "connector": options.vpc_connector
             })
@@ -511,6 +547,7 @@ def set_global_options(
     labels: dict[str, str] | None = None,
     secrets: list[str] | list[SecretParam] | _util.Sentinel | None = None,
     enforce_app_check: bool | None = None,
+    preserve_external_changes: bool | None = None,
 ):
     """
     Sets default options for all functions.
@@ -531,4 +568,5 @@ def set_global_options(
         labels=labels,
         secrets=secrets,
         enforce_app_check=enforce_app_check,
+        preserve_external_changes=preserve_external_changes,
     )
