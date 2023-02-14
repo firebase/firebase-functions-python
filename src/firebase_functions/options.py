@@ -253,8 +253,6 @@ class RuntimeOptions:
             for option in resettable_options:
                 if option not in merged_options:
                     merged_options[option] = RESET_VALUE
-        if "preserve_external_changes" in merged_options:
-            del merged_options["preserve_external_changes"]
         # _util.Sentinel values are converted to `None` in ManifestEndpoint generation
         # after other None values are removed - so as to keep them in the generated
         # YAML output as 'null' values.

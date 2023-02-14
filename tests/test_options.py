@@ -87,9 +87,6 @@ def test_options_preserve_external_changes():
         min_instances=5,
     )
     options_asdict = options._GLOBAL_OPTIONS._asdict_with_global_options()
-    assert ("preserve_external_changes"
-            not in options_asdict), "option is still set"
-
     assert (options_asdict["max_instances"] is
             options.RESET_VALUE), "option should be RESET_VALUE"
     assert options_asdict["min_instances"] == 5, "option should be set"
