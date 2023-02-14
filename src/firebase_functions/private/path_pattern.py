@@ -159,8 +159,8 @@ class PathPattern:
 
     @property
     def has_captures(self) -> bool:
-        return any(segment.name == SegmentName.SINGLE_CAPTURE or
-                   segment.name == SegmentName.MULTI_CAPTURE
+        return any(segment.name in (SegmentName.SINGLE_CAPTURE,
+                                    SegmentName.MULTI_CAPTURE)
                    for segment in self.segments)
 
     def extract_matches(self, path: str) -> dict[str, str]:
