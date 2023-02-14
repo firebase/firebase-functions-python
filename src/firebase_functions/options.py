@@ -23,6 +23,7 @@ import typing as _typing
 
 import firebase_functions.private.manifest as _manifest
 import firebase_functions.private.util as _util
+import firebase_functions.private.path_pattern as _path_pattern
 from firebase_functions.params import SecretParam, Expression
 
 USE_DEFAULT = _util.Sentinel(
@@ -194,6 +195,14 @@ class RuntimeOptions:
     secrets: list[str] | list[SecretParam] | _util.Sentinel | None = None
     """
     Secrets to bind to a function.
+    """
+
+    enforce_app_check: bool | None = None
+    """
+    Determines whether Firebase AppCheck is enforced.
+    When true, requests with invalid tokens auto respond with a 401
+    Unauthorized response.
+    When false, requests with invalid tokens set event.app to None.
     """
 
     def _asdict_with_global_options(self) -> dict:
@@ -386,13 +395,15 @@ class DatabaseOptions(RuntimeOptions):
         **kwargs,
     ) -> _manifest.ManifestEndpoint:
         assert kwargs["event_type"] is not None
-        event_filter_instance = self.instance if self.instance is not None else "*"
+        assert kwargs["instance_pattern"] is not None
+        instance_pattern: _path_pattern.PathPattern = kwargs["instance_pattern"]
+        event_filter_instance = instance_pattern.value
         event_filters: _typing.Any = {}
         event_filters_path_patterns: _typing.Any = {
             # Note: Eventarc always treats ref as a path pattern
             "ref": self.reference.strip("/"),
         }
-        if "*" in event_filter_instance:
+        if instance_pattern.has_wildcards:
             event_filters_path_patterns["instance"] = event_filter_instance
         else:
             event_filters["instance"] = event_filter_instance
@@ -438,7 +449,7 @@ class HttpsOptions(RuntimeOptions):
         """
         merged_options = super()._asdict_with_global_options()
         # "cors" is only used locally by the functions framework
-        # and is not used in the manifest.
+        # and is not used in the manifest or in global options.
         if "cors" in merged_options:
             del merged_options["cors"]
         return merged_options
@@ -499,6 +510,7 @@ def set_global_options(
     ingress: IngressSetting | _util.Sentinel | None = None,
     labels: dict[str, str] | None = None,
     secrets: list[str] | list[SecretParam] | _util.Sentinel | None = None,
+    enforce_app_check: bool | None = None,
 ):
     """
     Sets default options for all functions.
@@ -518,4 +530,5 @@ def set_global_options(
         ingress=ingress,
         labels=labels,
         secrets=secrets,
+        enforce_app_check=enforce_app_check,
     )

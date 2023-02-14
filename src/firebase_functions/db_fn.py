@@ -20,6 +20,7 @@ import functools as _functools
 import typing as _typing
 import datetime as _dt
 import firebase_functions.private.util as _util
+import firebase_functions.private.path_pattern as _path_pattern
 import firebase_functions.core as _core
 import cloudevents.http as _ce
 
@@ -90,14 +91,19 @@ _C2 = _typing.Callable[[_E2], None]
 
 def _db_endpoint_handler(
     func: _C1 | _C2,
+    event_type: str,
+    ref_pattern: _path_pattern.PathPattern,
+    instance_pattern: _path_pattern.PathPattern,
     raw: _ce.CloudEvent,
 ) -> None:
     event_attributes = raw._get_attributes()
     event_data: _typing.Any = raw.get_data()
-    # TODO Params are built locally via path pattern which is currently unimplemented
-    params: dict[str, str] = {}
-    database_event_data = event_data["data"]
-    if "delta" in event_data:
+    database_event_data = event_data
+    if event_type == _event_type_deleted:
+        database_event_data = database_event_data["data"]
+    if event_type == _event_type_created:
+        database_event_data = database_event_data["delta"]
+    if event_type in (_event_type_written, _event_type_updated):
         before = event_data["data"]
         after = event_data["delta"]
         # Merge delta into data to generate an 'after' view of the data.
@@ -107,10 +113,16 @@ def _db_endpoint_handler(
             before=before,
             after=after,
         )
+    event_instance = event_attributes["instance"]
+    event_ref = event_attributes["ref"]
+    params: dict[str, str] = {
+        **ref_pattern.extract_matches(event_ref),
+        **instance_pattern.extract_matches(event_instance),
+    }
     database_event = Event(
         firebase_database_host=event_attributes["firebasedatabasehost"],
-        instance=event_attributes["instance"],
-        reference=event_attributes["ref"],
+        instance=event_instance,
+        reference=event_ref,
         location=event_attributes["location"],
         specversion=event_attributes["specversion"],
         id=event_attributes["id"],
@@ -150,15 +162,27 @@ def on_value_written(**kwargs) -> _typing.Callable[[_C1], _C1]:
     options = DatabaseOptions(**kwargs)
 
     def on_value_written_inner_decorator(func: _C1):
+        ref_pattern = _path_pattern.PathPattern(options.reference)
+        instance_pattern = _path_pattern.PathPattern(
+            options.instance if options.instance is not None else "*")
 
         @_functools.wraps(func)
         def on_value_written_wrapped(raw: _ce.CloudEvent):
-            return _db_endpoint_handler(func, raw)
+            return _db_endpoint_handler(
+                func,
+                _event_type_written,
+                ref_pattern,
+                instance_pattern,
+                raw,
+            )
 
         _util.set_func_endpoint_attr(
             on_value_written_wrapped,
-            options._endpoint(event_type=_event_type_written,
-                              func_name=func.__name__),
+            options._endpoint(
+                event_type=_event_type_written,
+                func_name=func.__name__,
+                instance_pattern=instance_pattern,
+            ),
         )
         return on_value_written_wrapped
 
@@ -188,15 +212,27 @@ def on_value_updated(**kwargs) -> _typing.Callable[[_C1], _C1]:
     options = DatabaseOptions(**kwargs)
 
     def on_value_updated_inner_decorator(func: _C1):
+        ref_pattern = _path_pattern.PathPattern(options.reference)
+        instance_pattern = _path_pattern.PathPattern(
+            options.instance if options.instance is not None else "*")
 
         @_functools.wraps(func)
         def on_value_updated_wrapped(raw: _ce.CloudEvent):
-            return _db_endpoint_handler(func, raw)
+            return _db_endpoint_handler(
+                func,
+                _event_type_updated,
+                ref_pattern,
+                instance_pattern,
+                raw,
+            )
 
         _util.set_func_endpoint_attr(
             on_value_updated_wrapped,
-            options._endpoint(event_type=_event_type_updated,
-                              func_name=func.__name__),
+            options._endpoint(
+                event_type=_event_type_updated,
+                func_name=func.__name__,
+                instance_pattern=instance_pattern,
+            ),
         )
         return on_value_updated_wrapped
 
@@ -226,15 +262,27 @@ def on_value_created(**kwargs) -> _typing.Callable[[_C2], _C2]:
     options = DatabaseOptions(**kwargs)
 
     def on_value_created_inner_decorator(func: _C2):
+        ref_pattern = _path_pattern.PathPattern(options.reference)
+        instance_pattern = _path_pattern.PathPattern(
+            options.instance if options.instance is not None else "*")
 
         @_functools.wraps(func)
         def on_value_created_wrapped(raw: _ce.CloudEvent):
-            return _db_endpoint_handler(func, raw)
+            return _db_endpoint_handler(
+                func,
+                _event_type_created,
+                ref_pattern,
+                instance_pattern,
+                raw,
+            )
 
         _util.set_func_endpoint_attr(
             on_value_created_wrapped,
-            options._endpoint(event_type=_event_type_created,
-                              func_name=func.__name__),
+            options._endpoint(
+                event_type=_event_type_created,
+                func_name=func.__name__,
+                instance_pattern=instance_pattern,
+            ),
         )
         return on_value_created_wrapped
 
@@ -264,15 +312,27 @@ def on_value_deleted(**kwargs) -> _typing.Callable[[_C2], _C2]:
     options = DatabaseOptions(**kwargs)
 
     def on_value_deleted_inner_decorator(func: _C2):
+        ref_pattern = _path_pattern.PathPattern(options.reference)
+        instance_pattern = _path_pattern.PathPattern(
+            options.instance if options.instance is not None else "*")
 
         @_functools.wraps(func)
         def on_value_deleted_wrapped(raw: _ce.CloudEvent):
-            return _db_endpoint_handler(func, raw)
+            return _db_endpoint_handler(
+                func,
+                _event_type_deleted,
+                ref_pattern,
+                instance_pattern,
+                raw,
+            )
 
         _util.set_func_endpoint_attr(
             on_value_deleted_wrapped,
-            options._endpoint(event_type=_event_type_deleted,
-                              func_name=func.__name__),
+            options._endpoint(
+                event_type=_event_type_deleted,
+                func_name=func.__name__,
+                instance_pattern=instance_pattern,
+            ),
         )
         return on_value_deleted_wrapped
 
