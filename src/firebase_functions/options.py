@@ -23,6 +23,7 @@ import typing as _typing
 
 import firebase_functions.private.manifest as _manifest
 import firebase_functions.private.util as _util
+import firebase_functions.private.path_pattern as _path_pattern
 from firebase_functions.params import SecretParam, Expression
 
 USE_DEFAULT = _util.Sentinel(
@@ -394,13 +395,15 @@ class DatabaseOptions(RuntimeOptions):
         **kwargs,
     ) -> _manifest.ManifestEndpoint:
         assert kwargs["event_type"] is not None
-        event_filter_instance = self.instance if self.instance is not None else "*"
+        assert kwargs["instance_pattern"] is not None
+        instance_pattern: _path_pattern.PathPattern = kwargs["instance_pattern"]
+        event_filter_instance = instance_pattern.value
         event_filters: _typing.Any = {}
         event_filters_path_patterns: _typing.Any = {
             # Note: Eventarc always treats ref as a path pattern
             "ref": self.reference.strip("/"),
         }
-        if "*" in event_filter_instance:
+        if instance_pattern.has_wildcards:
             event_filters_path_patterns["instance"] = event_filter_instance
         else:
             event_filters["instance"] = event_filter_instance
