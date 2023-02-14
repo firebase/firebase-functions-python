@@ -30,10 +30,14 @@ R = _typing.TypeVar("R")
 
 
 class Sentinel:
-    """Internal class for USE_DEFAULT."""
+    """Internal class for RESET_VALUE."""
 
     def __init__(self, description):
         self.description = description
+
+    def __eq__(self, other):
+        return isinstance(other,
+                          Sentinel) and self.description == other.description
 
 
 def copy_func_kwargs(

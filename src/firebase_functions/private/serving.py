@@ -27,7 +27,7 @@ from flask import Flask
 from flask import Response
 
 from firebase_functions.private import manifest as _manifest
-from firebase_functions import params as _params
+from firebase_functions import params as _params, options as _options
 from firebase_functions.private import util as _util
 
 
@@ -76,9 +76,10 @@ def functions_as_yaml(functions: dict) -> str:
     manifest_spec = _manifest.manifest_to_spec_dict(manifest_stack)
     manifest_spec_with_sentinels = to_spec(manifest_spec)
 
-    def represent_sentinel(self, _):
-        # TODO distinguishing between RESET_VALUE or DEFAULT_VALUE
-        # TODO can be done here
+    def represent_sentinel(self, value):
+        if value == _options.RESET_VALUE:
+            return self.represent_scalar("tag:yaml.org,2002:null", "null")
+        # Other sentinel types in the future can be added here.
         return self.represent_scalar("tag:yaml.org,2002:null", "null")
 
     yaml.add_representer(_util.Sentinel, represent_sentinel)

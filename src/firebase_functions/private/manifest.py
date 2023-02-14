@@ -87,7 +87,7 @@ class BlockingTrigger(_typing.TypedDict):
 
 class VpcSettings(_typing.TypedDict):
     connector: _typing_extensions.Required[str]
-    egressSettings: _typing_extensions.NotRequired[str]
+    egressSettings: _typing_extensions.NotRequired[str | _util.Sentinel]
 
 
 @_dataclasses.dataclass(frozen=True)

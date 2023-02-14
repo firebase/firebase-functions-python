@@ -14,9 +14,20 @@
 """
 Options unit tests.
 """
-from firebase_functions import options
+from firebase_functions import options, https_fn
 from firebase_functions import params
+from firebase_functions.private.serving import functions_as_yaml
 # pylint: disable=protected-access
+
+
+@https_fn.on_call()
+def asamplefunction(_):
+    return "hello world"
+
+
+@https_fn.on_call(preserve_external_changes=True)
+def asamplefunctionpreserved(_):
+    return "hello world"
 
 
 def test_set_global_options():
@@ -63,3 +74,35 @@ def test_options_asdict_uses_cel_representation():
         min_instances=int_param)._asdict_with_global_options()
     assert https_options_dict["min_instances"] == int_param.to_cel(
     ), "param was not converted to CEL string"
+
+
+def test_options_preserve_external_changes():
+    """
+    Testing if setting a global option internally change the values.
+    """
+    assert (options._GLOBAL_OPTIONS.preserve_external_changes is
+            None), "option should not already be set"
+    options.set_global_options(
+        preserve_external_changes=False,
+        min_instances=5,
+    )
+    options_asdict = options._GLOBAL_OPTIONS._asdict_with_global_options()
+    assert (options_asdict["max_instances"] is
+            options.RESET_VALUE), "option should be RESET_VALUE"
+    assert options_asdict["min_instances"] == 5, "option should be set"
+
+    firebase_functions = {
+        "asamplefunction": asamplefunction,
+    }
+    yaml = functions_as_yaml(firebase_functions)
+    # A quick check to make sure the yaml has null values
+    # where we expect.
+    assert "    availableMemoryMb: null\n" in yaml, "availableMemoryMb not in yaml"
+    assert "    serviceAccountEmail: null\n" in yaml, "serviceAccountEmail not in yaml"
+
+    firebase_functions2 = {
+        "asamplefunctionpreserved": asamplefunctionpreserved,
+    }
+    yaml = functions_as_yaml(firebase_functions2)
+    assert "    availableMemoryMb: null\n" not in yaml, "availableMemoryMb found in yaml"
+    assert "    serviceAccountEmail: null\n" not in yaml, "serviceAccountEmail found in yaml"
