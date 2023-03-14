@@ -11,8 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-
 """
 Public code that is shared across modules.
 """
@@ -64,4 +62,3 @@ class CloudEvent(_typing.Generic[T]):
     """
     The resource, provided by source, that this event relates to
     """
-

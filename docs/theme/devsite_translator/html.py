@@ -15,13 +15,14 @@
 
 from sphinx.writers import html
 
-
-_DESCTYPE_NAMES = {'class': 'Classes',
-                   'data': 'Constants',
-                   'function': 'Functions',
-                   'method': 'Methods',
-                   'attribute': 'Attributes',
-                   'exception': 'Exceptions'}
+_DESCTYPE_NAMES = {
+    'class': 'Classes',
+    'data': 'Constants',
+    'function': 'Functions',
+    'method': 'Methods',
+    'attribute': 'Attributes',
+    'exception': 'Exceptions'
+}
 
 # Use the default translator for these node types
 _RENDER_WITH_DEFAULT = ['method', 'staticmethod', 'attribute']
@@ -48,12 +49,14 @@ class FiresiteHTMLTranslator(html.HTMLTranslator):
         if node.parent.tagname == 'section':
             self.insert_header = True
             if node['desctype'] != self.current_section:
-                self.body.append(f"<h2>{_DESCTYPE_NAMES[node['desctype']]}</h2>")
+                self.body.append(
+                    f"<h2>{_DESCTYPE_NAMES[node['desctype']]}</h2>")
                 self.current_section = node['desctype']
         if node['desctype'] in _RENDER_WITH_DEFAULT:
             html.HTMLTranslator.visit_desc(self, node)
         else:
-            self.body.append(self.starttag(node, 'table', CLASS=node['objtype']))
+            self.body.append(self.starttag(node, 'table',
+                                           CLASS=node['objtype']))
 
     def depart_desc(self, node):
         if node['desctype'] in _RENDER_WITH_DEFAULT:
@@ -68,7 +71,8 @@ class FiresiteHTMLTranslator(html.HTMLTranslator):
             self.body.append('<tr>')
             self.body.append(self.starttag(node, 'th'))
             if self.insert_header:
-                self.body.append(f"<h3 class=\"sphinx-hidden\">{node['fullname']}</h3>")
+                self.body.append(
+                    f"<h3 class=\"sphinx-hidden\">{node['fullname']}</h3>")
                 self.insert_header = False
 
     def depart_desc_signature(self, node):
