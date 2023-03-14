@@ -190,8 +190,7 @@ class Param(Expression[_T]):
     deployments.
     """
 
-    input: _typing.Union[TextInput, ResourceInput,
-                         SelectInput[_T]] = TextInput()
+    input: TextInput | ResourceInput | SelectInput[_T] = TextInput()
     """
     The type of input that is required for this param, e.g. TextInput.
     """
