@@ -325,7 +325,7 @@ class PubSubOptions(RuntimeOptions):
     Internal use only.
     """
 
-    retry: _typing.Optional[bool] = None
+    retry: bool | None = None
     """
     Whether failed executions should be delivered again.
     """
@@ -364,7 +364,7 @@ class StorageOptions(RuntimeOptions):
     Internal use only.
     """
 
-    bucket: _typing.Optional[str] = None
+    bucket: str | None = None
     """
     The name of the bucket to watch for Storage events.
     """
@@ -416,7 +416,7 @@ class DatabaseOptions(RuntimeOptions):
     Examples: '/foo/bar', '/foo/{bar}'
     """
 
-    instance: _typing.Optional[str] = None
+    instance: str | None = None
     """
     Specify the handler to trigger on a database instance(s).
     If present, this value can either be a single instance or a pattern.
@@ -471,7 +471,7 @@ class HttpsOptions(RuntimeOptions):
     Invoker to set access control on https functions.
     """
 
-    cors: _typing.Optional[CorsOptions] = None
+    cors: CorsOptions | None = None
     """
     Optionally set CORS options for Https functions.
     """

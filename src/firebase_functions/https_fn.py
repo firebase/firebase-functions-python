@@ -233,7 +233,7 @@ class HttpsError(Exception):
     determines the HTTP status code of the response.
     """
 
-    details: _typing.Optional[_typing.Any] = None
+    details: _typing.Any | None = None
     """
     Extra data to be converted to JSON and included in the error response.
     """
@@ -247,7 +247,7 @@ class HttpsError(Exception):
         self,
         code: FunctionsErrorCode,
         message: str,
-        details: _typing.Optional[_typing.Any] = None,
+        details: _typing.Any | None = None,
     ):
         self.code = code
         self.message = message
@@ -326,17 +326,17 @@ class CallableRequest(_typing.Generic[_core.T]):
     The raw request handled by the callable.
     """
 
-    app: _typing.Optional[AppCheckData] = None
+    app: AppCheckData | None = None
     """
     The result of decoding and verifying a Firebase AppCheck token.
     """
 
-    auth: _typing.Optional[AuthData] = None
+    auth: AuthData | None = None
     """"
     The result of decoding and verifying a Firebase Auth ID token.
     """
 
-    instance_id_token: _typing.Optional[str] = None
+    instance_id_token: str | None = None
     """
     An unverified token for a Firebase Instance ID.
     """
