@@ -318,16 +318,46 @@ class RuntimeOptions:
         return endpoint
 
 
+# TODO refactor Storage & Database options to use this base class.
 @_dataclasses.dataclass(frozen=True, kw_only=True)
-class PubSubOptions(RuntimeOptions):
+class EventHandlerOptions(RuntimeOptions):
     """
-    Options specific to Pub/Sub function types.
+    Options specific to any event handling Cloud function.
     Internal use only.
     """
 
-    retry: bool | None = None
+    retry: bool | Expression[bool] | _util.Sentinel | None = None
     """
     Whether failed executions should be delivered again.
+    """
+
+    def _endpoint(
+        self,
+        **kwargs,
+    ) -> _manifest.ManifestEndpoint:
+        assert kwargs["event_filters"] is not None
+        assert kwargs["event_type"] is not None
+
+        event_trigger = _manifest.EventTrigger(
+            eventType=kwargs["event_type"],
+            retry=self.retry if self.retry is not None else False,
+            eventFilters=kwargs["event_filters"],
+        )
+
+        kwargs_merged = {
+            **_dataclasses.asdict(super()._endpoint(**kwargs)),
+            "eventTrigger":
+                event_trigger,
+        }
+        return _manifest.ManifestEndpoint(
+            **_typing.cast(_typing.Dict, kwargs_merged))
+
+
+@_dataclasses.dataclass(frozen=True, kw_only=True)
+class PubSubOptions(EventHandlerOptions):
+    """
+    Options specific to Pub/Sub function types.
+    Internal use only.
     """
 
     topic: str
@@ -342,19 +372,11 @@ class PubSubOptions(RuntimeOptions):
         event_filters: _typing.Any = {
             "topic": self.topic,
         }
-        event_trigger = _manifest.EventTrigger(
-            eventType="google.cloud.pubsub.topic.v1.messagePublished",
-            retry=False,
-            eventFilters=event_filters,
-        )
-
-        kwargs_merged = {
-            **_dataclasses.asdict(super()._endpoint(**kwargs)),
-            "eventTrigger":
-                event_trigger,
-        }
-        return _manifest.ManifestEndpoint(
-            **_typing.cast(_typing.Dict, kwargs_merged))
+        event_type = "google.cloud.pubsub.topic.v1.messagePublished"
+        return _manifest.ManifestEndpoint(**_typing.cast(
+            _typing.Dict,
+            _dataclasses.asdict(super()._endpoint(
+                **kwargs, event_filters=event_filters, event_type=event_type))))
 
 
 @_dataclasses.dataclass(frozen=True, kw_only=True)
