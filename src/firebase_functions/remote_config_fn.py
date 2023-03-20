@@ -188,6 +188,25 @@ def _config_handler(func: _C1, raw: _ce.CloudEvent) -> None:
 
 @_util.copy_func_kwargs(EventHandlerOptions)
 def on_config_updated(**kwargs) -> _typing.Callable[[_C1], _C1]:
+    """
+    Event handler which triggers when data is updated in a Remote Config.
+
+    Example:
+
+    .. code-block:: python
+
+      @on_config_updated()
+      def example(event: CloudEvent[ConfigUpdateData]) -> None:
+          pass
+
+    :param \\*\\*kwargs: Pub/Sub options.
+    :type \\*\\*kwargs: as :exc:`firebase_functions.options.EventHandlerOptions`
+    :rtype: :exc:`typing.Callable`
+            \\[ \\[ :exc:`firebase_functions.core.CloudEvent` \\[
+            :exc:`firebase_functions.remote_config_fn.ConfigUpdateData` \\[
+            :exc:`typing.Any` \\] \\] \\], `None` \\]
+            A function that takes a CloudEvent and returns None.
+    """
     options = EventHandlerOptions(**kwargs)
 
     def on_config_updated_inner_decorator(func: _C1):
