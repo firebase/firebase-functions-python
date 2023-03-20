@@ -380,18 +380,17 @@ class TaskQueueOptions(RuntimeOptions):
     Options specific to Tasks function types.
     """
 
-    retry_config: _typing.Optional[RetryConfig] = None
+    retry_config: RetryConfig | None = None
     """
     How a task should be retried in the event of a non-2xx return.
     """
 
-    rate_limits: _typing.Optional[RateLimits] = None
+    rate_limits: RateLimits | None = None
     """
     How congestion control should be applied to the function.
     """
 
-    invoker: _typing.Optional[str | list[str] |
-                              _typing.Literal["private"]] = None
+    invoker: str | list[str] | _typing.Literal["private"] | None = None
     """
     Who can enqueue tasks for this function.
 
@@ -433,7 +432,7 @@ class TaskQueueOptions(RuntimeOptions):
         return [
             _manifest.ManifestRequiredApi(
                 api="cloudtasks.googleapis.com",
-                reason="Task Queues",
+                reason="Needed for task queue functions",
             )
         ]
 

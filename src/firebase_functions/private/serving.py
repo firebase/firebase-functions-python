@@ -71,6 +71,9 @@ def functions_as_yaml(functions: dict) -> str:
     for name, function in functions.items():
         endpoint = function.__firebase_endpoint__
         endpoints[name] = endpoint
+        if hasattr(function, "__required_apis"):
+            for api in function.__required_apis:
+                required_apis.append(api)
     manifest_stack = _manifest.ManifestStack(endpoints=endpoints,
                                              requiredAPIs=required_apis,
                                              params=list(

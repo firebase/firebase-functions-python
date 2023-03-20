@@ -21,7 +21,7 @@ from flask import Request, Response
 
 import firebase_functions.options as _options
 import firebase_functions.private.util as _util
-from firebase_functions.https import CallableRequest, _on_call_handler
+from firebase_functions.https_fn import CallableRequest, _on_call_handler
 
 _C = _typing.Callable[[CallableRequest[_typing.Any]], _typing.Any]
 
@@ -29,13 +29,23 @@ _C = _typing.Callable[[CallableRequest[_typing.Any]], _typing.Any]
 @_util.copy_func_kwargs(_options.TaskQueueOptions)
 def on_task_dispatched(**kwargs) -> _typing.Callable[[_C], Response]:
     """
-    A handler for tasks.
+    Creates a handler for tasks sent to a Google Cloud Tasks queue.
+    Requires a function that takes a CallableRequest.
 
-    Example::
+    Example:
+
+    .. code-block:: python
+
       @tasks.on_task_dispatched()
-      def on_task_dispatched_example(req: tasks.CallableRequest):
-        pass
+      def example(request: tasks.CallableRequest) -> Any:
+          return "Hello World"
 
+    :param \\*\\*kwargs: TaskQueueOptions options.
+    :type \\*\\*kwargs: as :exc:`firebase_functions.options.TaskQueueOptions`
+    :rtype: :exc:`typing.Callable`
+            \\[ \\[ :exc:`firebase_functions.https.CallableRequest` \\[
+            :exc:`object` \\] \\], :exc:`object` \\]
+            A function that takes a CallableRequest and returns an :exc:`object`.
     """
     options = _options.TaskQueueOptions(**kwargs)
 
@@ -43,7 +53,7 @@ def on_task_dispatched(**kwargs) -> _typing.Callable[[_C], Response]:
 
         @_functools.wraps(func)
         def on_task_dispatched_wrapped(request: Request) -> Response:
-            return _on_call_handler(func, request)
+            return _on_call_handler(func, request, enforce_app_check=False)
 
         _util.set_func_endpoint_attr(
             on_task_dispatched_wrapped,
