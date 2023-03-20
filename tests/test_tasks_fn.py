@@ -17,7 +17,7 @@ import unittest
 from unittest.mock import MagicMock
 from flask import Flask, Request
 from werkzeug.test import EnvironBuilder
-from firebase_functions.tasks import on_task_dispatched, CallableRequest
+from firebase_functions.tasks_fn import on_task_dispatched, CallableRequest
 
 
 class TestTasks(unittest.TestCase):
