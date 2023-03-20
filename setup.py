@@ -11,8 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-
 """
 Setup for Firebase Functions Python.
 """
@@ -20,7 +18,7 @@ from setuptools import find_packages, setup
 
 install_requires = [
     'flask>=2.1.2', 'functions-framework>=3.0.0', 'firebase-admin>=6.0.0',
-    'pyyaml>=6.0', 'typing-extensions>=4.3.0', 'cloudevents==1.9.0',
+    'pyyaml>=6.0', 'typing-extensions>=4.4.0', 'cloudevents==1.9.0',
     'flask-cors>=3.0.10', 'pyjwt[crypto]>=2.5.0'
 ]
 

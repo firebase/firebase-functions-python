@@ -30,10 +30,14 @@ R = _typing.TypeVar("R")
 
 
 class Sentinel:
-    """Internal class for USE_DEFAULT."""
+    """Internal class for RESET_VALUE."""
 
     def __init__(self, description):
         self.description = description
+
+    def __eq__(self, other):
+        return isinstance(other,
+                          Sentinel) and self.description == other.description
 
 
 def copy_func_kwargs(
@@ -114,7 +118,7 @@ def _on_call_valid_method(request: _Request) -> bool:
 
 def _on_call_valid_content_type(request: _Request) -> bool:
     """Validate content"""
-    content_type: _typing.Optional[str] = request.headers.get("Content-Type")
+    content_type: str | None = request.headers.get("Content-Type")
 
     if content_type is None:
         _logging.warning("Request is missing Content-Type.", content_type)
@@ -165,9 +169,9 @@ class _OnCallTokenVerification:
     """
 
     app: OnCallTokenState = OnCallTokenState.INVALID
-    app_token: _typing.Optional[dict] = None
+    app_token: dict[str, _typing.Any] | None = None
     auth: OnCallTokenState = OnCallTokenState.INVALID
-    auth_token: _typing.Optional[dict] = None
+    auth_token: dict | None = None
 
     def as_dict(self) -> dict:
         """Set dictionary"""
@@ -262,7 +266,7 @@ class FirebaseConfig():
     initialize a firebase App.
     """
 
-    storage_bucket: _typing.Optional[str]
+    storage_bucket: str | None
     """
     The name of the Google Cloud Storage bucket used for storing application data.
     This is the bucket name without any prefixes or additions (without "gs://").

@@ -21,9 +21,9 @@ import functools as _functools
 import typing as _typing
 import cloudevents.http as _ce
 
-import firebase_functions.options as _options
 import firebase_functions.private.util as _util
 from firebase_functions.core import CloudEvent
+from firebase_functions.options import StorageOptions
 
 _event_type_archived = "google.cloud.storage.object.v1.archived"
 _event_type_finalized = "google.cloud.storage.object.v1.finalized"
@@ -60,37 +60,37 @@ class StorageObjectData:
     The name of the bucket containing this object.
     """
 
-    cache_control: _typing.Optional[str]
+    cache_control: str | None
     """
     Cache-Control directive for the object data,
     matching [RFC 7234 §5.2]([https://tools.ietf.org/html/rfc7234#section-5.2"]).
     """
 
-    component_count: _typing.Optional[int]
+    component_count: int | None
     """
     Number of underlying components that make up this object.
     Components are accumulated by compose operations.
     """
 
-    content_disposition: _typing.Optional[str]
+    content_disposition: str | None
     """
     Content-Disposition of the object data,
     matching [RFC 6266]([https://tools.ietf.org/html/rfc6266"]).
     """
 
-    content_encoding: _typing.Optional[str]
+    content_encoding: str | None
     """
     Content-Encoding of the object data,
     matching [RFC 7231 §3.1.2.2](https://tools.ietf.org/html/rfc7231#section-3.1.2.2)
     """
 
-    content_language: _typing.Optional[str]
+    content_language: str | None
     """
     Content-Language of the object data,
     matching [RFC 7231 §3.1.3.2](https://tools.ietf.org/html/rfc7231#section-3.1.3.2)
     """
 
-    content_type: _typing.Optional[str]
+    content_type: str | None
     """
     Content-Type of the object data, matching
     [RFC 7231 §3.1.1.5](https://tools.ietf.org/html/rfc7231#section-3.1.1.5)
@@ -98,19 +98,19 @@ class StorageObjectData:
     `application/octet-stream`.
     """
 
-    crc32c: _typing.Optional[str]
+    crc32c: str | None
     """
     CRC32c checksum. For more information about using the CRC32c checksum, see
     [Hashes and ETags: Best Practices](https://cloud.google.com/storage/docs/hashes-etags#_JSONAPI).
     """
 
-    customer_encryption: _typing.Optional[CustomerEncryption]
+    customer_encryption: CustomerEncryption | None
     """
     Metadata of customer-supplied encryption key, if the object is encrypted by
     such a key.
     """
 
-    etag: _typing.Optional[str]
+    etag: str | None
     """
     HTTP 1.1 Entity tag for the object.
     """
@@ -126,22 +126,22 @@ class StorageObjectData:
     generation number.
     """
 
-    kind: _typing.Optional[str]
+    kind: str | None
     """
     The kind of item this is. For objects, this is always `storage#object`.
     """
 
-    md5_hash: _typing.Optional[str]
+    md5_hash: str | None
     """
     MD5 hash of the data; encoded using base64.
     """
 
-    media_link: _typing.Optional[str]
+    media_link: str | None
     """
     Media download link.
     """
 
-    metadata: _typing.Optional[dict[str, str]]
+    metadata: dict[str, str] | None
     """
     User-provided metadata, in key/value pairs.
     """
@@ -159,7 +159,7 @@ class StorageObjectData:
     The name of the object.
     """
 
-    self_link: _typing.Optional[str]
+    self_link: str | None
     """
     The link to this object.
     """
@@ -174,22 +174,22 @@ class StorageObjectData:
     Storage class of the object.
     """
 
-    time_created: _typing.Optional[str]
+    time_created: str | None
     """
     The creation time of the object.
     """
 
-    time_deleted: _typing.Optional[str]
+    time_deleted: str | None
     """
     The deletion time of the object.
     """
 
-    time_storage_class_updated: _typing.Optional[str]
+    time_storage_class_updated: str | None
     """
     The time at which the object's storage class was last changed.
     """
 
-    updated: _typing.Optional[str]
+    updated: str | None
     """
     The modification time of the object metadata.
     """
@@ -258,7 +258,7 @@ def _message_handler(
     func(event)
 
 
-@_util.copy_func_kwargs(_options.StorageOptions)
+@_util.copy_func_kwargs(StorageOptions)
 def on_object_archived(**kwargs) -> _typing.Callable[[_C1], _C1]:
     """
     Event handler sent only when a bucket has enabled object versioning.
@@ -266,13 +266,22 @@ def on_object_archived(**kwargs) -> _typing.Callable[[_C1], _C1]:
     archived version, either because it was archived or because it was
     overwritten by the upload of an object of the same name.
 
-    Example::
+    Example:
+
+    .. code-block:: python
+
       @on_object_archived()
       def example(event: CloudEvent[StorageObjectData]) -> None:
           pass
 
+    :param \\*\\*kwargs: Storage options.
+    :type \\*\\*kwargs: as :exc:`firebase_functions.options.StorageOptions`
+    :rtype: :exc:`typing.Callable`
+            \\[ \\[ :exc:`firebase_functions.core.CloudEvent` \\[
+            :exc:`firebase_functions.storage.StorageObjectData` \\] \\], `None` \\]
+            A function that takes a CloudEvent and returns None.
     """
-    options = _options.StorageOptions(**kwargs)
+    options = StorageOptions(**kwargs)
 
     def on_object_archived_inner_decorator(func: _C1):
 
@@ -290,7 +299,7 @@ def on_object_archived(**kwargs) -> _typing.Callable[[_C1], _C1]:
     return on_object_archived_inner_decorator
 
 
-@_util.copy_func_kwargs(_options.StorageOptions)
+@_util.copy_func_kwargs(StorageOptions)
 def on_object_finalized(**kwargs) -> _typing.Callable[[_C1], _C1]:
     """
     Event handler which fires every time a Google Cloud Storage object
@@ -299,13 +308,22 @@ def on_object_finalized(**kwargs) -> _typing.Callable[[_C1], _C1]:
     is successfully created in the bucket. This includes copying or rewriting
     an existing object. A failed upload does not trigger this event.
 
-    Example::
+    Example:
+
+    .. code-block:: python
+
       @on_object_finalized()
       def example(event: CloudEvent[StorageObjectData]) -> None:
           pass
 
+    :param \\*\\*kwargs: Storage options.
+    :type \\*\\*kwargs: as :exc:`firebase_functions.options.StorageOptions`
+    :rtype: :exc:`typing.Callable`
+            \\[ \\[ :exc:`firebase_functions.core.CloudEvent` \\[
+            :exc:`firebase_functions.storage.StorageObjectData` \\] \\], `None` \\]
+            A function that takes a CloudEvent and returns None.
     """
-    options = _options.StorageOptions(**kwargs)
+    options = StorageOptions(**kwargs)
 
     def on_object_finalized_inner_decorator(func: _C1):
 
@@ -323,7 +341,7 @@ def on_object_finalized(**kwargs) -> _typing.Callable[[_C1], _C1]:
     return on_object_finalized_inner_decorator
 
 
-@_util.copy_func_kwargs(_options.StorageOptions)
+@_util.copy_func_kwargs(StorageOptions)
 def on_object_deleted(**kwargs) -> _typing.Callable[[_C1], _C1]:
     """
     Event handler which fires every time a Google Cloud Storage deletion occurs.
@@ -333,13 +351,22 @@ def on_object_deleted(**kwargs) -> _typing.Callable[[_C1], _C1]:
     sent when an object is archived, even if archival occurs
     via the `storage.objects.delete` method.
 
-    Example::
+    Example:
+
+    .. code-block:: python
+
       @on_object_deleted()
       def example(event: CloudEvent[StorageObjectData]) -> None:
           pass
 
+    :param \\*\\*kwargs: Storage options.
+    :type \\*\\*kwargs: as :exc:`firebase_functions.options.StorageOptions`
+    :rtype: :exc:`typing.Callable`
+            \\[ \\[ :exc:`firebase_functions.core.CloudEvent` \\[
+            :exc:`firebase_functions.storage.StorageObjectData` \\] \\], `None` \\]
+            A function that takes a CloudEvent and returns None.
     """
-    options = _options.StorageOptions(**kwargs)
+    options = StorageOptions(**kwargs)
 
     def on_object_deleted_inner_decorator(func: _C1):
 
@@ -357,19 +384,28 @@ def on_object_deleted(**kwargs) -> _typing.Callable[[_C1], _C1]:
     return on_object_deleted_inner_decorator
 
 
-@_util.copy_func_kwargs(_options.StorageOptions)
+@_util.copy_func_kwargs(StorageOptions)
 def on_object_metadata_updated(**kwargs) -> _typing.Callable[[_C1], _C1]:
     """
     Event handler which fires every time the metadata of an existing object
     changes.
 
-    Example::
+    Example:
+
+    .. code-block:: python
+
       @on_object_metadata_updated()
       def example(event: CloudEvent[StorageObjectData]) -> None:
           pass
 
+    :param \\*\\*kwargs: Storage options.
+    :type \\*\\*kwargs: as :exc:`firebase_functions.options.StorageOptions`
+    :rtype: :exc:`typing.Callable`
+            \\[ \\[ :exc:`firebase_functions.core.CloudEvent` \\[
+            :exc:`firebase_functions.storage.StorageObjectData` \\] \\], `None` \\]
+            A function that takes a CloudEvent and returns None.
     """
-    options = _options.StorageOptions(**kwargs)
+    options = StorageOptions(**kwargs)
 
     def on_object_metadata_updated_inner_decorator(func: _C1):
 

@@ -11,8 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-
 """Module for Cloud Functions that listen to HTTPS endpoints.
 These can be raw web requests and Callable RPCs.
 """
@@ -23,12 +21,12 @@ import typing as _typing
 import typing_extensions as _typing_extensions
 import enum as _enum
 import json as _json
-import firebase_functions.options as _options
 import firebase_functions.private.util as _util
 import firebase_functions.core as _core
 from functions_framework import logging as _logging
 
-from flask import Request, Response, jsonify as _jsonify
+from firebase_functions.options import HttpsOptions, _GLOBAL_OPTIONS
+from flask import Request, Response, make_response as _make_response, jsonify as _jsonify
 from flask_cors import cross_origin as _cross_origin
 
 
@@ -235,7 +233,7 @@ class HttpsError(Exception):
     determines the HTTP status code of the response.
     """
 
-    details: _typing.Optional[_typing.Any] = None
+    details: _typing.Any | None = None
     """
     Extra data to be converted to JSON and included in the error response.
     """
@@ -249,7 +247,7 @@ class HttpsError(Exception):
         self,
         code: FunctionsErrorCode,
         message: str,
-        details: _typing.Optional[_typing.Any] = None,
+        details: _typing.Any | None = None,
     ):
         self.code = code
         self.message = message
@@ -328,17 +326,17 @@ class CallableRequest(_typing.Generic[_core.T]):
     The raw request handled by the callable.
     """
 
-    app: _typing.Optional[AppCheckData] = None
+    app: AppCheckData | None = None
     """
     The result of decoding and verifying a Firebase AppCheck token.
     """
 
-    auth: _typing.Optional[AuthData] = None
+    auth: AuthData | None = None
     """"
     The result of decoding and verifying a Firebase Auth ID token.
     """
 
-    instance_id_token: _typing.Optional[str] = None
+    instance_id_token: str | None = None
     """
     An unverified token for a Firebase Instance ID.
     """
@@ -348,7 +346,8 @@ _C1 = _typing.Callable[[Request], Response]
 _C2 = _typing.Callable[[CallableRequest[_typing.Any]], _typing.Any]
 
 
-def _on_call_handler(func: _C2, request: Request) -> Response:
+def _on_call_handler(func: _C2, request: Request,
+                     enforce_app_check: bool) -> Response:
     try:
         if not _util.valid_on_call_request(request):
             _logging.error("Invalid request, unable to process.")
@@ -364,23 +363,22 @@ def _on_call_handler(func: _C2, request: Request) -> Response:
             raise HttpsError(FunctionsErrorCode.UNAUTHENTICATED,
                              "Unauthenticated")
 
-        # TODO support for `allowInvalidAppCheckToken`
-        if token_status.app == _util.OnCallTokenState.INVALID:
+        if enforce_app_check and token_status.app in (
+                _util.OnCallTokenState.MISSING, _util.OnCallTokenState.INVALID):
             raise HttpsError(FunctionsErrorCode.UNAUTHENTICATED,
                              "Unauthenticated")
+        if token_status.app == _util.OnCallTokenState.VALID and token_status.app_token is not None:
+            context = _dataclasses.replace(
+                context,
+                app=AppCheckData(token_status.app_token["sub"],
+                                 token_status.app_token),
+            )
 
         if token_status.auth_token is not None:
             context = _dataclasses.replace(
                 context,
                 auth=AuthData(token_status.auth_token["uid"],
                               token_status.auth_token),
-            )
-
-        if token_status.app_token is not None:
-            context = _dataclasses.replace(
-                context,
-                app=AppCheckData(token_status.app_token["sub"],
-                                 token_status.app_token),
             )
 
         instance_id = request.headers.get("Firebase-Instance-ID-Token")
@@ -395,7 +393,7 @@ def _on_call_handler(func: _C2, request: Request) -> Response:
                     "Firebase-Instance-ID-Token"),
             )
         result = func(context)
-        return _jsonify(data=result, status=200)
+        return _jsonify(result=result)
     # Disable broad exceptions lint since we want to handle all exceptions here
     # and wrap as an HttpsError.
     # pylint: disable=broad-except
@@ -404,10 +402,10 @@ def _on_call_handler(func: _C2, request: Request) -> Response:
             _logging.error("Unhandled error", err)
             err = HttpsError(FunctionsErrorCode.INTERNAL, "INTERNAL")
         status = err._http_error_code.status
-        return _jsonify(error=err._as_dict(), status=status)
+        return _make_response(_jsonify(error=err._as_dict()), status)
 
 
-@_util.copy_func_kwargs(_options.HttpsOptions)
+@_util.copy_func_kwargs(HttpsOptions)
 def on_request(**kwargs) -> _typing.Callable[[_C1], _C1]:
     """
     Handler which handles HTTPS requests.
@@ -421,8 +419,12 @@ def on_request(**kwargs) -> _typing.Callable[[_C1], _C1]:
       def example(request: Request) -> Response:
           pass
 
+    :param \\*\\*kwargs: Https options.
+    :type \\*\\*kwargs: as :exc:`firebase_functions.options.HttpsOptions`
+    :rtype: :exc:`typing.Callable` \\[ \\[ :exc:`flask.Request` \\], :exc:`flask.Response` \\]
+            A function that takes a :exc:`flask.Request` and returns a :exc:`flask.Response`.
     """
-    options = _options.HttpsOptions(**kwargs)
+    options = HttpsOptions(**kwargs)
 
     def on_request_inner_decorator(func: _C1):
 
@@ -444,7 +446,7 @@ def on_request(**kwargs) -> _typing.Callable[[_C1], _C1]:
     return on_request_inner_decorator
 
 
-@_util.copy_func_kwargs(_options.HttpsOptions)
+@_util.copy_func_kwargs(HttpsOptions)
 def on_call(**kwargs) -> _typing.Callable[[_C2], _C2]:
     """
     Declares a callable method for clients to call using a Firebase SDK.
@@ -456,15 +458,30 @@ def on_call(**kwargs) -> _typing.Callable[[_C2], _C2]:
 
       @on_call()
       def example(request: CallableRequest) -> Any:
-          pass
+          return "Hello World"
 
+    :param \\*\\*kwargs: Https options.
+    :type \\*\\*kwargs: as :exc:`firebase_functions.options.HttpsOptions`
+    :rtype: :exc:`typing.Callable`
+            \\[ \\[ :exc:`firebase_functions.https.CallableRequest` \\[
+            :exc:`object` \\] \\], :exc:`object` \\]
+            A function that takes a CallableRequest and returns an :exc:`object`.
     """
-    options = _options.HttpsOptions(**kwargs)
+    options = HttpsOptions(**kwargs)
 
     def on_call_inner_decorator(func: _C2):
         origins: _typing.Any = "*"
         if options.cors is not None and options.cors.cors_origins is not None:
             origins = options.cors.cors_origins
+
+        # Default to False.
+        enforce_app_check = False
+        # If the global option is set, use that.
+        if options.enforce_app_check is None and _GLOBAL_OPTIONS.enforce_app_check is not None:
+            enforce_app_check = _GLOBAL_OPTIONS.enforce_app_check
+        # If the global option is not set, use the local option.
+        elif options.enforce_app_check is not None:
+            enforce_app_check = options.enforce_app_check
 
         @_cross_origin(
             methods="POST",
@@ -472,7 +489,11 @@ def on_call(**kwargs) -> _typing.Callable[[_C2], _C2]:
         )
         @_functools.wraps(func)
         def on_call_wrapped(request: Request):
-            return _on_call_handler(func, request)
+            return _on_call_handler(
+                func,
+                request,
+                enforce_app_check,
+            )
 
         _util.set_func_endpoint_attr(
             on_call_wrapped,

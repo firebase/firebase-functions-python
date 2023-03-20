@@ -1,7 +1,7 @@
 """
 Example Firebase Functions written in Python
 """
-from firebase_functions import db, options, https, params, pubsub
+from firebase_functions import https_fn, options, params, pubsub_fn
 from firebase_admin import initialize_app
 
 initialize_app()
@@ -13,49 +13,26 @@ options.set_global_options(
 )
 
 
-@db.on_value_written(
-    reference="hello",
-    region=options.SupportedRegion.EUROPE_WEST1,
-)
-def on_write_example(event: db.DatabaseEvent[db.Change[object]]) -> None:
-    print("Hello from db write event:", event)
-
-
-@db.on_value_created(reference="hello/{any_thing_here}/bar")
-def on_created_example(event: db.DatabaseEvent[object]) -> None:
-    print("Hello from db create event:", event)
-
-
-@db.on_value_deleted(reference="hello/{any_thing_here}/bar")
-def on_deleted_example(event: db.DatabaseEvent[object]) -> None:
-    print("Hello from db delete event:", event)
-
-
-@db.on_value_updated(reference="hello")
-def on_updated_example(event: db.DatabaseEvent[db.Change[object]]) -> None:
-    print("Hello from db updated event:", event)
-
-
-@https.on_request()
-def on_request_example(req: https.Request) -> https.Response:
+@https_fn.on_request()
+def onrequestexample(req: https_fn.Request) -> https_fn.Response:
     print("on request function data:", req.data)
-    return https.Response("Hello from https on request function example")
+    return https_fn.Response("Hello from https on request function example")
 
 
-@https.on_call()
-def on_call_example(req: https.CallableRequest):
+@https_fn.on_call()
+def oncallexample(req: https_fn.CallableRequest):
     print("on call function data:", req)
     if req.data == "error_test":
-        raise https.HttpsError(
-            https.FunctionsErrorCode.INVALID_ARGUMENT,
+        raise https_fn.HttpsError(
+            https_fn.FunctionsErrorCode.INVALID_ARGUMENT,
             "This is a test",
             "This is some details of the test",
         )
     return "Hello from https on call function example"
 
 
-@pubsub.on_message_published(
+@pubsub_fn.on_message_published(
     topic="hello",)
-def on_message_published_example(
-        event: pubsub.CloudEvent[pubsub.MessagePublishedData]) -> None:
+def onmessagepublishedexample(
+        event: pubsub_fn.CloudEvent[pubsub_fn.MessagePublishedData]) -> None:
     print("Hello from pubsub event:", event)

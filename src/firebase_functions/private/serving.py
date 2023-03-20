@@ -27,7 +27,7 @@ from flask import Flask
 from flask import Response
 
 from firebase_functions.private import manifest as _manifest
-from firebase_functions import params as _params
+from firebase_functions import params as _params, options as _options
 from firebase_functions.private import util as _util
 
 
@@ -37,7 +37,7 @@ def get_functions():
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
     else:
-        raise Exception(
+        raise FileNotFoundError(
             "Firebase Functions for Python could not find the main.py file in your project."
         )
     functions = inspect.getmembers(module, inspect.isfunction)
@@ -70,13 +70,7 @@ def functions_as_yaml(functions: dict) -> str:
     required_apis: list[_manifest.ManifestRequiredApi] = []
     for name, function in functions.items():
         endpoint = function.__firebase_endpoint__
-        # v2 function name(s) can only contain lower case letters, numbers, hyphens
-        endpoints[name.replace("_", "-").lower()] = endpoint
-        if hasattr(function, "__required_apis"):
-            if isinstance(function.__required_apis, list):
-                required_apis.extend(function.__required_apis)
-            else:
-                required_apis.append(function.__required_apis)
+        endpoints[name] = endpoint
     manifest_stack = _manifest.ManifestStack(endpoints=endpoints,
                                              requiredAPIs=required_apis,
                                              params=list(
@@ -84,9 +78,10 @@ def functions_as_yaml(functions: dict) -> str:
     manifest_spec = _manifest.manifest_to_spec_dict(manifest_stack)
     manifest_spec_with_sentinels = to_spec(manifest_spec)
 
-    def represent_sentinel(self, _):
-        # TODO distinguishing between RESET_VALUE or DEFAULT_VALUE
-        # TODO can be done here
+    def represent_sentinel(self, value):
+        if value == _options.RESET_VALUE:
+            return self.represent_scalar("tag:yaml.org,2002:null", "null")
+        # Other sentinel types in the future can be added here.
         return self.represent_scalar("tag:yaml.org,2002:null", "null")
 
     yaml.add_representer(_util.Sentinel, represent_sentinel)
