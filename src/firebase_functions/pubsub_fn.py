@@ -61,7 +61,7 @@ class Message(_typing.Generic[T]):
     """
 
     @property
-    def json(self) -> _typing.Optional[T]:
+    def json(self) -> T | None:
         try:
             if self.data is not None:
                 return _json.loads(_base64.b64decode(self.data).decode("utf-8"))

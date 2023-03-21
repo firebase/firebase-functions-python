@@ -12,3 +12,12 @@ pythonpath = [
 
     [tool.coverage.report]
     skip_empty = true
+[tool.yapf]
+based_on_style = "google"
+indent_width = 4
+[tool.yapfignore]
+ignore_patterns = [
+  "venv",
+  "build",
+  "dist",
+]

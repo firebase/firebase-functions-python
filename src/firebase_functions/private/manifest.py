@@ -94,29 +94,28 @@ class VpcSettings(_typing.TypedDict):
 class ManifestEndpoint:
     """A definition of a function as appears in the Manifest."""
 
-    entryPoint: _typing.Optional[str] = None
-    region: _typing.Optional[list[str]] = _dataclasses.field(
-        default_factory=list[str])
-    platform: _typing.Optional[str] = "gcfv2"
+    entryPoint: str | None = None
+    region: list[str] | None = _dataclasses.field(default_factory=list[str])
+    platform: str | None = "gcfv2"
     availableMemoryMb: int | _params.Expression[
         int] | _util.Sentinel | None = None
     maxInstances: int | _params.Expression[int] | _util.Sentinel | None = None
     minInstances: int | _params.Expression[int] | _util.Sentinel | None = None
     concurrency: int | _params.Expression[int] | _util.Sentinel | None = None
-    serviceAccountEmail: _typing.Optional[str | _util.Sentinel] = None
+    serviceAccountEmail: str | _util.Sentinel | None = None
     timeoutSeconds: int | _params.Expression[int] | _util.Sentinel | None = None
     cpu: int | str | _util.Sentinel | None = None
-    vpc: _typing.Optional[VpcSettings] = None
-    labels: _typing.Optional[dict[str, str]] = None
-    ingressSettings: _typing.Optional[str] | _util.Sentinel = None
-    secretEnvironmentVariables: _typing.Optional[
-        list[SecretEnvironmentVariable] | _util.Sentinel] = _dataclasses.field(
+    vpc: VpcSettings | None = None
+    labels: dict[str, str] | None = None
+    ingressSettings: str | None | _util.Sentinel = None
+    secretEnvironmentVariables: list[
+        SecretEnvironmentVariable] | _util.Sentinel | None = _dataclasses.field(
             default_factory=list[SecretEnvironmentVariable])
-    httpsTrigger: _typing.Optional[HttpsTrigger] = None
-    callableTrigger: _typing.Optional[CallableTrigger] = None
-    eventTrigger: _typing.Optional[EventTrigger] = None
-    scheduleTrigger: _typing.Optional[ScheduleTrigger] = None
-    blockingTrigger: _typing.Optional[BlockingTrigger] = None
+    httpsTrigger: HttpsTrigger | None = None
+    callableTrigger: CallableTrigger | None = None
+    eventTrigger: EventTrigger | None = None
+    scheduleTrigger: ScheduleTrigger | None = None
+    blockingTrigger: BlockingTrigger | None = None
 
 
 class ManifestRequiredApi(_typing.TypedDict):
