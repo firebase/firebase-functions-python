@@ -459,6 +459,60 @@ class DatabaseOptions(RuntimeOptions):
 
 
 @_dataclasses.dataclass(frozen=True, kw_only=True)
+class FirestoreOptions(RuntimeOptions):
+    """
+    Options specific to Firestore function types.
+    Internal use only.
+    """
+
+    document: str
+    """
+    The document path to watch for Firestore events.
+    This value can either be a document path or a pattern.
+    Examples: 'foo/bar', 'foo/{bar}'
+    """
+
+    database: str | None = None
+    """
+    The Firestore database.
+    """
+
+    namespace: str | None = None
+    """
+    The Firestore namespace.
+    """
+
+    def _endpoint(
+        self,
+        **kwargs,
+    ) -> _manifest.ManifestEndpoint:
+        assert kwargs["event_type"] is not None
+        assert kwargs["document_pattern"] is not None
+        document_pattern: _path_pattern.PathPattern = kwargs["document_pattern"]
+        event_filter_document = document_pattern.value
+        event_filters: _typing.Any = {}
+        event_filters_path_patterns: _typing.Any = {}
+        if document_pattern.has_wildcards:
+            event_filters_path_patterns["document"] = event_filter_document
+        else:
+            event_filters["document"] = event_filter_document
+        event_trigger = _manifest.EventTrigger(
+            eventType=kwargs["event_type"],
+            retry=False,
+            eventFilters=event_filters,
+            eventFilterPathPatterns=event_filters_path_patterns,
+        )
+
+        kwargs_merged = {
+            **_dataclasses.asdict(super()._endpoint(**kwargs)),
+            "eventTrigger":
+                event_trigger,
+        }
+        return _manifest.ManifestEndpoint(
+            **_typing.cast(_typing.Dict, kwargs_merged))
+
+
+@_dataclasses.dataclass(frozen=True, kw_only=True)
 class HttpsOptions(RuntimeOptions):
     """
     Options specific to Http function types.
