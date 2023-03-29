@@ -65,14 +65,38 @@ class EventTrigger(_typing.TypedDict):
 
 
 class RetryConfig(_typing.TypedDict):
-    retryCount: _typing_extensions.NotRequired[int | _params.Expression[int]]
-    maxRetrySeconds: _typing_extensions.NotRequired[str |
-                                                    _params.Expression[str]]
-    minBackoffSeconds: _typing_extensions.NotRequired[str |
-                                                      _params.Expression[str]]
-    maxBackoffSeconds: _typing_extensions.NotRequired[str |
-                                                      _params.Expression[str]]
-    maxDoublings: _typing_extensions.NotRequired[int | _params.Expression[int]]
+    """
+    Retry configuration for a endpoint.
+    """
+    maxAttempts: _typing_extensions.NotRequired[int | _params.Expression[int] |
+                                                _util.Sentinel | None]
+    maxRetrySeconds: _typing_extensions.NotRequired[int |
+                                                    _params.Expression[int] |
+                                                    _util.Sentinel | None]
+    maxBackoffSeconds: _typing_extensions.NotRequired[int |
+                                                      _params.Expression[int] |
+                                                      _util.Sentinel | None]
+    maxDoublings: _typing_extensions.NotRequired[int | _params.Expression[int] |
+                                                 _util.Sentinel | None]
+    minBackoffSeconds: _typing_extensions.NotRequired[int |
+                                                      _params.Expression[int] |
+                                                      _util.Sentinel | None]
+
+
+class RateLimits(_typing.TypedDict):
+    maxConcurrentDispatches: int | _params.Expression[
+        int] | _util.Sentinel | None
+
+    maxDispatchesPerSecond: int | _params.Expression[int] | _util.Sentinel | None
+
+
+class TaskQueueTrigger(_typing.TypedDict):
+    """
+    Trigger definitions for RPCs servers using the HTTP protocol defined at
+    https://firebase.google.com/docs/functions/callable-reference
+    """
+    retryConfig: RetryConfig | None
+    rateLimits: RateLimits | None
 
 
 class ScheduleTrigger(_typing.TypedDict):
@@ -116,6 +140,7 @@ class ManifestEndpoint:
     eventTrigger: EventTrigger | None = None
     scheduleTrigger: ScheduleTrigger | None = None
     blockingTrigger: BlockingTrigger | None = None
+    taskQueueTrigger: TaskQueueTrigger | None = None
 
 
 class ManifestRequiredApi(_typing.TypedDict):

@@ -1,0 +1,11 @@
+{
+  "functions": [
+    {
+      "source": "functions",
+      "codebase": "default",
+      "ignore": [
+        "venv"
+      ]
+    }
+  ]
+}
