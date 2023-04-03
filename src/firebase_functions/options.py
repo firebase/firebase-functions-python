@@ -490,7 +490,12 @@ class FirestoreOptions(RuntimeOptions):
         assert kwargs["document_pattern"] is not None
         document_pattern: _path_pattern.PathPattern = kwargs["document_pattern"]
         event_filter_document = document_pattern.value
-        event_filters: _typing.Any = {}
+        event_filters: _typing.Any = {
+            "database":
+                self.database if self.database is not None else "(default)",
+            "namespace":
+                self.namespace if self.namespace is not None else "(default)",
+        }
         event_filters_path_patterns: _typing.Any = {}
         if document_pattern.has_wildcards:
             event_filters_path_patterns["document"] = event_filter_document
