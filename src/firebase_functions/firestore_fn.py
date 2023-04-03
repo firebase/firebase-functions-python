@@ -87,19 +87,18 @@ def _firestore_endpoint_handler(
     event_attributes = raw._get_attributes()
     event_data: _typing.Any = raw.get_data()
     firestore_event_data: _firestore.DocumentEventData
-
-    # TODO also check event_attributes['datacontenttype'] includes
-    # 'application/json' || 'application/protobuf'
-    if isinstance(event_data, dict):
-        # TODO event_data may need to be a JSON string
+    content_type: str = event_attributes["datacontenttype"]
+    if "application/json" in content_type or isinstance(event_data, dict):
         firestore_event_data = _firestore.DocumentEventData.from_json(
             event_data)
-    elif isinstance(event_data, bytes):
+    elif "application/protobuf" in content_type or isinstance(
+            event_data, bytes):
         firestore_event_data = _firestore.DocumentEventData.deserialize(
             event_data)
     else:
-        # Throw an error if the data is not a string or bytes.
-        raise TypeError("Firestore CloudEvent data must be a string or bytes")
+        actual_type = type(event_data)
+        raise TypeError(f"Firestore: Cannot parse event payload of data type "
+                        f"'{actual_type}' and content type '{content_type}'.")
 
     if event_type == _event_type_deleted:
         firestore_event_data = firestore_event_data.value
