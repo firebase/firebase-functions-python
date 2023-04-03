@@ -9,7 +9,7 @@ initialize_app()
 options.set_global_options(region=options.SupportedRegion.EUROPE_WEST1)
 
 
-@firestore_fn.on_document_written(document="hello/world")
+@firestore_fn.on_document_written(document="hello/{world}")
 def onfirestoredocumentwritten(
         event: firestore_fn.Event[firestore_fn.Change]) -> None:
     print("Hello from Firestore document write event:", event)
