@@ -171,7 +171,7 @@ def on_message_published(**kwargs) -> _typing.Callable[[_C1], _C1]:
     :type \\*\\*kwargs: as :exc:`firebase_functions.options.PubSubOptions`
     :rtype: :exc:`typing.Callable`
             \\[ \\[ :exc:`firebase_functions.core.CloudEvent` \\[
-            :exc:`firebase_functions.pubsub.MessagePublishedData` \\[
+            :exc:`firebase_functions.pubsub_fn.MessagePublishedData` \\[
             :exc:`typing.Any` \\] \\] \\], `None` \\]
             A function that takes a CloudEvent and returns None.
     """
