@@ -65,14 +65,43 @@ def to_spec(data: dict) -> dict:
     return without_nones
 
 
+def merge_required_apis(
+    required_apis: list[_manifest.ManifestRequiredApi]
+) -> list[_manifest.ManifestRequiredApi]:
+    api_to_reasons: dict[str, list[str]] = {}
+    for api_reason in required_apis:
+        api = api_reason["api"]
+        reason = api_reason["reason"]
+        if api not in api_to_reasons:
+            api_to_reasons[api] = []
+
+        if reason not in api_to_reasons[api]:
+            # Append unique reasons only
+            api_to_reasons[api].append(reason)
+
+    merged: list[_manifest.ManifestRequiredApi] = []
+    for api, reasons in api_to_reasons.items():
+        merged.append({"api": api, "reason": " ".join(reasons)})
+
+    return merged
+
+
 def functions_as_yaml(functions: dict) -> str:
     endpoints: dict[str, _manifest.ManifestEndpoint] = {}
+    required_apis: list[_manifest.ManifestRequiredApi] = []
     for name, function in functions.items():
         endpoint = function.__firebase_endpoint__
         endpoints[name] = endpoint
-    manifest_stack = _manifest.ManifestStack(endpoints=endpoints,
-                                             params=list(
-                                                 _params._params.values()))
+        if hasattr(function, "__required_apis"):
+            for api in function.__required_apis:
+                required_apis.append(api)
+
+    required_apis = merge_required_apis(required_apis)
+    manifest_stack = _manifest.ManifestStack(
+        endpoints=endpoints,
+        requiredAPIs=required_apis,
+        params=list(_params._params.values()),
+    )
     manifest_spec = _manifest.manifest_to_spec_dict(manifest_stack)
     manifest_spec_with_sentinels = to_spec(manifest_spec)
 
