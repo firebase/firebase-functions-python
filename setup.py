@@ -26,7 +26,8 @@ install_requires = [
 dev_requires = [
     'pytest>=7.1.2', 'setuptools>=63.4.2', 'pylint>=2.16.1',
     'pytest-cov>=3.0.0', 'mypy>=1.0.0', 'sphinx>=6.1.3',
-    'sphinxcontrib-napoleon>=0.7', 'yapf>=0.32.0', 'toml>=0.10.2'
+    'sphinxcontrib-napoleon>=0.7', 'yapf>=0.32.0', 'toml>=0.10.2',
+    'google-cloud-tasks>=2.13.1'
 ]
 
 setup(
