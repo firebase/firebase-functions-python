@@ -25,8 +25,7 @@ jobs:
           python3.10 -m venv venv
           source venv/bin/activate 
           pip3 install --upgrade pip 
-          python3.10 -m pip install -r requirements.txt
-          python3.10 setup.py install
+          python3.10 -m pip install -e ".[dev]"
       - name: Test with pytest & coverage
         run: |
           source venv/bin/activate
@@ -48,8 +47,7 @@ jobs:
           python3.10 -m venv venv
           source venv/bin/activate 
           pip3 install --upgrade pip 
-          python3.10 -m pip install -r requirements.txt
-          python3.10 setup.py install
+          python3.10 -m pip install -e ".[dev]"
       - name: Lint with pylint
         run: |
           source venv/bin/activate
@@ -72,8 +70,7 @@ jobs:
           python3.10 -m venv venv
           source venv/bin/activate 
           pip3 install --upgrade pip 
-          python3.10 -m pip install -r requirements.txt
-          python3.10 setup.py install
+          python3.10 -m pip install -e ".[dev]"
       - name: Generate Reference Docs
         run: |
           source venv/bin/activate
@@ -98,8 +95,7 @@ jobs:
           python3.10 -m venv venv
           source venv/bin/activate 
           pip3 install --upgrade pip 
-          python3.10 -m pip install -r requirements.txt
-          python3.10 setup.py install
+          python3.10 -m pip install -e ".[dev]"
       - name: Check Formatting
         run: |
           source venv/bin/activate
