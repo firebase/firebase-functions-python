@@ -99,6 +99,62 @@ class SupportedRegion(str, _enum.Enum):
     US_WEST1 = "us-west1"
 
 
+@_dataclasses.dataclass(frozen=True)
+class RateLimits():
+    """
+    How congestion control should be applied to the function.
+    """
+    max_concurrent_dispatches: int | Expression[
+        int] | _util.Sentinel | None = None
+    """
+    The maximum number of requests that can be outstanding at a time.
+    If left unspecified, will default to 1000.
+    """
+
+    max_dispatches_per_second: int | Expression[
+        int] | _util.Sentinel | None = None
+    """
+    The maximum number of requests that can be invoked per second.
+    If left unspecified, will default to 500.
+    """
+
+
+@_dataclasses.dataclass(frozen=True)
+class RetryConfig():
+    """
+    How a task should be retried in the event of a non-2xx return.
+    """
+
+    max_attempts: int | Expression[int] | _util.Sentinel | None = None
+    """
+    The maximum number of times a request should be attempted.
+    If left unspecified, will default to 3.
+    """
+
+    max_retry_seconds: int | Expression[int] | _util.Sentinel | None = None
+    """
+    The maximum amount of time for retrying failed task.
+    If left unspecified will retry indefinitely.
+    """
+
+    max_backoff_seconds: int | Expression[int] | _util.Sentinel | None = None
+    """
+    The maximum amount of time to wait between attempts.
+    If left unspecified will default to 1hr.
+    """
+
+    max_doublings: int | Expression[int] | _util.Sentinel | None = None
+    """
+    The maximum number of times to double the backoff between
+    retries. If left unspecified will default to 16.
+    """
+
+    min_backoff_seconds: int | Expression[int] | _util.Sentinel | None = None
+    """
+    The minimum time to wait between attempts.
+    """
+
+
 @_dataclasses.dataclass(frozen=True, kw_only=True)
 class RuntimeOptions:
     """
@@ -126,7 +182,7 @@ class RuntimeOptions:
     The minimum timeout for a gen 2 function is 1s. The maximum timeout for a
     function depends on the type of function: Event handling functions have a
     maximum timeout of 540s (9 minutes). HTTPS and callable functions have a
-    maximum timeout of 36,00s (1 hour). Task queue functions have a maximum
+    maximum timeout of 3,600s (1 hour). Task queue functions have a maximum
     timeout of 1,800s (30 minutes)
     """
 
@@ -316,6 +372,69 @@ class RuntimeOptions:
         )
 
         return endpoint
+
+
+@_dataclasses.dataclass(frozen=True, kw_only=True)
+class TaskQueueOptions(RuntimeOptions):
+    """
+    Options specific to Tasks function types.
+    """
+
+    retry_config: RetryConfig | None = None
+    """
+    How a task should be retried in the event of a non-2xx return.
+    """
+
+    rate_limits: RateLimits | None = None
+    """
+    How congestion control should be applied to the function.
+    """
+
+    invoker: str | list[str] | _typing.Literal["private"] | None = None
+    """
+    Who can enqueue tasks for this function.
+
+    Note:
+        If left unspecified, only service accounts which have
+        `roles/cloudtasks.enqueuer` and `roles/cloudfunctions.invoker`
+        will have permissions.
+    """
+
+    def _endpoint(
+        self,
+        **kwargs,
+    ) -> _manifest.ManifestEndpoint:
+        rate_limits: _manifest.RateLimits | None = _manifest.RateLimits(
+            maxConcurrentDispatches=self.rate_limits.max_concurrent_dispatches,
+            maxDispatchesPerSecond=self.rate_limits.max_dispatches_per_second,
+        ) if self.rate_limits is not None else None
+
+        retry_config: _manifest.RetryConfig | None = _manifest.RetryConfig(
+            maxAttempts=self.retry_config.max_attempts,
+            maxRetrySeconds=self.retry_config.max_retry_seconds,
+            maxBackoffSeconds=self.retry_config.max_backoff_seconds,
+            maxDoublings=self.retry_config.max_doublings,
+            minBackoffSeconds=self.retry_config.min_backoff_seconds,
+        ) if self.retry_config is not None else None
+
+        kwargs_merged = {
+            **_dataclasses.asdict(super()._endpoint(**kwargs)),
+            "taskQueueTrigger":
+                _manifest.TaskQueueTrigger(
+                    rateLimits=rate_limits,
+                    retryConfig=retry_config,
+                ),
+        }
+        return _manifest.ManifestEndpoint(
+            **_typing.cast(_typing.Dict, kwargs_merged))
+
+    def _required_apis(self) -> list[_manifest.ManifestRequiredApi]:
+        return [
+            _manifest.ManifestRequiredApi(
+                api="cloudtasks.googleapis.com",
+                reason="Needed for task queue functions",
+            )
+        ]
 
 
 # TODO refactor Storage & Database options to use this base class.

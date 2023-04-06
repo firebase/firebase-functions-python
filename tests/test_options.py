@@ -16,7 +16,7 @@ Options unit tests.
 """
 from firebase_functions import options, https_fn
 from firebase_functions import params
-from firebase_functions.private.serving import functions_as_yaml
+from firebase_functions.private.serving import functions_as_yaml, merge_required_apis
 # pylint: disable=protected-access
 
 
@@ -106,3 +106,114 @@ def test_options_preserve_external_changes():
     yaml = functions_as_yaml(firebase_functions2)
     assert "    availableMemoryMb: null\n" not in yaml, "availableMemoryMb found in yaml"
     assert "    serviceAccountEmail: null\n" not in yaml, "serviceAccountEmail found in yaml"
+
+
+def test_merge_apis_empty_input():
+    """
+    This test checks the behavior of the merge_required_apis function
+    when the input is an empty list. The desired outcome for this test
+    is to receive an empty list as output. This test ensures that the
+    function can handle the situation where there are no input APIs to merge.
+    """
+    required_apis = []
+    expected_output = []
+    merged_apis = merge_required_apis(required_apis)
+
+    assert merged_apis == expected_output, f"Expected {expected_output}, but got {merged_apis}"
+
+
+def test_merge_apis_no_duplicate_apis():
+    """
+    This test verifies that the merge_required_apis function functions
+    correctly when the input is a list of unique APIs with no duplicates.
+    The expected result is a list containing the same unique APIs in the
+    input list. This test confirms that the function processes and returns
+    APIs without modification when there is no duplication.
+    """
+    required_apis = [
+        {
+            "api": "API1",
+            "reason": "Reason 1"
+        },
+        {
+            "api": "API2",
+            "reason": "Reason 2"
+        },
+        {
+            "api": "API3",
+            "reason": "Reason 3"
+        },
+    ]
+
+    expected_output = [
+        {
+            "api": "API1",
+            "reason": "Reason 1"
+        },
+        {
+            "api": "API2",
+            "reason": "Reason 2"
+        },
+        {
+            "api": "API3",
+            "reason": "Reason 3"
+        },
+    ]
+
+    merged_apis = merge_required_apis(required_apis)
+
+    assert merged_apis == expected_output, f"Expected {expected_output}, but got {merged_apis}"
+
+
+def test_merge_apis_duplicate_apis():
+    """
+    This test evaluates the merge_required_apis function when the
+    input list contains duplicate APIs with different reasons.
+    The desired outcome for this test is a list where the duplicate
+    APIs are merged properly and reasons are combined. 
+    This test ensures that the function correctly merges the duplicate
+    APIs and combines the reasons associated with them.
+    """
+    required_apis = [
+        {
+            "api": "API1",
+            "reason": "Reason 1"
+        },
+        {
+            "api": "API2",
+            "reason": "Reason 2"
+        },
+        {
+            "api": "API1",
+            "reason": "Reason 3"
+        },
+        {
+            "api": "API2",
+            "reason": "Reason 4"
+        },
+    ]
+
+    expected_output = [
+        {
+            "api": "API1",
+            "reason": "Reason 1 Reason 3"
+        },
+        {
+            "api": "API2",
+            "reason": "Reason 2 Reason 4"
+        },
+    ]
+
+    merged_apis = merge_required_apis(required_apis)
+
+    assert len(merged_apis) == len(
+        expected_output
+    ), f"Expected a list of length {len(expected_output)}, but got {len(merged_apis)}"
+
+    for expected_item in expected_output:
+        assert (expected_item in merged_apis
+               ), f"Expected item {expected_item} missing from the merged list"
+
+    for actual_item in merged_apis:
+        assert (actual_item in expected_output
+               ), f"Unexpected item {actual_item} found in the merged list"
