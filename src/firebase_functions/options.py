@@ -20,11 +20,15 @@ import enum as _enum
 import dataclasses as _dataclasses
 import re as _re
 import typing as _typing
+from zoneinfo import ZoneInfo as _ZoneInfo
 
 import firebase_functions.private.manifest as _manifest
 import firebase_functions.private.util as _util
 import firebase_functions.private.path_pattern as _path_pattern
 from firebase_functions.params import SecretParam, Expression
+
+Timezone = _ZoneInfo
+"""An alias of the zoneinfo.ZoneInfo for convenience."""
 
 RESET_VALUE = _util.Sentinel(
     "Special configuration value to reset configuration to platform default.")
@@ -409,7 +413,7 @@ class TaskQueueOptions(RuntimeOptions):
             maxDispatchesPerSecond=self.rate_limits.max_dispatches_per_second,
         ) if self.rate_limits is not None else None
 
-        retry_config: _manifest.RetryConfig | None = _manifest.RetryConfig(
+        retry_config: _manifest.RetryConfigTasks | None = _manifest.RetryConfigTasks(
             maxAttempts=self.retry_config.max_attempts,
             maxRetrySeconds=self.retry_config.max_retry_seconds,
             maxBackoffSeconds=self.retry_config.max_backoff_seconds,
@@ -496,6 +500,86 @@ class PubSubOptions(EventHandlerOptions):
             _typing.Dict,
             _dataclasses.asdict(super()._endpoint(
                 **kwargs, event_filters=event_filters, event_type=event_type))))
+
+
+@_dataclasses.dataclass(frozen=True, kw_only=True)
+class ScheduleOptions(RuntimeOptions):
+    """
+    Options that can be set on a Schedule trigger.
+    """
+
+    schedule: str
+    """
+    The schedule, in Unix Crontab or AppEngine syntax.
+    """
+
+    timezone: Timezone | Expression[str] | _util.Sentinel | None = None
+    """
+    The timezone that the schedule executes in.
+    """
+
+    retry_count: int | Expression[int] | _util.Sentinel | None = None
+    """
+    The number of retry attempts for a failed run.
+    """
+
+    max_retry_seconds: int | Expression[int] | _util.Sentinel | None = None
+    """
+    The time limit for retrying.
+    """
+
+    max_backoff_seconds: int | Expression[int] | _util.Sentinel | None = None
+    """
+    The maximum amount of time to wait between attempts.
+    """
+
+    max_doublings: int | Expression[int] | _util.Sentinel | None = None
+    """
+    The maximum number of times to double the backoff between
+    retries.
+    """
+
+    min_backoff_seconds: int | Expression[int] | _util.Sentinel | None = None
+    """
+    The minimum time to wait between attempts.
+    """
+
+    def _endpoint(
+        self,
+        **kwargs,
+    ) -> _manifest.ManifestEndpoint:
+        retry_config: _manifest.RetryConfigScheduler = _manifest.RetryConfigScheduler(
+            retryCount=self.retry_count,
+            maxRetrySeconds=self.max_retry_seconds,
+            maxBackoffSeconds=self.max_backoff_seconds,
+            maxDoublings=self.max_doublings,
+            minBackoffSeconds=self.min_backoff_seconds,
+        )
+        time_zone: str | Expression[str] | _util.Sentinel | None = None
+        if isinstance(self.timezone, Timezone):
+            time_zone = self.timezone.key
+        else:
+            time_zone = self.timezone
+
+        kwargs_merged = {
+            **_dataclasses.asdict(super()._endpoint(**kwargs)),
+            "scheduleTrigger":
+                _manifest.ScheduleTrigger(
+                    schedule=self.schedule,
+                    timeZone=time_zone,
+                    retryConfig=retry_config,
+                ),
+        }
+        return _manifest.ManifestEndpoint(
+            **_typing.cast(_typing.Dict, kwargs_merged))
+
+    def _required_apis(self) -> list[_manifest.ManifestRequiredApi]:
+        return [
+            _manifest.ManifestRequiredApi(
+                api="cloudscheduler.googleapis.com",
+                reason="Needed for scheduled functions.",
+            )
+        ]
 
 
 @_dataclasses.dataclass(frozen=True, kw_only=True)
