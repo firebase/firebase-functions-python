@@ -7,7 +7,7 @@ from firebase_functions.test_lab_fn import (
 
 
 @on_test_matrix_completed()
-def handle_test_matrix_completed(
+def testmatrixcompleted(
         event: CloudEvent[TestMatrixCompletedData]) -> None:
     print(f"Test Matrix ID: {event.data.test_matrix_id}")
     print(f"Test Matrix State: {event.data.state}")
