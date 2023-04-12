@@ -170,7 +170,7 @@ class TestMatrixCompletedData:
     State of the test matrix.
     """
 
-    invalid_matrix_details: str
+    invalid_matrix_details: str | None
     """
     Code that describes why the test matrix is considered invalid. Only set for
     matrices in the INVALID state.
@@ -210,7 +210,7 @@ def _event_handler(func: _C1, raw: _ce.CloudEvent) -> None:
         create_time=_dt.datetime.strptime(event_data["createTime"],
                                           "%Y-%m-%dT%H:%M:%S.%f%z"),
         state=TestState(event_data["state"]),
-        invalid_matrix_details=event_data["invalidMatrixDetails"],
+        invalid_matrix_details=event_data.get("invalidMatrixDetails"),
         outcome_summary=OutcomeSummary(event_data["outcomeSummary"]),
         result_storage=ResultStorage(
             tool_results_history=event_data["resultStorage"]
