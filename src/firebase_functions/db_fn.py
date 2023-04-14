@@ -25,6 +25,7 @@ import firebase_functions.core as _core
 import cloudevents.http as _ce
 
 from firebase_functions.options import DatabaseOptions
+from firebase_functions.core import Change, T
 
 _event_type_written = "google.firebase.database.ref.v1.written"
 _event_type_created = "google.firebase.database.ref.v1.created"
@@ -33,25 +34,7 @@ _event_type_deleted = "google.firebase.database.ref.v1.deleted"
 
 
 @_dataclass.dataclass(frozen=True)
-class Change(_typing.Generic[_core.T]):
-    """
-    * The Functions interface for events that change state, such as
-    * Realtime Database `on_value_written`.
-    """
-
-    before: _core.T
-    """
-    The state of data before the change.
-    """
-
-    after: _core.T
-    """
-    The state of data after the change.
-    """
-
-
-@_dataclass.dataclass(frozen=True)
-class Event(_core.CloudEvent[_core.T]):
+class Event(_core.CloudEvent[T]):
     """
     A CloudEvent that contains a DataSnapshot or a Change<DataSnapshot>.
     """
@@ -155,8 +138,8 @@ def on_value_written(**kwargs) -> _typing.Callable[[_C1], _C1]:
     :param \\*\\*kwargs: Database options.
     :type \\*\\*kwargs: as :exc:`firebase_functions.options.DatabaseOptions`
     :rtype: :exc:`typing.Callable`
-            \\[ \\[ :exc:`firebase_functions.db.Event` \\[
-            :exc:`firebase_functions.db.Change` \\] \\], `None` \\]
+            \\[ \\[ :exc:`firebase_functions.db_fn.Event` \\[
+            :exc:`firebase_functions.core.Change` \\] \\], `None` \\]
             A function that takes a Database Event and returns None.
     """
     options = DatabaseOptions(**kwargs)
@@ -205,8 +188,8 @@ def on_value_updated(**kwargs) -> _typing.Callable[[_C1], _C1]:
     :param \\*\\*kwargs: Database options.
     :type \\*\\*kwargs: as :exc:`firebase_functions.options.DatabaseOptions`
     :rtype: :exc:`typing.Callable`
-            \\[ \\[ :exc:`firebase_functions.db.Event` \\[
-            :exc:`firebase_functions.db.Change` \\] \\], `None` \\]
+            \\[ \\[ :exc:`firebase_functions.db_fn.Event` \\[
+            :exc:`firebase_functions.core.Change` \\] \\], `None` \\]
             A function that takes a Database Event and returns None.
     """
     options = DatabaseOptions(**kwargs)
@@ -255,7 +238,7 @@ def on_value_created(**kwargs) -> _typing.Callable[[_C2], _C2]:
     :param \\*\\*kwargs: Database options.
     :type \\*\\*kwargs: as :exc:`firebase_functions.options.DatabaseOptions`
     :rtype: :exc:`typing.Callable`
-            \\[ \\[ :exc:`firebase_functions.db.Event` \\[
+            \\[ \\[ :exc:`firebase_functions.db_fn.Event` \\[
             :exc:`object` \\] \\], `None` \\]
             A function that takes a Database Event and returns None.
     """
@@ -305,7 +288,7 @@ def on_value_deleted(**kwargs) -> _typing.Callable[[_C2], _C2]:
     :param \\*\\*kwargs: Database options.
     :type \\*\\*kwargs: as :exc:`firebase_functions.options.DatabaseOptions`
     :rtype: :exc:`typing.Callable`
-            \\[ \\[ :exc:`firebase_functions.db.Event` \\[
+            \\[ \\[ :exc:`firebase_functions.db_fn.Event` \\[
             :exc:`object` \\] \\], `None` \\]
             A function that takes a Database Event and returns None.
     """

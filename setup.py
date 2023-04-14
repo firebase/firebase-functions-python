@@ -19,7 +19,15 @@ from setuptools import find_packages, setup
 install_requires = [
     'flask>=2.1.2', 'functions-framework>=3.0.0', 'firebase-admin>=6.0.0',
     'pyyaml>=6.0', 'typing-extensions>=4.4.0', 'cloudevents==1.9.0',
-    'flask-cors>=3.0.10', 'pyjwt[crypto]>=2.5.0'
+    'flask-cors>=3.0.10', 'pyjwt[crypto]>=2.5.0', 'google-events>=0.5.0',
+    'google-cloud-firestore>=2.11.0'
+]
+
+dev_requires = [
+    'pytest>=7.1.2', 'setuptools>=63.4.2', 'pylint>=2.16.1',
+    'pytest-cov>=3.0.0', 'mypy>=1.0.0', 'sphinx>=6.1.3',
+    'sphinxcontrib-napoleon>=0.7', 'yapf>=0.32.0', 'toml>=0.10.2',
+    'google-cloud-tasks>=2.13.1'
 ]
 
 setup(
@@ -27,6 +35,7 @@ setup(
     version='0.0.1',
     description='Firebase Functions Python SDK',
     install_requires=install_requires,
+    extras_require={'dev': dev_requires},
     packages=find_packages(where='src'),
     package_dir={'': 'src'},
     python_requires='>=3.10',
