@@ -65,12 +65,10 @@ class EventTrigger(_typing.TypedDict):
                                        _util.Sentinel]
 
 
-class RetryConfig(_typing.TypedDict):
+class RetryConfigBase(_typing.TypedDict):
     """
     Retry configuration for a endpoint.
     """
-    maxAttempts: _typing_extensions.NotRequired[int | _params.Expression[int] |
-                                                _util.Sentinel | None]
     maxRetrySeconds: _typing_extensions.NotRequired[int |
                                                     _params.Expression[int] |
                                                     _util.Sentinel | None]
@@ -82,6 +80,22 @@ class RetryConfig(_typing.TypedDict):
     minBackoffSeconds: _typing_extensions.NotRequired[int |
                                                       _params.Expression[int] |
                                                       _util.Sentinel | None]
+
+
+class RetryConfigTasks(RetryConfigBase):
+    """
+    Retry configuration for a task.
+    """
+    maxAttempts: _typing_extensions.NotRequired[int | _params.Expression[int] |
+                                                _util.Sentinel | None]
+
+
+class RetryConfigScheduler(RetryConfigBase):
+    """
+    Retry configuration for a schedule.
+    """
+    retryCount: _typing_extensions.NotRequired[int | _params.Expression[int] |
+                                               _util.Sentinel | None]
 
 
 class RateLimits(_typing.TypedDict):
@@ -96,14 +110,14 @@ class TaskQueueTrigger(_typing.TypedDict):
     Trigger definitions for RPCs servers using the HTTP protocol defined at
     https://firebase.google.com/docs/functions/callable-reference
     """
-    retryConfig: RetryConfig | None
+    retryConfig: RetryConfigTasks | None
     rateLimits: RateLimits | None
 
 
 class ScheduleTrigger(_typing.TypedDict):
-    schedule: _typing_extensions.NotRequired[str | _params.Expression[str]]
-    timeZone: _typing_extensions.NotRequired[str | _params.Expression[str]]
-    retryConfig: _typing_extensions.NotRequired[RetryConfig]
+    schedule: str | _params.Expression[str]
+    timeZone: str | _params.Expression[str] | _util.Sentinel | None
+    retryConfig: RetryConfigScheduler | None
 
 
 class BlockingTrigger(_typing.TypedDict):
