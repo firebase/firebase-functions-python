@@ -82,7 +82,18 @@ if [[ "$OUTDIR" == "" ]]; then
 fi
 
 TITLE="Firebase Python SDK for Cloud Functions"
-PY_MODULES='firebase_functions firebase_functions.core firebase_functions.https_fn firebase_functions.params firebase_functions.db_fn firebase_functions.options firebase_functions.pubsub_fn firebase_functions.storage_fn'
+PY_MODULES='firebase_functions
+            firebase_functions.core
+            firebase_functions.db_fn
+            firebase_functions.https_fn
+            firebase_functions.options
+            firebase_functions.params
+            firebase_functions.pubsub_fn
+            firebase_functions.remote_config_fn
+            firebase_functions.scheduler_fn
+            firebase_functions.storage_fn
+            firebase_functions.tasks_fn
+            firebase_functions.test_lab_fn'
 DEVSITE_PATH='/docs/reference/functions/2nd-gen/python'
 
 #
@@ -143,7 +154,7 @@ done
 
 echo Building HTML...
 echo "$PYTHONPATH"
-PYTHONPATH="$PYTHONPATH" "$SPHINXBIN" -W -b html . _build/
+PYTHONPATH="$PYTHONPATH" "$SPHINXBIN" -W -v -b html . _build/
 if [ "$?" -ne 0 ]; then
   exit 1
 fi
