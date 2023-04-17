@@ -61,24 +61,63 @@ class EventTrigger(_typing.TypedDict):
         str, str | _params.Expression[str]]]
     channel: _typing_extensions.NotRequired[str]
     eventType: _typing_extensions.Required[str]
-    retry: _typing_extensions.Required[bool | _params.Expression[bool]]
+    retry: _typing_extensions.Required[bool | _params.Expression[bool] |
+                                       _util.Sentinel]
 
 
-class RetryConfig(_typing.TypedDict):
-    retryCount: _typing_extensions.NotRequired[int | _params.Expression[int]]
-    maxRetrySeconds: _typing_extensions.NotRequired[str |
-                                                    _params.Expression[str]]
-    minBackoffSeconds: _typing_extensions.NotRequired[str |
-                                                      _params.Expression[str]]
-    maxBackoffSeconds: _typing_extensions.NotRequired[str |
-                                                      _params.Expression[str]]
-    maxDoublings: _typing_extensions.NotRequired[int | _params.Expression[int]]
+class RetryConfigBase(_typing.TypedDict):
+    """
+    Retry configuration for a endpoint.
+    """
+    maxRetrySeconds: _typing_extensions.NotRequired[int |
+                                                    _params.Expression[int] |
+                                                    _util.Sentinel | None]
+    maxBackoffSeconds: _typing_extensions.NotRequired[int |
+                                                      _params.Expression[int] |
+                                                      _util.Sentinel | None]
+    maxDoublings: _typing_extensions.NotRequired[int | _params.Expression[int] |
+                                                 _util.Sentinel | None]
+    minBackoffSeconds: _typing_extensions.NotRequired[int |
+                                                      _params.Expression[int] |
+                                                      _util.Sentinel | None]
+
+
+class RetryConfigTasks(RetryConfigBase):
+    """
+    Retry configuration for a task.
+    """
+    maxAttempts: _typing_extensions.NotRequired[int | _params.Expression[int] |
+                                                _util.Sentinel | None]
+
+
+class RetryConfigScheduler(RetryConfigBase):
+    """
+    Retry configuration for a schedule.
+    """
+    retryCount: _typing_extensions.NotRequired[int | _params.Expression[int] |
+                                               _util.Sentinel | None]
+
+
+class RateLimits(_typing.TypedDict):
+    maxConcurrentDispatches: int | _params.Expression[
+        int] | _util.Sentinel | None
+
+    maxDispatchesPerSecond: int | _params.Expression[int] | _util.Sentinel | None
+
+
+class TaskQueueTrigger(_typing.TypedDict):
+    """
+    Trigger definitions for RPCs servers using the HTTP protocol defined at
+    https://firebase.google.com/docs/functions/callable-reference
+    """
+    retryConfig: RetryConfigTasks | None
+    rateLimits: RateLimits | None
 
 
 class ScheduleTrigger(_typing.TypedDict):
-    schedule: _typing_extensions.NotRequired[str | _params.Expression[str]]
-    timeZone: _typing_extensions.NotRequired[str | _params.Expression[str]]
-    retryConfig: _typing_extensions.NotRequired[RetryConfig]
+    schedule: str | _params.Expression[str]
+    timeZone: str | _params.Expression[str] | _util.Sentinel | None
+    retryConfig: RetryConfigScheduler | None
 
 
 class BlockingTrigger(_typing.TypedDict):
@@ -94,29 +133,29 @@ class VpcSettings(_typing.TypedDict):
 class ManifestEndpoint:
     """A definition of a function as appears in the Manifest."""
 
-    entryPoint: _typing.Optional[str] = None
-    region: _typing.Optional[list[str]] = _dataclasses.field(
-        default_factory=list[str])
-    platform: _typing.Optional[str] = "gcfv2"
+    entryPoint: str | None = None
+    region: list[str] | None = _dataclasses.field(default_factory=list[str])
+    platform: str | None = "gcfv2"
     availableMemoryMb: int | _params.Expression[
         int] | _util.Sentinel | None = None
     maxInstances: int | _params.Expression[int] | _util.Sentinel | None = None
     minInstances: int | _params.Expression[int] | _util.Sentinel | None = None
     concurrency: int | _params.Expression[int] | _util.Sentinel | None = None
-    serviceAccountEmail: _typing.Optional[str | _util.Sentinel] = None
+    serviceAccountEmail: str | _util.Sentinel | None = None
     timeoutSeconds: int | _params.Expression[int] | _util.Sentinel | None = None
     cpu: int | str | _util.Sentinel | None = None
-    vpc: _typing.Optional[VpcSettings] = None
-    labels: _typing.Optional[dict[str, str]] = None
-    ingressSettings: _typing.Optional[str] | _util.Sentinel = None
-    secretEnvironmentVariables: _typing.Optional[
-        list[SecretEnvironmentVariable] | _util.Sentinel] = _dataclasses.field(
+    vpc: VpcSettings | None = None
+    labels: dict[str, str] | None = None
+    ingressSettings: str | None | _util.Sentinel = None
+    secretEnvironmentVariables: list[
+        SecretEnvironmentVariable] | _util.Sentinel | None = _dataclasses.field(
             default_factory=list[SecretEnvironmentVariable])
-    httpsTrigger: _typing.Optional[HttpsTrigger] = None
-    callableTrigger: _typing.Optional[CallableTrigger] = None
-    eventTrigger: _typing.Optional[EventTrigger] = None
-    scheduleTrigger: _typing.Optional[ScheduleTrigger] = None
-    blockingTrigger: _typing.Optional[BlockingTrigger] = None
+    httpsTrigger: HttpsTrigger | None = None
+    callableTrigger: CallableTrigger | None = None
+    eventTrigger: EventTrigger | None = None
+    scheduleTrigger: ScheduleTrigger | None = None
+    blockingTrigger: BlockingTrigger | None = None
+    taskQueueTrigger: TaskQueueTrigger | None = None
 
 
 class ManifestRequiredApi(_typing.TypedDict):

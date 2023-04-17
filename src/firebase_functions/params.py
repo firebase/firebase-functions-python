@@ -104,7 +104,7 @@ class SelectOptions(_typing.Generic[_T]):
     value: _T
     """The value of the option."""
 
-    label: _typing.Optional[str] = None
+    label: str | None = None
     """The displayed label for the option."""
 
 
@@ -127,18 +127,18 @@ class TextInput:
     validation_regex, if present, will be retried.
     """
 
-    example: _typing.Optional[str] = None
+    example: str | None = None
     """
     An example of the input required that will be displayed alongside the input prompt.
     """
 
-    validation_regex: _typing.Optional[str] = None
+    validation_regex: str | None = None
     """
     Validation regex for the input.
     Input that does not match this regex, if present, will be retried.
     """
 
-    validation_error_message: _typing.Optional[str] = None
+    validation_error_message: str | None = None
     """
     An error message that is displayed to the user if validation_regex fails.
     """
@@ -169,29 +169,28 @@ class Param(Expression[_T]):
     The environment variable of this parameter. Must be upper case.
     """
 
-    default: _typing.Optional[_T] = None
+    default: _T | None = None
     """
     The default value to assign to this param if none provided.
     """
 
-    label: _typing.Optional[str] = None
+    label: str | None = None
     """
     A label that is displayed to the user for this param.
     """
 
-    description: _typing.Optional[str] = None
+    description: str | None = None
     """
     Description of this param that is displayed to the user.
     """
 
-    immutable: _typing.Optional[bool] = None
+    immutable: bool | None = None
     """
     Whether the value of this parameter can change between function
     deployments.
     """
 
-    input: _typing.Union[TextInput, ResourceInput,
-                         SelectInput[_T]] = TextInput()
+    input: TextInput | ResourceInput | SelectInput[_T] = TextInput()
     """
     The type of input that is required for this param, e.g. TextInput.
     """
@@ -233,17 +232,17 @@ class SecretParam(Expression[str]):
     The environment variable of this parameter. Must be upper case.
     """
 
-    label: _typing.Optional[str] = None
+    label: str | None = None
     """
     A label that is displayed to the user for this param.
     """
 
-    description: _typing.Optional[str] = None
+    description: str | None = None
     """
     Description of this param that is displayed to the user.
     """
 
-    immutable: _typing.Optional[bool] = None
+    immutable: bool | None = None
     """
     Whether the value of this parameter can change between function
     deployments.

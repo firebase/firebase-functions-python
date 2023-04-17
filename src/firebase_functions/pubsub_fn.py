@@ -61,7 +61,7 @@ class Message(_typing.Generic[T]):
     """
 
     @property
-    def json(self) -> _typing.Optional[T]:
+    def json(self) -> T | None:
         try:
             if self.data is not None:
                 return _json.loads(_base64.b64decode(self.data).decode("utf-8"))
@@ -171,7 +171,7 @@ def on_message_published(**kwargs) -> _typing.Callable[[_C1], _C1]:
     :type \\*\\*kwargs: as :exc:`firebase_functions.options.PubSubOptions`
     :rtype: :exc:`typing.Callable`
             \\[ \\[ :exc:`firebase_functions.core.CloudEvent` \\[
-            :exc:`firebase_functions.pubsub.MessagePublishedData` \\[
+            :exc:`firebase_functions.pubsub_fn.MessagePublishedData` \\[
             :exc:`typing.Any` \\] \\] \\], `None` \\]
             A function that takes a CloudEvent and returns None.
     """

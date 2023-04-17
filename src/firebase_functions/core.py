@@ -11,8 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-
 """
 Public code that is shared across modules.
 """
@@ -65,3 +63,20 @@ class CloudEvent(_typing.Generic[T]):
     The resource, provided by source, that this event relates to
     """
 
+
+@_dataclass.dataclass(frozen=True)
+class Change(_typing.Generic[T]):
+    """
+    * The Functions interface for events that change state, such as
+    * Realtime Database `on_value_written`.
+    """
+
+    before: T
+    """
+    The state of data before the change.
+    """
+
+    after: T
+    """
+    The state of data after the change.
+    """

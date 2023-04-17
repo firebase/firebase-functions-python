@@ -20,11 +20,15 @@ import enum as _enum
 import dataclasses as _dataclasses
 import re as _re
 import typing as _typing
+from zoneinfo import ZoneInfo as _ZoneInfo
 
 import firebase_functions.private.manifest as _manifest
 import firebase_functions.private.util as _util
 import firebase_functions.private.path_pattern as _path_pattern
 from firebase_functions.params import SecretParam, Expression
+
+Timezone = _ZoneInfo
+"""An alias of the zoneinfo.ZoneInfo for convenience."""
 
 RESET_VALUE = _util.Sentinel(
     "Special configuration value to reset configuration to platform default.")
@@ -99,6 +103,62 @@ class SupportedRegion(str, _enum.Enum):
     US_WEST1 = "us-west1"
 
 
+@_dataclasses.dataclass(frozen=True)
+class RateLimits():
+    """
+    How congestion control should be applied to the function.
+    """
+    max_concurrent_dispatches: int | Expression[
+        int] | _util.Sentinel | None = None
+    """
+    The maximum number of requests that can be outstanding at a time.
+    If left unspecified, will default to 1000.
+    """
+
+    max_dispatches_per_second: int | Expression[
+        int] | _util.Sentinel | None = None
+    """
+    The maximum number of requests that can be invoked per second.
+    If left unspecified, will default to 500.
+    """
+
+
+@_dataclasses.dataclass(frozen=True)
+class RetryConfig():
+    """
+    How a task should be retried in the event of a non-2xx return.
+    """
+
+    max_attempts: int | Expression[int] | _util.Sentinel | None = None
+    """
+    The maximum number of times a request should be attempted.
+    If left unspecified, will default to 3.
+    """
+
+    max_retry_seconds: int | Expression[int] | _util.Sentinel | None = None
+    """
+    The maximum amount of time for retrying failed task.
+    If left unspecified will retry indefinitely.
+    """
+
+    max_backoff_seconds: int | Expression[int] | _util.Sentinel | None = None
+    """
+    The maximum amount of time to wait between attempts.
+    If left unspecified will default to 1hr.
+    """
+
+    max_doublings: int | Expression[int] | _util.Sentinel | None = None
+    """
+    The maximum number of times to double the backoff between
+    retries. If left unspecified will default to 16.
+    """
+
+    min_backoff_seconds: int | Expression[int] | _util.Sentinel | None = None
+    """
+    The minimum time to wait between attempts.
+    """
+
+
 @_dataclasses.dataclass(frozen=True, kw_only=True)
 class RuntimeOptions:
     """
@@ -126,7 +186,7 @@ class RuntimeOptions:
     The minimum timeout for a gen 2 function is 1s. The maximum timeout for a
     function depends on the type of function: Event handling functions have a
     maximum timeout of 540s (9 minutes). HTTPS and callable functions have a
-    maximum timeout of 36,00s (1 hour). Task queue functions have a maximum
+    maximum timeout of 3,600s (1 hour). Task queue functions have a maximum
     timeout of 1,800s (30 minutes)
     """
 
@@ -319,15 +379,108 @@ class RuntimeOptions:
 
 
 @_dataclasses.dataclass(frozen=True, kw_only=True)
-class PubSubOptions(RuntimeOptions):
+class TaskQueueOptions(RuntimeOptions):
     """
-    Options specific to Pub/Sub function types.
+    Options specific to Tasks function types.
+    """
+
+    retry_config: RetryConfig | None = None
+    """
+    How a task should be retried in the event of a non-2xx return.
+    """
+
+    rate_limits: RateLimits | None = None
+    """
+    How congestion control should be applied to the function.
+    """
+
+    invoker: str | list[str] | _typing.Literal["private"] | None = None
+    """
+    Who can enqueue tasks for this function.
+
+    Note:
+        If left unspecified, only service accounts which have
+        `roles/cloudtasks.enqueuer` and `roles/cloudfunctions.invoker`
+        will have permissions.
+    """
+
+    def _endpoint(
+        self,
+        **kwargs,
+    ) -> _manifest.ManifestEndpoint:
+        rate_limits: _manifest.RateLimits | None = _manifest.RateLimits(
+            maxConcurrentDispatches=self.rate_limits.max_concurrent_dispatches,
+            maxDispatchesPerSecond=self.rate_limits.max_dispatches_per_second,
+        ) if self.rate_limits is not None else None
+
+        retry_config: _manifest.RetryConfigTasks | None = _manifest.RetryConfigTasks(
+            maxAttempts=self.retry_config.max_attempts,
+            maxRetrySeconds=self.retry_config.max_retry_seconds,
+            maxBackoffSeconds=self.retry_config.max_backoff_seconds,
+            maxDoublings=self.retry_config.max_doublings,
+            minBackoffSeconds=self.retry_config.min_backoff_seconds,
+        ) if self.retry_config is not None else None
+
+        kwargs_merged = {
+            **_dataclasses.asdict(super()._endpoint(**kwargs)),
+            "taskQueueTrigger":
+                _manifest.TaskQueueTrigger(
+                    rateLimits=rate_limits,
+                    retryConfig=retry_config,
+                ),
+        }
+        return _manifest.ManifestEndpoint(
+            **_typing.cast(_typing.Dict, kwargs_merged))
+
+    def _required_apis(self) -> list[_manifest.ManifestRequiredApi]:
+        return [
+            _manifest.ManifestRequiredApi(
+                api="cloudtasks.googleapis.com",
+                reason="Needed for task queue functions",
+            )
+        ]
+
+
+# TODO refactor Storage & Database options to use this base class.
+@_dataclasses.dataclass(frozen=True, kw_only=True)
+class EventHandlerOptions(RuntimeOptions):
+    """
+    Options specific to any event handling Cloud function.
     Internal use only.
     """
 
-    retry: _typing.Optional[bool] = None
+    retry: bool | Expression[bool] | _util.Sentinel | None = None
     """
     Whether failed executions should be delivered again.
+    """
+
+    def _endpoint(
+        self,
+        **kwargs,
+    ) -> _manifest.ManifestEndpoint:
+        assert kwargs["event_filters"] is not None
+        assert kwargs["event_type"] is not None
+
+        event_trigger = _manifest.EventTrigger(
+            eventType=kwargs["event_type"],
+            retry=self.retry if self.retry is not None else False,
+            eventFilters=kwargs["event_filters"],
+        )
+
+        kwargs_merged = {
+            **_dataclasses.asdict(super()._endpoint(**kwargs)),
+            "eventTrigger":
+                event_trigger,
+        }
+        return _manifest.ManifestEndpoint(
+            **_typing.cast(_typing.Dict, kwargs_merged))
+
+
+@_dataclasses.dataclass(frozen=True, kw_only=True)
+class PubSubOptions(EventHandlerOptions):
+    """
+    Options specific to Pub/Sub function types.
+    Internal use only.
     """
 
     topic: str
@@ -342,19 +495,91 @@ class PubSubOptions(RuntimeOptions):
         event_filters: _typing.Any = {
             "topic": self.topic,
         }
-        event_trigger = _manifest.EventTrigger(
-            eventType="google.cloud.pubsub.topic.v1.messagePublished",
-            retry=False,
-            eventFilters=event_filters,
+        event_type = "google.cloud.pubsub.topic.v1.messagePublished"
+        return _manifest.ManifestEndpoint(**_typing.cast(
+            _typing.Dict,
+            _dataclasses.asdict(super()._endpoint(
+                **kwargs, event_filters=event_filters, event_type=event_type))))
+
+
+@_dataclasses.dataclass(frozen=True, kw_only=True)
+class ScheduleOptions(RuntimeOptions):
+    """
+    Options that can be set on a Schedule trigger.
+    """
+
+    schedule: str
+    """
+    The schedule, in Unix Crontab or AppEngine syntax.
+    """
+
+    timezone: Timezone | Expression[str] | _util.Sentinel | None = None
+    """
+    The timezone that the schedule executes in.
+    """
+
+    retry_count: int | Expression[int] | _util.Sentinel | None = None
+    """
+    The number of retry attempts for a failed run.
+    """
+
+    max_retry_seconds: int | Expression[int] | _util.Sentinel | None = None
+    """
+    The time limit for retrying.
+    """
+
+    max_backoff_seconds: int | Expression[int] | _util.Sentinel | None = None
+    """
+    The maximum amount of time to wait between attempts.
+    """
+
+    max_doublings: int | Expression[int] | _util.Sentinel | None = None
+    """
+    The maximum number of times to double the backoff between
+    retries.
+    """
+
+    min_backoff_seconds: int | Expression[int] | _util.Sentinel | None = None
+    """
+    The minimum time to wait between attempts.
+    """
+
+    def _endpoint(
+        self,
+        **kwargs,
+    ) -> _manifest.ManifestEndpoint:
+        retry_config: _manifest.RetryConfigScheduler = _manifest.RetryConfigScheduler(
+            retryCount=self.retry_count,
+            maxRetrySeconds=self.max_retry_seconds,
+            maxBackoffSeconds=self.max_backoff_seconds,
+            maxDoublings=self.max_doublings,
+            minBackoffSeconds=self.min_backoff_seconds,
         )
+        time_zone: str | Expression[str] | _util.Sentinel | None = None
+        if isinstance(self.timezone, Timezone):
+            time_zone = self.timezone.key
+        else:
+            time_zone = self.timezone
 
         kwargs_merged = {
             **_dataclasses.asdict(super()._endpoint(**kwargs)),
-            "eventTrigger":
-                event_trigger,
+            "scheduleTrigger":
+                _manifest.ScheduleTrigger(
+                    schedule=self.schedule,
+                    timeZone=time_zone,
+                    retryConfig=retry_config,
+                ),
         }
         return _manifest.ManifestEndpoint(
             **_typing.cast(_typing.Dict, kwargs_merged))
+
+    def _required_apis(self) -> list[_manifest.ManifestRequiredApi]:
+        return [
+            _manifest.ManifestRequiredApi(
+                api="cloudscheduler.googleapis.com",
+                reason="Needed for scheduled functions.",
+            )
+        ]
 
 
 @_dataclasses.dataclass(frozen=True, kw_only=True)
@@ -364,7 +589,7 @@ class StorageOptions(RuntimeOptions):
     Internal use only.
     """
 
-    bucket: _typing.Optional[str] = None
+    bucket: str | None = None
     """
     The name of the bucket to watch for Storage events.
     """
@@ -416,7 +641,7 @@ class DatabaseOptions(RuntimeOptions):
     Examples: '/foo/bar', '/foo/{bar}'
     """
 
-    instance: _typing.Optional[str] = None
+    instance: str | None = None
     """
     Specify the handler to trigger on a database instance(s).
     If present, this value can either be a single instance or a pattern.
@@ -459,6 +684,65 @@ class DatabaseOptions(RuntimeOptions):
 
 
 @_dataclasses.dataclass(frozen=True, kw_only=True)
+class FirestoreOptions(RuntimeOptions):
+    """
+    Options specific to Firestore function types.
+    Internal use only.
+    """
+
+    document: str
+    """
+    The document path to watch for Firestore events.
+    This value can either be a document path or a pattern.
+    Examples: 'foo/bar', 'foo/{bar}'
+    """
+
+    database: str | None = None
+    """
+    The Firestore database.
+    """
+
+    namespace: str | None = None
+    """
+    The Firestore namespace.
+    """
+
+    def _endpoint(
+        self,
+        **kwargs,
+    ) -> _manifest.ManifestEndpoint:
+        assert kwargs["event_type"] is not None
+        assert kwargs["document_pattern"] is not None
+        document_pattern: _path_pattern.PathPattern = kwargs["document_pattern"]
+        event_filter_document = document_pattern.value
+        event_filters: _typing.Any = {
+            "database":
+                self.database if self.database is not None else "(default)",
+            "namespace":
+                self.namespace if self.namespace is not None else "(default)",
+        }
+        event_filters_path_patterns: _typing.Any = {}
+        if document_pattern.has_wildcards:
+            event_filters_path_patterns["document"] = event_filter_document
+        else:
+            event_filters["document"] = event_filter_document
+        event_trigger = _manifest.EventTrigger(
+            eventType=kwargs["event_type"],
+            retry=False,
+            eventFilters=event_filters,
+            eventFilterPathPatterns=event_filters_path_patterns,
+        )
+
+        kwargs_merged = {
+            **_dataclasses.asdict(super()._endpoint(**kwargs)),
+            "eventTrigger":
+                event_trigger,
+        }
+        return _manifest.ManifestEndpoint(
+            **_typing.cast(_typing.Dict, kwargs_merged))
+
+
+@_dataclasses.dataclass(frozen=True, kw_only=True)
 class HttpsOptions(RuntimeOptions):
     """
     Options specific to Http function types.
@@ -471,7 +755,7 @@ class HttpsOptions(RuntimeOptions):
     Invoker to set access control on https functions.
     """
 
-    cors: _typing.Optional[CorsOptions] = None
+    cors: CorsOptions | None = None
     """
     Optionally set CORS options for Https functions.
     """
