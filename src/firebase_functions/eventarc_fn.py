@@ -35,6 +35,7 @@ def on_custom_event_published(
     Example:
 
     .. code-block:: python
+
       from firebase_functions import eventarc_fn
 
       @eventarc_fn.on_custom_event_published(
