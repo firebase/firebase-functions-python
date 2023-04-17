@@ -83,7 +83,7 @@ fi
 
 TITLE="Firebase Python SDK for Cloud Functions"
 PY_MODULES='firebase_functions firebase_functions.core firebase_functions.https_fn firebase_functions.params firebase_functions.db_fn firebase_functions.options firebase_functions.pubsub_fn firebase_functions.storage_fn'
-DEVSITE_PATH='/docs/reference/functions-python'
+DEVSITE_PATH='/docs/reference/functions/2nd-gen/python'
 
 #
 # Set up temporary project
