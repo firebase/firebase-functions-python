@@ -17,21 +17,14 @@
 import typing as _typing
 import functools as _functools
 import datetime as _dt
-import time as _time
-import json as _json
 import dataclasses as _dataclasses
-from firebase_functions.https_fn import HttpsError, FunctionsErrorCode
 
 import firebase_functions.options as _options
 import firebase_functions.private.util as _util
-import firebase_functions.private.token_verifier as _token_verifier
 from flask import (
     Request as _Request,
     Response as _Response,
-    make_response as _make_response,
-    jsonify as _jsonify,
 )
-from functions_framework import logging as _logging
 
 
 @_dataclasses.dataclass(frozen=True)
@@ -57,17 +50,6 @@ class AuthUserInfo:
     phone_number: str | None = None
     """The phone number for the linked provider."""
 
-    @classmethod
-    def from_json(cls, json_data: dict[str, _typing.Any]) -> "AuthUserInfo":
-        return cls(
-            uid=json_data["uid"],
-            provider_id=json_data["provider_id"],
-            display_name=json_data.get("display_name"),
-            email=json_data.get("email"),
-            photo_url=json_data.get("photo_url"),
-            phone_number=json_data.get("phone_number"),
-        )
-
 
 @_dataclasses.dataclass(frozen=True)
 class AuthUserMetadata:
@@ -79,15 +61,6 @@ class AuthUserMetadata:
 
     last_sign_in_time: _dt.datetime
     """The date the user last signed in."""
-
-    @classmethod
-    def from_json(cls, json_data: dict[str, _typing.Any]) -> "AuthUserMetadata":
-        return cls(
-            creation_time=_dt.datetime.utcfromtimestamp(
-                json_data["creation_time"] / 1000.0),
-            last_sign_in_time=_dt.datetime.utcfromtimestamp(
-                json_data["last_sign_in_time"] / 1000.0),
-        )
 
 
 @_dataclasses.dataclass(frozen=True)
@@ -121,24 +94,6 @@ class AuthMultiFactorInfo:
     The phone number associated with a phone second factor.
     """
 
-    @classmethod
-    def from_json(cls, json_data: dict[str,
-                                       _typing.Any]) -> "AuthMultiFactorInfo":
-        enrollment_time = json_data.get("enrollment_time")
-        if enrollment_time:
-            enrollment_time = _dt.datetime.fromisoformat(enrollment_time)
-
-        factor_id = json_data["factor_id"] if not json_data.get(
-            "phone_number") else "phone"
-
-        return cls(
-            uid=json_data["uid"],
-            factor_id=factor_id,
-            display_name=json_data.get("display_name"),
-            enrollment_time=enrollment_time,
-            phone_number=json_data.get("phone_number"),
-        )
-
 
 @_dataclasses.dataclass(frozen=True)
 class AuthMultiFactorSettings:
@@ -150,21 +105,6 @@ class AuthMultiFactorSettings:
     """
     List of second factors enrolled with the current user.
     """
-
-    @classmethod
-    def from_json(cls, json_data: dict[str, _typing.Any]):
-        if not json_data:
-            return None
-
-        enrolled_factors = [
-            AuthMultiFactorInfo.from_json(factor)
-            for factor in json_data.get("enrolled_factors", [])
-        ]
-
-        if not enrolled_factors:
-            return None
-
-        return cls(enrolled_factors=enrolled_factors)
 
 
 @_dataclasses.dataclass(frozen=True)
@@ -244,33 +184,6 @@ class AuthUserRecord:
     multi_factor: AuthMultiFactorSettings | None
     """The multi-factor related properties for the current user, if available."""
 
-    @classmethod
-    def from_json(cls, json_data: dict[str, _typing.Any]) -> "AuthUserRecord":
-        return cls(
-            uid=json_data["uid"],
-            email=json_data.get("email"),
-            email_verified=json_data["email_verified"],
-            display_name=json_data.get("display_name"),
-            photo_url=json_data.get("photo_url"),
-            phone_number=json_data.get("phone_number"),
-            disabled=json_data.get("disabled", False),
-            metadata=AuthUserMetadata.from_json(json_data["metadata"]),
-            provider_data=[
-                AuthUserInfo.from_json(info)
-                for info in json_data["provider_data"]
-            ],
-            password_hash=json_data.get("password_hash"),
-            password_salt=json_data.get("password_salt"),
-            custom_claims=json_data.get("custom_claims"),
-            tenant_id=json_data.get("tenant_id"),
-            tokens_valid_after_time=_dt.datetime.utcfromtimestamp(
-                json_data["tokens_valid_after_time"])
-            if json_data.get("tokens_valid_after_time") else None,
-            multi_factor=AuthMultiFactorSettings.from_json(
-                json_data["multi_factor"])
-            if "multi_factor" in json_data else None,
-        )
-
 
 @_dataclasses.dataclass(frozen=True)
 class AdditionalUserInfo:
@@ -289,37 +202,6 @@ class AdditionalUserInfo:
 
     is_new_user: bool
     """A boolean indicating if the user is new or not."""
-
-    @classmethod
-    def from_json(cls, json_data: dict[str,
-                                       _typing.Any]) -> "AdditionalUserInfo":
-        raw_user_info = json_data.get("raw_user_info")
-        profile = None
-        username = None
-        if raw_user_info:
-            try:
-                profile = _json.loads(raw_user_info)
-            except _json.JSONDecodeError as err:
-                _logging.debug(f"Parse Error: {err.msg}")
-        if profile:
-            sign_in_method = json_data.get("sign_in_method")
-            if sign_in_method == "github.com":
-                username = profile.get("login")
-            elif sign_in_method == "twitter.com":
-                username = profile.get("screen_name")
-
-        provider_id: str = ("password" if json_data.get("sign_in_method")
-                            == "emailLink" else str(
-                                json_data.get("sign_in_method")))
-
-        is_new_user = json_data.get("event_type") == "beforeCreate"
-
-        return cls(
-            provider_id=provider_id,
-            profile=profile,
-            username=username,
-            is_new_user=is_new_user,
-        )
 
 
 @_dataclasses.dataclass(frozen=True)
@@ -351,66 +233,6 @@ class Credential:
 
     sign_in_method: str
     """The user's sign-in method."""
-
-    @classmethod
-    def from_json(cls, json_data: dict[str, _typing.Any], time: float):
-        if (not json_data.get("sign_in_attributes") and
-                not json_data.get("oauth_id_token") and
-                not json_data.get("oauth_access_token") and
-                not json_data.get("oauth_refresh_token")):
-            return None
-
-        oauth_expires_in = json_data.get("oauth_expires_in")
-        expiration_time = (_dt.datetime.utcfromtimestamp(time +
-                                                         oauth_expires_in)
-                           if oauth_expires_in else None)
-
-        provider_id: str = ("password" if json_data.get("sign_in_method")
-                            == "emailLink" else str(
-                                json_data.get("sign_in_method")))
-
-        return cls(
-            claims=json_data.get("sign_in_attributes"),
-            id_token=json_data.get("oauth_id_token"),
-            access_token=json_data.get("oauth_access_token"),
-            refresh_token=json_data.get("oauth_refresh_token"),
-            expiration_time=expiration_time,
-            secret=json_data.get("oauth_token_secret"),
-            provider_id=provider_id,
-            sign_in_method=json_data["sign_in_method"],
-        )
-
-
-@_dataclasses.dataclass(frozen=True)
-class BeforeCreateResponse:
-    """
-    The handler response type for 'beforeCreate' blocking events.
-    """
-
-    display_name: str | None = None
-    """The user's display name."""
-
-    disabled: bool | None = None
-    """Whether or not the user is disabled."""
-
-    email_verified: bool | None = None
-    """Whether or not the user's primary email is verified."""
-
-    photo_url: str | None = None
-    """The user's photo URL."""
-
-    custom_claims: dict[str, _typing.Any] | None = None
-    """The user's custom claims object if available."""
-
-
-@_dataclasses.dataclass(frozen=True)
-class BeforeSignInResponse(BeforeCreateResponse):
-    """
-    The handler response type for 'beforeSignIn' blocking events.
-    """
-
-    session_claims: dict[str, _typing.Any] | None = None
-    """The user's session claims object if available."""
 
 
 @_dataclasses.dataclass(frozen=True)
@@ -459,157 +281,54 @@ class AuthBlockingEvent:
     """
     The time the event was triggered."""
 
-    @classmethod
-    def from_json(cls, json_data: dict[str,
-                                       _typing.Any]) -> "AuthBlockingEvent":
-        return cls(
-            data=AuthUserRecord.from_json(json_data["user_record"]),
-            locale=json_data.get("locale"),
-            event_id=json_data["event_id"],
-            ip_address=json_data["ip_address"],
-            user_agent=json_data["user_agent"],
-            timestamp=_dt.datetime.fromtimestamp(json_data["iat"]),
-            additional_user_info=AdditionalUserInfo.from_json(json_data),
-            credential=Credential.from_json(json_data, _time.time()),
-        )
+
+class BeforeCreateResponse(_typing.TypedDict, total=False):
+    """
+    The handler response type for 'before_user_created' blocking events.
+    """
+
+    display_name: str | None
+    """The user's display name."""
+
+    disabled: bool | None
+    """Whether or not the user is disabled."""
+
+    email_verified: bool | None
+    """Whether or not the user's primary email is verified."""
+
+    photo_url: str | None
+    """The user's photo URL."""
+
+    custom_claims: dict[str, _typing.Any] | None
+    """The user's custom claims object if available."""
 
 
-_C1 = _typing.Callable[[AuthBlockingEvent], BeforeCreateResponse | None]
-_C2 = _typing.Callable[[AuthBlockingEvent], BeforeSignInResponse | None]
-_event_type_before_create = "providers/cloud.auth/eventTypes/user.beforeCreate"
-_event_type_before_sign_in = "providers/cloud.auth/eventTypes/user.beforeSignIn"
-_claims_max_payload_size = 1000
-_disallowed_custom_claims = [
-    "acr",
-    "amr",
-    "at_hash",
-    "aud",
-    "auth_time",
-    "azp",
-    "cnf",
-    "c_hash",
-    "exp",
-    "iat",
-    "iss",
-    "jti",
-    "nbf",
-    "nonce",
-    "firebase",
-]
+class BeforeSignInResponse(BeforeCreateResponse):
+    """
+    The handler response type for 'before_user_signed_in' blocking events.
+    """
+
+    session_claims: dict[str, _typing.Any] | None
+    """The user's session claims object if available."""
 
 
-def _validate_auth_response(
-    event_type: str,
-    auth_request: BeforeCreateResponse | BeforeSignInResponse | None = None,
-):
-    if auth_request is None:
-        auth_request = BeforeCreateResponse()
+BeforeUserCreatedCallable = _typing.Callable[[AuthBlockingEvent],
+                                             BeforeCreateResponse | None]
+"""
+The type of the callable for 'before_user_created' blocking events.
+"""
 
-    if auth_request.custom_claims:
-        invalid_claims = [
-            claim for claim in _disallowed_custom_claims
-            if claim in auth_request.custom_claims
-        ]
-
-        if invalid_claims:
-            raise HttpsError(
-                FunctionsErrorCode.INVALID_ARGUMENT,
-                f'The custom_claims claims "{",".join(invalid_claims)}" are reserved '
-                f"and cannot be specified.")
-
-        if len(_json.dumps(
-                auth_request.custom_claims)) > _claims_max_payload_size:
-            raise HttpsError(
-                FunctionsErrorCode.INVALID_ARGUMENT,
-                f"The custom_claims payload should not exceed "
-                f"{_claims_max_payload_size} characters.")
-
-    if event_type == _event_type_before_sign_in and isinstance(
-            auth_request, BeforeSignInResponse) and auth_request.session_claims:
-
-        invalid_claims = [
-            claim for claim in _disallowed_custom_claims
-            if claim in auth_request.session_claims
-        ]
-
-        if invalid_claims:
-            raise HttpsError(
-                FunctionsErrorCode.INVALID_ARGUMENT,
-                f'The session_claims claims "{",".join(invalid_claims)}" are reserved '
-                f"and cannot be specified.",
-            )
-
-        if len(_json.dumps(
-                auth_request.session_claims)) > _claims_max_payload_size:
-            raise HttpsError(
-                FunctionsErrorCode.INVALID_ARGUMENT,
-                f"The session_claims payload should not exceed "
-                f"{_claims_max_payload_size} characters.",
-            )
-
-        combined_claims = {
-            **(auth_request.custom_claims if auth_request.custom_claims else {}),
-            **auth_request.session_claims
-        }
-
-        if len(_json.dumps(combined_claims)) > _claims_max_payload_size:
-            raise HttpsError(
-                FunctionsErrorCode.INVALID_ARGUMENT,
-                f"The customClaims and session_claims payloads should not exceed "
-                f"{_claims_max_payload_size} characters combined.")
-
-
-def _before_operation_handler(
-    func: _C1 | _C2,
-    event_type: str,
-    request: _Request,
-) -> _Response:
-    try:
-        if not _util.valid_on_call_request(request):
-            _logging.error("Invalid request, unable to process.")
-            raise HttpsError(FunctionsErrorCode.INVALID_ARGUMENT, "Bad Request")
-        if request.json is None:
-            _logging.error("Request is missing body.")
-            raise HttpsError(FunctionsErrorCode.INVALID_ARGUMENT, "Bad Request")
-        if request.json is None or "data" not in request.json:
-            _logging.error("Request body is missing data.", request.json)
-            raise HttpsError(FunctionsErrorCode.INVALID_ARGUMENT, "Bad Request")
-        jwt_token = request.json["data"]["jwt"]
-        decoded_token = _token_verifier.verify_auth_blocking_token(jwt_token)
-        event = AuthBlockingEvent.from_json(decoded_token)
-        auth_response: BeforeCreateResponse | BeforeSignInResponse | None = func(
-            event)
-        if not auth_response:
-            return _jsonify(result={})
-
-        _validate_auth_response(event_type, auth_response)
-
-        # TODO: photoURL vs photoUrl, we want to use photoURL
-        # TODO: updateMask is showing all fields instead of just the ones that were updated
-        auth_response_dict = _util.convert_keys_to_camel_case(
-            _dataclasses.asdict(auth_response))
-        update_mask = ",".join(auth_response_dict.keys())
-        # TODO: remove this after testing
-        print(auth_response_dict)
-        print(update_mask)
-        return _jsonify(result={
-            "userRecord": {
-                **auth_response_dict,
-                "updateMask": update_mask,
-            }
-        })
-    # Disable broad exceptions lint since we want to handle all exceptions.
-    # pylint: disable=broad-except
-    except Exception as exception:
-        if not isinstance(exception, HttpsError):
-            _logging.error("Unhandled error", exception)
-            exception = HttpsError(FunctionsErrorCode.INTERNAL, "INTERNAL")
-        status = exception._http_error_code.status
-        return _make_response(_jsonify(error=exception._as_dict()), status)
+BeforeUserSignedInCallable = _typing.Callable[[AuthBlockingEvent],
+                                              BeforeSignInResponse | None]
+"""
+The type of the callable for 'before_user_signed_in' blocking events.
+"""
 
 
 @_util.copy_func_kwargs(_options.BlockingOptions)
-def before_user_signed_in(**kwargs,) -> _typing.Callable[[_C2], _C2]:
+def before_user_signed_in(
+    **kwargs,
+) -> _typing.Callable[[BeforeUserSignedInCallable], BeforeUserSignedInCallable]:
     """
     Handles an event that is triggered before a user is signed in.
 
@@ -632,13 +351,15 @@ def before_user_signed_in(**kwargs,) -> _typing.Callable[[_C2], _C2]:
     """
     options = _options.BlockingOptions(**kwargs)
 
-    def before_user_signed_in_decorator(func: _C2):
+    def before_user_signed_in_decorator(func: BeforeUserSignedInCallable):
+        from firebase_functions.private._identity_fn import event_type_before_sign_in
 
         @_functools.wraps(func)
         def before_user_signed_in_wrapped(request: _Request) -> _Response:
-            return _before_operation_handler(
+            from firebase_functions.private._identity_fn import before_operation_handler
+            return before_operation_handler(
                 func,
-                _event_type_before_sign_in,
+                event_type_before_sign_in,
                 request,
             )
 
@@ -646,7 +367,7 @@ def before_user_signed_in(**kwargs,) -> _typing.Callable[[_C2], _C2]:
             before_user_signed_in_wrapped,
             options._endpoint(
                 func_name=func.__name__,
-                event_type=_event_type_before_sign_in,
+                event_type=event_type_before_sign_in,
             ),
         )
         _util.set_required_apis_attr(
@@ -659,7 +380,9 @@ def before_user_signed_in(**kwargs,) -> _typing.Callable[[_C2], _C2]:
 
 
 @_util.copy_func_kwargs(_options.BlockingOptions)
-def before_user_created(**kwargs,) -> _typing.Callable[[_C1], _C1]:
+def before_user_created(
+    **kwargs,
+) -> _typing.Callable[[BeforeUserCreatedCallable], BeforeUserCreatedCallable]:
     """
     Handles an event that is triggered before a user is created.
 
@@ -682,13 +405,15 @@ def before_user_created(**kwargs,) -> _typing.Callable[[_C1], _C1]:
     """
     options = _options.BlockingOptions(**kwargs)
 
-    def before_user_created_decorator(func: _C1):
+    def before_user_created_decorator(func: BeforeUserCreatedCallable):
+        from firebase_functions.private._identity_fn import event_type_before_create
 
         @_functools.wraps(func)
         def before_user_created_wrapped(request: _Request) -> _Response:
-            return _before_operation_handler(
+            from firebase_functions.private._identity_fn import before_operation_handler
+            return before_operation_handler(
                 func,
-                _event_type_before_create,
+                event_type_before_create,
                 request,
             )
 
@@ -696,7 +421,7 @@ def before_user_created(**kwargs,) -> _typing.Callable[[_C1], _C1]:
             before_user_created_wrapped,
             options._endpoint(
                 func_name=func.__name__,
-                event_type=_event_type_before_create,
+                event_type=event_type_before_create,
             ),
         )
         _util.set_required_apis_attr(

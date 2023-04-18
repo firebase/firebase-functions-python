@@ -14,11 +14,15 @@ def beforeusercreated(
     if not event.data.email:
         return None
     if "@cats.com" in event.data.email:
-        return identity_fn.BeforeCreateResponse(display_name="🐈",
-                                                custom_claims={"meow": True})
+        return identity_fn.BeforeCreateResponse(
+            display_name="🐈",
+            custom_claims={"meow": True},
+        )
     if "@dogs.com" in event.data.email:
-        return identity_fn.BeforeCreateResponse(display_name="🐕",
-                                                custom_claims={"woof": True})
+        return identity_fn.BeforeCreateResponse(
+            display_name="🐕",
+            custom_claims={"woof": True},
+        )
     return None
 
 
@@ -33,10 +37,21 @@ def beforeusersignedin(
     print(event)
     if not event.data.email:
         return None
+
     if "@cats.com" in event.data.email:
-        return identity_fn.BeforeSignInResponse(
-            display_name="🐈", session_claims={"temporary_meow": True})
+        return {
+            "display_name": "🐈",
+            "session_claims": {
+                "session_meow": True
+            },
+        }
+
     if "@dogs.com" in event.data.email:
-        return identity_fn.BeforeSignInResponse(
-            display_name="🐕", session_claims={"temporary_woof": True})
+        return {
+            "display_name": "🐕",
+            "session_claims": {
+                "session_woof": True
+            },
+        }
+
     return None

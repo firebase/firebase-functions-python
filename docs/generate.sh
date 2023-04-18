@@ -86,6 +86,7 @@ PY_MODULES='firebase_functions
             firebase_functions.core
             firebase_functions.db_fn
             firebase_functions.https_fn
+            firebase_functions.identity_fn
             firebase_functions.options
             firebase_functions.params
             firebase_functions.pubsub_fn
