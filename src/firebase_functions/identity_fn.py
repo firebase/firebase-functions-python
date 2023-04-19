@@ -303,7 +303,7 @@ class BeforeCreateResponse(_typing.TypedDict, total=False):
     """The user's custom claims object if available."""
 
 
-class BeforeSignInResponse(BeforeCreateResponse):
+class BeforeSignInResponse(BeforeCreateResponse, total=False):
     """
     The handler response type for 'before_user_signed_in' blocking events.
     """
