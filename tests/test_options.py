@@ -80,15 +80,15 @@ def test_options_preserve_external_changes():
     """
     Testing if setting a global option internally change the values.
     """
-    assert (options._GLOBAL_OPTIONS.preserve_external_changes is
-            None), "option should not already be set"
+    assert (options._GLOBAL_OPTIONS.preserve_external_changes
+            is None), "option should not already be set"
     options.set_global_options(
         preserve_external_changes=False,
         min_instances=5,
     )
     options_asdict = options._GLOBAL_OPTIONS._asdict_with_global_options()
-    assert (options_asdict["max_instances"] is
-            options.RESET_VALUE), "option should be RESET_VALUE"
+    assert (options_asdict["max_instances"]
+            is options.RESET_VALUE), "option should be RESET_VALUE"
     assert options_asdict["min_instances"] == 5, "option should be set"
 
     firebase_functions = {

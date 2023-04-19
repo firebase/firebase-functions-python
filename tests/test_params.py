@@ -27,11 +27,11 @@ class TestBoolParams:
         for value_true, value_false in zip(["true", "t", "1", "y", "yes"],
                                            ["false", "f", "0", "n", "no"]):
             environ["BOOL_VALUE_TEST1"] = value_true
-            assert (bool_param.value() is
-                    True), "Failure, params returned False"
+            assert (bool_param.value()
+                    is True), "Failure, params returned False"
             environ["BOOL_VALUE_TEST1"] = value_false
-            assert (bool_param.value() is
-                    False), "Failure, params returned True"
+            assert (bool_param.value()
+                    is False), "Failure, params returned True"
 
     def test_bool_param_value_error(self):
         """Testing if bool params throws a value error if invalid value."""
@@ -41,26 +41,26 @@ class TestBoolParams:
 
     def test_bool_param_empty_default(self):
         """Testing if bool params defaults to False if no value and no default."""
-        assert (params.BoolParam("BOOL_DEFAULT_TEST").value() is
-                False), "Failure, params returned True"
+        assert (params.BoolParam("BOOL_DEFAULT_TEST").value()
+                is False), "Failure, params returned True"
 
     def test_bool_param_default(self):
         """Testing if bool params defaults to provided default value."""
         assert (params.BoolParam("BOOL_DEFAULT_TEST_FALSE",
-                                 default=False).value() is
-                False), "Failure, params returned True"
+                                 default=False).value()
+                is False), "Failure, params returned True"
         assert (params.BoolParam("BOOL_DEFAULT_TEST_TRUE",
-                                 default=True).value() is
-                True), "Failure, params returned False"
+                                 default=True).value()
+                is True), "Failure, params returned False"
 
     def test_bool_param_equality(self):
         """Test bool equality."""
         assert (params.BoolParam("BOOL_TEST1",
-                                 default=False).equals(False).value() is
-                True), "Failure, equality check returned False"
+                                 default=False).equals(False).value()
+                is True), "Failure, equality check returned False"
         assert (params.BoolParam("BOOL_TEST2",
-                                 default=True).equals(False).value() is
-                False), "Failure, equality check returned False"
+                                 default=True).equals(False).value()
+                is False), "Failure, equality check returned False"
 
 
 class TestFloatParams:
@@ -86,11 +86,11 @@ class TestFloatParams:
     def test_float_param_equality(self):
         """Test float equality."""
         assert (params.FloatParam("FLOAT_TEST1",
-                                  default=123.456).equals(123.456).value() is
-                True), "Failure, equality check returned False"
+                                  default=123.456).equals(123.456).value()
+                is True), "Failure, equality check returned False"
         assert (params.FloatParam("FLOAT_TEST2",
-                                  default=456.789).equals(123.456).value() is
-                False), "Failure, equality check returned False"
+                                  default=456.789).equals(123.456).value()
+                is False), "Failure, equality check returned False"
 
 
 class TestIntParams:
@@ -114,10 +114,10 @@ class TestIntParams:
 
     def test_int_param_equality(self):
         """Test int equality."""
-        assert (params.IntParam("INT_TEST1", default=123).equals(123).value() is
-                True), "Failure, equality check returned False"
-        assert (params.IntParam("INT_TEST2", default=456).equals(123).value() is
-                False), "Failure, equality check returned False"
+        assert (params.IntParam("INT_TEST1", default=123).equals(123).value()
+                is True), "Failure, equality check returned False"
+        assert (params.IntParam("INT_TEST2", default=456).equals(123).value()
+                is False), "Failure, equality check returned False"
 
 
 class TestStringParams:
@@ -150,11 +150,11 @@ class TestStringParams:
     def test_string_param_equality(self):
         """Test string equality."""
         assert (params.StringParam("STRING_TEST1",
-                                   default="123").equals("123").value() is
-                True), "Failure, equality check returned False"
+                                   default="123").equals("123").value()
+                is True), "Failure, equality check returned False"
         assert (params.StringParam("STRING_TEST2",
-                                   default="456").equals("123").value() is
-                False), "Failure, equality check returned False"
+                                   default="456").equals("123").value()
+                is False), "Failure, equality check returned False"
 
 
 class TestListParams:
@@ -185,10 +185,12 @@ class TestListParams:
 
     def test_list_param_equality(self):
         """Test list equality."""
-        assert (params.ListParam("LIST_TEST1", default=["123"]).equals(
-            ["123"]).value() is True), "Failure, equality check returned False"
-        assert (params.ListParam("LIST_TEST2", default=["456"]).equals(
-            ["123"]).value() is False), "Failure, equality check returned False"
+        assert (params.ListParam("LIST_TEST1",
+                                 default=["123"]).equals(["123"]).value()
+                is True), "Failure, equality check returned False"
+        assert (params.ListParam("LIST_TEST2",
+                                 default=["456"]).equals(["123"]).value()
+                is False), "Failure, equality check returned False"
 
 
 class TestParamsManifest:
