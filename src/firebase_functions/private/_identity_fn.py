@@ -324,7 +324,7 @@ def before_operation_handler(
         auth_response: BeforeCreateResponse | BeforeSignInResponse | None = func(
             event)
         if not auth_response:
-            return _jsonify(result={})
+            return _jsonify({})
         auth_response_dict = _validate_auth_response(event_type, auth_response)
         update_mask = ",".join(auth_response_dict.keys())
         result = {
@@ -333,7 +333,7 @@ def before_operation_handler(
                 "updateMask": update_mask,
             }
         }
-        return _jsonify(result=result)
+        return _jsonify(result)
     # Disable broad exceptions lint since we want to handle all exceptions.
     # pylint: disable=broad-except
     except Exception as exception:
