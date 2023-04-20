@@ -1,0 +1,24 @@
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-app.js";
+  import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-auth.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyCZ2C2_0jQIkQItbiJ4IGbL8OLObbK2mY0",
+    authDomain: "python-functions-testing.firebaseapp.com",
+    databaseURL: "https://python-functions-testing-default-rtdb.europe-west1.firebasedatabase.app",
+    projectId: "python-functions-testing",
+    storageBucket: "python-functions-testing.appspot.com",
+    messagingSenderId: "441947996129",
+    appId: "1:441947996129:web:227004b738ba64f04edca0",
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+
+  // createUserWithEmailAndPassword(auth, "hello@dogs.com", "password")
+  signInWithEmailAndPassword(auth, "hello@cats.com", "password")
+    .then((userCredential) => {
+      console.log("signed in", userCredential);
+    })
+    .catch(console.error);
+</script>

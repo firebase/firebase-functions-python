@@ -744,6 +744,62 @@ class DatabaseOptions(RuntimeOptions):
 
 
 @_dataclasses.dataclass(frozen=True, kw_only=True)
+class BlockingOptions(RuntimeOptions):
+    """
+    Options that can be set on an Auth Blocking Trigger.
+    Internal use only.
+    """
+
+    id_token: bool | None = None
+    """
+    Pass the ID Token credential to the function.
+    """
+
+    access_token: bool | None = None
+    """
+    Pass the Access Token credential to the function.
+    """
+
+    refresh_token: bool | None = None
+    """
+    Pass the Refresh Token credential to the function.
+    """
+
+    def _endpoint(
+        self,
+        **kwargs,
+    ) -> _manifest.ManifestEndpoint:
+        assert kwargs["event_type"] is not None
+
+        blocking_trigger = _manifest.BlockingTrigger(
+            eventType=kwargs["event_type"],
+            options=_manifest.BlockingTriggerOptions(
+                idToken=self.id_token if self.id_token is not None else False,
+                accessToken=self.access_token
+                if self.access_token is not None else False,
+                refreshToken=self.refresh_token
+                if self.refresh_token is not None else False,
+            ),
+        )
+
+        kwargs_merged = {
+            **_dataclasses.asdict(super()._endpoint(**kwargs)),
+            "blockingTrigger":
+                blocking_trigger,
+        }
+        return _manifest.ManifestEndpoint(
+            **_typing.cast(_typing.Dict, kwargs_merged))
+
+    def _required_apis(self) -> list[_manifest.ManifestRequiredApi]:
+        return [
+            _manifest.ManifestRequiredApi(
+                api="identitytoolkit.googleapis.com",
+                reason="Needed for auth blocking functions",
+            )
+        ]
+
+
+@_dataclasses.dataclass(frozen=True, kw_only=True)
 class FirestoreOptions(RuntimeOptions):
     """
     Options specific to Firestore function types.
