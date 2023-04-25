@@ -35,9 +35,7 @@ jobs:
     # via the 'ref' client parameter.
     steps:
     - name: Checkout source for staging
-      uses: actions/checkout@v2
-      with:
-        ref: $GITHUB_REF
+      uses: actions/checkout@v3
 
     - name: Set up Python
       uses: actions/setup-python@v4
