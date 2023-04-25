@@ -503,6 +503,66 @@ class PubSubOptions(EventHandlerOptions):
 
 
 @_dataclasses.dataclass(frozen=True, kw_only=True)
+class EventarcTriggerOptions(EventHandlerOptions):
+    """
+    Options that can be set on an Eventarc trigger.
+    Internal use only.
+    """
+
+    event_type: str
+    """
+    Type of the event to trigger on.
+    """
+
+    channel: str | None = None
+    """
+    ID of the channel. Can be either:
+      * fully qualified channel resource name:
+        `projects/{project}/locations/{location}/channels/{channel-id}`
+      * partial resource name with location and channel ID, in which case
+        the runtime project ID of the function will be used:
+        `locations/{location}/channels/{channel-id}`
+      * partial channel ID, in which case the runtime project ID of the
+        function and `us-central1` as location will be used:
+        `{channel-id}`
+
+    If not specified, the default Firebase channel will be used:
+    `projects/{project}/locations/us-central1/channels/firebase`
+    """
+
+    filters: dict[str, str] | None = None
+    """
+    Eventarc event exact match filter.
+    """
+
+    def _endpoint(
+        self,
+        **kwargs,
+    ) -> _manifest.ManifestEndpoint:
+        event_filters = {} if self.filters is None else self.filters
+        endpoint = _manifest.ManifestEndpoint(**_typing.cast(
+            _typing.Dict,
+            _dataclasses.asdict(super()._endpoint(
+                **kwargs,
+                event_filters=event_filters,
+                event_type=self.event_type,
+            ))))
+        assert endpoint.eventTrigger is not None
+        channel = (self.channel if self.channel is not None else
+                   "locations/us-central1/channels/firebase")
+        endpoint.eventTrigger["channel"] = channel
+        return endpoint
+
+    def _required_apis(self) -> list[_manifest.ManifestRequiredApi]:
+        return [
+            _manifest.ManifestRequiredApi(
+                api="eventarcpublishing.googleapis.com",
+                reason="Needed for custom event functions",
+            )
+        ]
+
+
+@_dataclasses.dataclass(frozen=True, kw_only=True)
 class ScheduleOptions(RuntimeOptions):
     """
     Options that can be set on a Schedule trigger.
@@ -681,6 +741,62 @@ class DatabaseOptions(RuntimeOptions):
         }
         return _manifest.ManifestEndpoint(
             **_typing.cast(_typing.Dict, kwargs_merged))
+
+
+@_dataclasses.dataclass(frozen=True, kw_only=True)
+class BlockingOptions(RuntimeOptions):
+    """
+    Options that can be set on an Auth Blocking Trigger.
+    Internal use only.
+    """
+
+    id_token: bool | None = None
+    """
+    Pass the ID Token credential to the function.
+    """
+
+    access_token: bool | None = None
+    """
+    Pass the Access Token credential to the function.
+    """
+
+    refresh_token: bool | None = None
+    """
+    Pass the Refresh Token credential to the function.
+    """
+
+    def _endpoint(
+        self,
+        **kwargs,
+    ) -> _manifest.ManifestEndpoint:
+        assert kwargs["event_type"] is not None
+
+        blocking_trigger = _manifest.BlockingTrigger(
+            eventType=kwargs["event_type"],
+            options=_manifest.BlockingTriggerOptions(
+                idToken=self.id_token if self.id_token is not None else False,
+                accessToken=self.access_token
+                if self.access_token is not None else False,
+                refreshToken=self.refresh_token
+                if self.refresh_token is not None else False,
+            ),
+        )
+
+        kwargs_merged = {
+            **_dataclasses.asdict(super()._endpoint(**kwargs)),
+            "blockingTrigger":
+                blocking_trigger,
+        }
+        return _manifest.ManifestEndpoint(
+            **_typing.cast(_typing.Dict, kwargs_merged))
+
+    def _required_apis(self) -> list[_manifest.ManifestRequiredApi]:
+        return [
+            _manifest.ManifestRequiredApi(
+                api="identitytoolkit.googleapis.com",
+                reason="Needed for auth blocking functions",
+            )
+        ]
 
 
 @_dataclasses.dataclass(frozen=True, kw_only=True)

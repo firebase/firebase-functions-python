@@ -120,8 +120,15 @@ class ScheduleTrigger(_typing.TypedDict):
     retryConfig: RetryConfigScheduler | None
 
 
+class BlockingTriggerOptions(_typing.TypedDict):
+    accessToken: _typing_extensions.NotRequired[bool]
+    idToken: _typing_extensions.NotRequired[bool]
+    refreshToken: _typing_extensions.NotRequired[bool]
+
+
 class BlockingTrigger(_typing.TypedDict):
     eventType: _typing_extensions.Required[str]
+    options: _typing_extensions.NotRequired[BlockingTriggerOptions]
 
 
 class VpcSettings(_typing.TypedDict):

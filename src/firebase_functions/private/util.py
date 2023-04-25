@@ -85,6 +85,16 @@ def valid_on_call_request(request: _Request) -> bool:
     return False
 
 
+def convert_keys_to_camel_case(
+        data: dict[str, _typing.Any]) -> dict[str, _typing.Any]:
+
+    def snake_to_camel(word: str) -> str:
+        components = word.split("_")
+        return components[0] + "".join(x.capitalize() for x in components[1:])
+
+    return {snake_to_camel(key): value for key, value in data.items()}
+
+
 def _on_call_valid_body(request: _Request) -> bool:
     """The body must not be empty."""
     if request.json is None:
