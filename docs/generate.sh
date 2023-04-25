@@ -84,6 +84,11 @@ fi
 TITLE="Firebase Python SDK for Cloud Functions"
 PY_MODULES='firebase_functions
             firebase_functions.core
+            firebase_functions.alerts_fn
+            firebase_functions.alerts.app_distribution_fn
+            firebase_functions.alerts.billing_fn
+            firebase_functions.alerts.crashlytics_fn
+            firebase_functions.alerts.performance_fn
             firebase_functions.db_fn
             firebase_functions.eventarc_fn
             firebase_functions.https_fn
