@@ -1,0 +1,114 @@
+# Copyright 2023 Google Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+name: Release Candidate
+
+on:
+  pull_request:
+    types: [opened, synchronize, closed]
+  # Allow workflow to be triggered manually.
+  workflow_dispatch:
+
+jobs:
+  stage_release:
+    # To publish a release, merge the release PR with the label 'release:publish'.
+    # To stage a release without publishing it, manually invoke the workflow.
+    # .  or apply the 'release:stage' label to a PR.
+    if: (github.event.pull_request.merged && contains(github.event.pull_request.labels.*.name, 'release:publish')) ||
+      github.event.workflow_dispatch ||
+      contains(github.event.pull_request.labels.*.name, 'release:stage')
+
+    runs-on: ubuntu-latest
+
+    # When manually triggering the build, the requester can specify a target branch or a tag
+    # via the 'ref' client parameter.
+    steps:
+    - name: Checkout source for staging
+      uses: actions/checkout@v2
+      with:
+        ref: $GITHUB_REF
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: 3.10
+
+    - name: Install dependencies
+      run: |
+        pip install --upgrade pip
+        python -m pip install -e ".[dev]"
+
+    - name: Test with pytest & coverage
+      run: |
+        python -m pytest --cov=src --cov-report term --cov-report html --cov-report xml -vv
+
+    # Build the Python Wheel and the source distribution.
+    - name: Package release artifacts
+      run: |
+       python -m pip install setuptools wheel
+       python setup.py bdist_wheel sdist
+
+    # Attach the packaged artifacts to the workflow output. These can be manually
+    # downloaded for later inspection if necessary.
+    - name: Archive artifacts
+      uses: actions/upload-artifact@v1
+      with:
+        name: dist
+        path: dist
+
+  publish_release:
+    needs: stage_release
+
+    # Check whether the release should be published. We publish only when the trigger PR is
+    #   1. merged
+    #   2. to the master branch
+    #   3. with the label 'release:publish', and
+    #   4. the title prefix '[chore] Release '.
+    if: github.event.pull_request.merged &&
+      github.ref == 'master' &&
+      contains(github.event.pull_request.labels.*.name, 'release:publish') &&
+      startsWith(github.event.pull_request.title, '[chore] Release ')
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout source for publish
+      uses: actions/checkout@v2
+
+    # Download the artifacts created by the stage_release job.
+    - name: Download release candidates
+      uses: actions/download-artifact@v1
+      with:
+        name: dist
+
+    - name: Publish preflight check
+      id: preflight
+      run: ./.github/scripts/publish_preflight_check.sh
+
+    - name: Create release tag
+      uses: elgohr/Github-Release-Action@v4
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ steps.preflight.outputs.version }}
+        release_name: Firebase Admin Python SDK ${{ steps.preflight.outputs.version }}
+        body: ${{ steps.preflight.outputs.changelog }}
+        draft: false
+        prerelease: false
+
+    - name: Publish to Pypi
+      uses: pypa/gh-action-pypi-publish@v1.0.0a0
+      with:
+        user: firebase
+        password: ${{ secrets.PYPI_PASSWORD }}
