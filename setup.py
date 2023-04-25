@@ -14,6 +14,7 @@
 """
 Setup for Firebase Functions Python.
 """
+from os import path
 from setuptools import find_packages, setup
 
 install_requires = [
@@ -30,9 +31,17 @@ dev_requires = [
     'google-cloud-tasks>=2.13.1'
 ]
 
+# Read in the package metadata per recommendations from:
+# https://packaging.python.org/guides/single-sourcing-package-version/
+init_path = path.join(path.dirname(path.abspath(__file__)), 'src', 'firebase_functions', '__init__.py')
+version = {}
+with open(init_path) as fp:
+    exec(fp.read(), version)  # pylint: disable=exec-used
+
+
 setup(
     name='firebase_functions',
-    version='0.0.1',
+    version=version['__version__'],
     description='Firebase Functions Python SDK',
     install_requires=install_requires,
     extras_require={'dev': dev_requires},
