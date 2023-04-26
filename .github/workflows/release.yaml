@@ -71,11 +71,10 @@ jobs:
     #   2. to the master branch
     #   3. with the label 'release:publish', and
     #   4. the title prefix '[chore] Release '.
-    # if: github.event.pull_request.merged &&
-    #   github.ref == 'master' &&
-    #   contains(github.event.pull_request.labels.*.name, 'release:publish') &&
-    #   startsWith(github.event.pull_request.title, '[chore] Release ')
-    if: contains(github.event.pull_request.labels.*.name, 'release:stage')
+    if: github.event.pull_request.merged &&
+      github.ref == 'master' &&
+      contains(github.event.pull_request.labels.*.name, 'release:publish') &&
+      startsWith(github.event.pull_request.title, '[chore] Release ')
 
     runs-on: ubuntu-latest
 
@@ -94,22 +93,21 @@ jobs:
       id: preflight
       run: ./.github/scripts/publish_preflight_check.sh
 
-    # - name: Create release tag
-    #   # Skip creating a release tag for prereleases
-    #   if: (!contains(github.event.pull_request.labels.*.name, 'release:prerelease'))
-    #   uses: elgohr/Github-Release-Action@v4
-    #   env:
-    #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    #   with:
-    #     tag_name: ${{ env.version }}
-    #     release_name: Firebase Functions Python SDK ${{ env.version }}
-    #     body: ${{ env.changelog }}
-    #     draft: false
-    #     prerelease: false
+    - name: Create release tag
+      # Skip creating a release tag for prereleases
+      if: (!contains(github.event.pull_request.labels.*.name, 'release:prerelease'))
+      uses: elgohr/Github-Release-Action@v4
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ env.version }}
+        release_name: Firebase Functions Python SDK ${{ env.version }}
+        body: ${{ env.changelog }}
+        draft: false
+        prerelease: false
 
     - name: Publish to Pypi
       uses: pypa/gh-action-pypi-publish@release/v1
       with:
-        user: danielylee
-        password: ${{ secrets.TEST_PYPI_PASSWORD }}
-        repository-url: https://test.pypi.org/legacy/
+        user: firebase
+        password: ${{ secrets.PYPI_PASSWORD }}
