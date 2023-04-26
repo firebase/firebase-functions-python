@@ -502,6 +502,191 @@ class PubSubOptions(EventHandlerOptions):
                 **kwargs, event_filters=event_filters, event_type=event_type))))
 
 
+class AlertType(str, _enum.Enum):
+    """
+    The underlying alert type of the Firebase Alerts provider.
+    """
+
+    CRASHLYTICS_NEW_FATAL_ISSUE = "crashlytics.newFatalIssue"
+    """
+    Crashlytics new fatal issue alerts.
+    """
+
+    CRASHLYTICS_NEW_NONFATAL_ISSUE = "crashlytics.newNonfatalIssue"
+    """
+    Crashlytics new non-fatal issue alerts.
+    """
+
+    CRASHLYTICS_REGRESSION = "crashlytics.regression"
+    """
+    Crashlytics regression alerts.
+    """
+
+    CRASHLYTICS_STABILITY_DIGEST = "crashlytics.stabilityDigest"
+    """
+    Crashlytics stability digest alerts.
+    """
+
+    CRASHLYTICS_VELOCITY = "crashlytics.velocity"
+    """
+    Crashlytics velocity alerts.
+    """
+
+    CRASHLYTICS_NEW_ANR_ISSUE = "crashlytics.newAnrIssue"
+    """
+    Crashlytics new ANR issue alerts.
+    """
+
+    BILLING_PLAN_UPDATE = "billing.planUpdate"
+    """
+    Billing plan update alerts.
+    """
+
+    BILLING_PLAN_AUTOMATED_UPDATE = "billing.planAutomatedUpdate"
+    """
+    Billing automated plan update alerts.
+    """
+
+    APP_DISTRIBUTION_NEW_TESTER_IOS_DEVICE = "appDistribution.newTesterIosDevice"
+    """
+    App Distribution new tester iOS device alerts.
+    """
+
+    APP_DISTRIBUTION_IN_APP_FEEDBACK = "appDistribution.inAppFeedback"
+    """
+    App Distribution in-app feedback alerts.
+    """
+
+    PERFORMANCE_THRESHOLD = "performance.threshold"
+    """
+    Performance threshold alerts.
+    """
+
+
+@_dataclasses.dataclass(frozen=True, kw_only=True)
+class FirebaseAlertOptions(EventHandlerOptions):
+    """
+    Options specific to Firebase Alert function types.
+    Internal use only.
+    """
+
+    alert_type: str | AlertType
+    """
+    The Firebase Alert type to listen to. Can be an AlertType enum
+    or string.
+    """
+
+    app_id: str | None = None
+    """
+    An optional app ID to scope down alerts.
+    """
+
+    def _endpoint(
+        self,
+        **kwargs,
+    ) -> _manifest.ManifestEndpoint:
+        event_filters: _typing.Any = {
+            "alerttype": self.alert_type,
+        }
+
+        if self.app_id is not None:
+            event_filters["appid"] = self.app_id
+
+        event_type = "google.firebase.firebasealerts.alerts.v1.published"
+        return _manifest.ManifestEndpoint(**_typing.cast(
+            _typing.Dict,
+            _dataclasses.asdict(super()._endpoint(
+                **kwargs,
+                event_filters=event_filters,
+                event_type=event_type,
+            ))))
+
+
+@_dataclasses.dataclass(frozen=True, kw_only=True)
+class AppDistributionOptions(EventHandlerOptions):
+    """
+    Options specific to app distribution functions.
+    Internal use only.
+    """
+
+    app_id: str | None = None
+    """
+    An optional app ID to scope down alerts.
+    """
+
+    def _endpoint(
+        self,
+        **kwargs,
+    ) -> _manifest.ManifestEndpoint:
+        assert kwargs["alert_type"] is not None
+        return FirebaseAlertOptions(
+            alert_type=kwargs["alert_type"],
+            app_id=self.app_id,
+        )._endpoint(**kwargs)
+
+
+@_dataclasses.dataclass(frozen=True, kw_only=True)
+class PerformanceOptions(EventHandlerOptions):
+    """
+    Options specific to performance alerts functions.
+    Internal use only.
+    """
+
+    app_id: str | None = None
+    """
+    An optional app ID to scope down alerts.
+    """
+
+    def _endpoint(
+        self,
+        **kwargs,
+    ) -> _manifest.ManifestEndpoint:
+        assert kwargs["alert_type"] is not None
+        return FirebaseAlertOptions(
+            alert_type=kwargs["alert_type"],
+            app_id=self.app_id,
+        )._endpoint(**kwargs)
+
+
+@_dataclasses.dataclass(frozen=True, kw_only=True)
+class CrashlyticsOptions(EventHandlerOptions):
+    """
+    Options specific to Crashlytics alert functions.
+    Internal use only.
+    """
+
+    app_id: str | None = None
+    """
+    An optional app ID to scope down alerts.
+    """
+
+    def _endpoint(
+        self,
+        **kwargs,
+    ) -> _manifest.ManifestEndpoint:
+        assert kwargs["alert_type"] is not None
+        return FirebaseAlertOptions(
+            alert_type=kwargs["alert_type"],
+            app_id=self.app_id,
+        )._endpoint(**kwargs)
+
+
+@_dataclasses.dataclass(frozen=True, kw_only=True)
+class BillingOptions(EventHandlerOptions):
+    """
+    Options specific to billing alert functions.
+    Internal use only.
+    """
+
+    def _endpoint(
+        self,
+        **kwargs,
+    ) -> _manifest.ManifestEndpoint:
+        assert kwargs["alert_type"] is not None
+        return FirebaseAlertOptions(
+            alert_type=kwargs["alert_type"],)._endpoint(**kwargs)
+
+
 @_dataclasses.dataclass(frozen=True, kw_only=True)
 class EventarcTriggerOptions(EventHandlerOptions):
     """
