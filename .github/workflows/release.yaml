@@ -106,8 +106,7 @@ jobs:
         prerelease: false
 
     - name: Publish to Pypi
-      uses: pypa/gh-action-pypi-publish@v1.0.0a0
+      uses: pypa/gh-action-pypi-publish@release/v1
       with:
         user: firebase
         password: ${{ secrets.PYPI_PASSWORD }}
-        repository_url: https://test.pypi.org/legacy/
