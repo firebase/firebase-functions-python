@@ -56,7 +56,7 @@ echo_info "Extracting release version"
 echo_info "--------------------------------------------"
 echo_info ""
 
-readonly INIT_FILE="src/firebase-functions/__init__.py"
+readonly INIT_FILE="src/firebase_functions/__init__.py"
 echo_info "Loading version from: ${INIT_FILE}"
 
 readonly RELEASE_VERSION=`grep "__version__" ${INIT_FILE} | awk '{print $3}' | tr -d \'` || true
