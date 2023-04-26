@@ -71,7 +71,7 @@ if [[ ! "${RELEASE_VERSION}" =~ ^[0-9]+\.[0-9]+\.[0-9]+([a-zA-Z0-9]+)?$ ]]; then
 fi
 
 echo_info "Extracted release version: ${RELEASE_VERSION}"
-echo "version=${RELEASE_VERSION}" >> "$GITHUB_ENV"
+echo "version=${RELEASE_VERSION}" >> "$GITHUB_OUTPUT"
 
 
 echo_info ""
@@ -170,7 +170,7 @@ FILTERED_CHANGELOG=`echo "$CHANGELOG" | grep -v "\\[INFO\\]"`
 FILTERED_CHANGELOG="${FILTERED_CHANGELOG//'%'/'%25'}"
 FILTERED_CHANGELOG="${FILTERED_CHANGELOG//$'\n'/'%0A'}"
 FILTERED_CHANGELOG="${FILTERED_CHANGELOG//$'\r'/'%0D'}"
-echo "changelog=${FILTERED_CHANGELOG}" >> "$GITHUB_ENV"
+echo "changelog=${FILTERED_CHANGELOG}" >> "$GITHUB_OUTPUT"
 
 
 echo ""
