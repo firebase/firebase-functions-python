@@ -160,7 +160,7 @@ echo_info "--------------------------------------------"
 echo_info ""
 
 echo_info "---< git fetch origin master --prune --unshallow >---"
-git fetch origin master --prune --unshallow
+git fetch origin main --unshallow
 echo ""
 
 echo_info "Generating changelog from history..."
