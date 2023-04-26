@@ -165,12 +165,12 @@ readonly CHANGELOG=`${CURRENT_DIR}/generate_changelog.sh`
 echo "$CHANGELOG"
 
 # Parse and preformat the text to handle multi-line output.
-# See https://github.community/t5/GitHub-Actions/set-output-Truncates-Multiline-Strings/td-p/37870
+https://docs.github.com/en/actions/using-workflows/workflow-commands-for-github-actions#example-of-a-multiline-string
 FILTERED_CHANGELOG=`echo "$CHANGELOG" | grep -v "\\[INFO\\]"`
-FILTERED_CHANGELOG="${FILTERED_CHANGELOG//'%'/'%25'}"
-FILTERED_CHANGELOG="${FILTERED_CHANGELOG//$'\n'/'%0A'}"
-FILTERED_CHANGELOG="${FILTERED_CHANGELOG//$'\r'/'%0D'}"
-echo "changelog=${FILTERED_CHANGELOG}" >> "$GITHUB_OUTPUT"
+EOF=$(dd if=/dev/urandom bs=15 count=1 status=none | base64)
+echo "changelog=<<$EOF" >> "$GITHUB_OUTPUT"
+echo $CHANGELOG >> "$GITHUB_OUTPUT"
+echo $EOF >> "$GITHUG_OUTPUT"
 
 
 echo ""
