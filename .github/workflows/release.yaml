@@ -109,6 +109,6 @@ jobs:
     - name: Publish to Pypi
       uses: pypa/gh-action-pypi-publish@release/v1
       with:
-        user: firebase
-        password: ${{ secrets.PYPI_PASSWORD }}
+        user: danielylee
+        password: ${{ secrets.TEST_PYPI_PASSWORD }}
         repository-url: https://test.pypi.org/legacy/
