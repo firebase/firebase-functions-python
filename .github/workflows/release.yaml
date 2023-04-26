@@ -100,9 +100,9 @@ jobs:
     #   env:
     #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     #   with:
-    #     tag_name: ${{ steps.preflight.outputs.version }}
-    #     release_name: Firebase Functions Python SDK ${{ steps.preflight.outputs.version }}
-    #     body: ${{ steps.preflight.outputs.changelog }}
+    #     tag_name: ${{ env.version }}
+    #     release_name: Firebase Functions Python SDK ${{ env.version }}
+    #     body: ${{ env.changelog }}
     #     draft: false
     #     prerelease: false
 
