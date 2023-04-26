@@ -75,7 +75,7 @@ jobs:
     #   github.ref == 'master' &&
     #   contains(github.event.pull_request.labels.*.name, 'release:publish') &&
     #   startsWith(github.event.pull_request.title, '[chore] Release ')
-    if: (github.event.pull_request.merged && contains(github.event.pull_request.labels.*.name, 'release:publish'))
+    if: contains(github.event.pull_request.labels.*.name, 'release:stage')
 
     runs-on: ubuntu-latest
 
