@@ -65,7 +65,7 @@ if [[ -z "${RELEASE_VERSION}" ]]; then
   terminate
 fi
 
-if [[ ! "${RELEASE_VERSION}" =~ ^[0-9]+\.[0-9]+\.[0-9]+([a-zA-Z0-9_\-\.]+)?$ ]]; then
+if [[ ! "${RELEASE_VERSION}" =~ ^[0-9]+\.[0-9]+\.[0-9]+([a-zA-Z0-9]+)?$ ]]; then
   echo_warn "Malformed release version string: ${RELEASE_VERSION}. Exiting."
   terminate
 fi
