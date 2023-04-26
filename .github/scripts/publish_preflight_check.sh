@@ -136,10 +136,6 @@ echo_info "Checking release tag"
 echo_info "--------------------------------------------"
 echo_info ""
 
-echo_info "---< git fetch --depth=1 origin +refs/tags/*:refs/tags/* >---"
-git fetch --depth=1 origin +refs/tags/*:refs/tags/*
-echo ""
-
 readonly EXISTING_TAG=`git rev-parse -q --verify "refs/tags/v${RELEASE_VERSION}"` || true
 if [[ -n "${EXISTING_TAG}" ]]; then
   echo_warn "Tag v${RELEASE_VERSION} already exists. Exiting."
