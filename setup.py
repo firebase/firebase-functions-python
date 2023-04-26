@@ -41,7 +41,7 @@ with open(init_path) as fp:
 
 long_description = (
     'The Firebase Functions Python SDK provides an SDK for defining'
-    'Cloud Functions for Firebase.')
+    ' Cloud Functions for Firebase.')
 
 setup(
     name='firebase_functions',
