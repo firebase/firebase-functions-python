@@ -59,7 +59,7 @@ echo_info ""
 readonly INIT_FILE="src/firebase_functions/__init__.py"
 echo_info "Loading version from: ${INIT_FILE}"
 
-readonly RELEASE_VERSION=`grep "__version__" ${INIT_FILE} | awk '{print $3}' | tr -d \'` || true
+readonly RELEASE_VERSION=`grep "__version__" ${INIT_FILE} | awk '{print $3}' | tr -d \"` || true
 if [[ -z "${RELEASE_VERSION}" ]]; then
   echo_warn "Failed to extract release version from: ${INIT_FILE}"
   terminate
