@@ -66,14 +66,10 @@ do
     CHANGES+=("$COMMIT_MSG")
   elif [[ $COMMIT_MSG =~ ^fix(\(.*\))?: ]]; then
     FIXES+=("$COMMIT_MSG")
-  elif [[ $COMMIT_MSG =~ ^chore(\(.*\))?: ]]; then
-    FIXES+=("$COMMIT_MSG")
   elif [[ $COMMIT_MSG =~ ^refactor(\(.*\))?: ]]; then
     FIXES+=("$COMMIT_MSG")
   elif [[ $COMMIT_MSG =~ ^feat(\(.*\))?: ]]; then
     FEATS+=("$COMMIT_MSG")
-  elif [[ $COMMIT_MSG =~ ^Merge\ branch(\(.*\))?: ]]; then
-    : # do nothing
   else
     MISC+=("${COMMIT_MSG}")
   fi
@@ -82,4 +78,3 @@ done < <(git log ${VERSION_RANGE} --oneline)
 printChangelog "Breaking Changes" "${CHANGES[@]}"
 printChangelog "New Features" "${FEATS[@]}"
 printChangelog "Bug Fixes" "${FIXES[@]}"
-printChangelog "Miscellaneous" "${MISC[@]}"
