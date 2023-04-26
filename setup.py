@@ -14,6 +14,7 @@
 """
 Setup for Firebase Functions Python.
 """
+from os import path
 from setuptools import find_packages, setup
 
 install_requires = [
@@ -30,19 +31,37 @@ dev_requires = [
     'google-cloud-tasks>=2.13.1'
 ]
 
+# Read in the package metadata per recommendations from:
+# https://packaging.python.org/guides/single-sourcing-package-version/
+init_path = path.join(path.dirname(path.abspath(__file__)), 'src',
+                      'firebase_functions', '__init__.py')
+version = {}
+with open(init_path) as fp:
+    exec(fp.read(), version)  # pylint: disable=exec-used
+
+long_description = (
+    'The Firebase Functions Python SDK provides an SDK for defining'
+    ' Cloud Functions for Firebase.')
+
 setup(
     name='firebase_functions',
-    version='0.0.1',
+    version=version['__version__'],
     description='Firebase Functions Python SDK',
+    long_description=long_description,
+    url='https://github.com/firebase/firebase-functions-python',
+    author='Firebase Team',
+    keywords=['firebase', 'functions', 'google', 'cloud'],
+    license='Apache License 2.0',
     install_requires=install_requires,
     extras_require={'dev': dev_requires},
     packages=find_packages(where='src'),
     package_dir={'': 'src'},
     python_requires='>=3.10',
     classifiers=[
-        'Development Status :: 1 - Planning',
+        'Development Status :: 4 - Beta',
         'Intended Audience :: Developers',
         'Topic :: Software Development :: Build Tools',
         'Programming Language :: Python :: 3.10',
+        'Programming Language :: Python :: 3.11',
     ],
 )
