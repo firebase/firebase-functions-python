@@ -39,8 +39,9 @@ version = {}
 with open(init_path) as fp:
     exec(fp.read(), version)  # pylint: disable=exec-used
 
-long_description = ('The Firebase Functions Python SDK provides an SDK for defining'
-                    'Cloud Functions for Firebase.')
+long_description = (
+    'The Firebase Functions Python SDK provides an SDK for defining'
+    'Cloud Functions for Firebase.')
 
 setup(
     name='firebase_functions',
