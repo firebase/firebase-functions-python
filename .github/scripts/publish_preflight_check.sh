@@ -24,8 +24,6 @@
 
 set -e
 set -u
-set -o pipefail
-set -x
 
 function echo_info() {
     local MESSAGE=$1
