@@ -135,6 +135,10 @@ echo_info "Checking release tag"
 echo_info "--------------------------------------------"
 echo_info ""
 
+echo_info "---< git fetch --depth=1 origin +refs/tags/*:refs/tags/* >---"
+git fetch --depth=1 origin +refs/tags/*:refs/tags/*
+echo ""
+
 readonly EXISTING_TAG=`git rev-parse -q --verify "refs/tags/v${RELEASE_VERSION}"` || true
 if [[ -n "${EXISTING_TAG}" ]]; then
   echo_warn "Tag v${RELEASE_VERSION} already exists. Exiting."
@@ -156,8 +160,8 @@ echo_info "Generating changelog"
 echo_info "--------------------------------------------"
 echo_info ""
 
-echo_info "---< git fetch origin main >---"
-git fetch origin main
+echo_info "---< git fetch origin main --prune --unshallow >---"
+git fetch origin main --prune --unshallow
 echo ""
 
 echo_info "Generating changelog from history..."
