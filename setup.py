@@ -38,20 +38,24 @@ version = {}
 with open(init_path) as fp:
     exec(fp.read(), version)  # pylint: disable=exec-used
 
-
 setup(
     name='firebase_functions',
     version=version['__version__'],
     description='Firebase Functions Python SDK',
+    url='https://github.com/firebase/firebase-functions-python',
+    author='Firebase Team',
+    keywords=['firebase', 'functions', 'google', 'cloud'],
+    license='Apache License 2.0',
     install_requires=install_requires,
     extras_require={'dev': dev_requires},
     packages=find_packages(where='src'),
     package_dir={'': 'src'},
     python_requires='>=3.10',
     classifiers=[
-        'Development Status :: 1 - Planning',
+        'Development Status :: 4 - Beta',
         'Intended Audience :: Developers',
         'Topic :: Software Development :: Build Tools',
         'Programming Language :: Python :: 3.10',
+        'Programming Language :: Python :: 3.11',
     ],
 )

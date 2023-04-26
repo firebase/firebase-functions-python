@@ -31,8 +31,6 @@ jobs:
 
     runs-on: ubuntu-latest
 
-    # When manually triggering the build, the requester can specify a target branch or a tag
-    # via the 'ref' client parameter.
     steps:
     - name: Checkout source for staging
       uses: actions/checkout@v3
@@ -95,12 +93,14 @@ jobs:
       run: ./.github/scripts/publish_preflight_check.sh
 
     - name: Create release tag
+      # Skip creating a release tag for prereleases
+      if: (!contains(github.event.pull_request.labels.*.name, 'release:prerelease'))
       uses: elgohr/Github-Release-Action@v4
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         tag_name: ${{ steps.preflight.outputs.version }}
-        release_name: Firebase Admin Python SDK ${{ steps.preflight.outputs.version }}
+        release_name: Firebase Functions Python SDK ${{ steps.preflight.outputs.version }}
         body: ${{ steps.preflight.outputs.changelog }}
         draft: false
         prerelease: false
@@ -110,3 +110,4 @@ jobs:
       with:
         user: firebase
         password: ${{ secrets.PYPI_PASSWORD }}
+        repository_url: https://test.pypi.org/legacy/

@@ -56,7 +56,7 @@ echo_info "Extracting release version"
 echo_info "--------------------------------------------"
 echo_info ""
 
-readonly INIT_FILE="src/__init__.py"
+readonly INIT_FILE="src/firebase-functions/__init__.py"
 echo_info "Loading version from: ${INIT_FILE}"
 
 readonly RELEASE_VERSION=`grep "__version__" ${INIT_FILE} | awk '{print $3}' | tr -d \'` || true
@@ -65,7 +65,7 @@ if [[ -z "${RELEASE_VERSION}" ]]; then
   terminate
 fi
 
-if [[ ! "${RELEASE_VERSION}" =~ ^([0-9]*)\.([0-9]*)\.([0-9]*)$ ]]; then
+if [[ ! "${RELEASE_VERSION}" =~ ^[0-9]+\.[0-9]+\.[0-9]+([a-zA-Z0-9_\-\.]+)?$ ]]; then
   echo_warn "Malformed release version string: ${RELEASE_VERSION}. Exiting."
   terminate
 fi
