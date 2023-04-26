@@ -24,6 +24,8 @@
 
 set -e
 set -u
+set -o pipefail
+set -x
 
 function echo_info() {
     local MESSAGE=$1
@@ -159,7 +161,7 @@ echo_info "Generating changelog"
 echo_info "--------------------------------------------"
 echo_info ""
 
-echo_info "---< git fetch origin master --prune --unshallow >---"
+echo_info "---< git fetch origin main >---"
 git fetch origin main
 echo ""
 
