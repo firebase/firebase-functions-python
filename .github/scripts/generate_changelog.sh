@@ -16,6 +16,7 @@
 
 set -e
 set -u
+set -x
 
 function printChangelog() {
   local TITLE=$1

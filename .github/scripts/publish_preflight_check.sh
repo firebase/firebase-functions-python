@@ -24,6 +24,7 @@
 
 set -e
 set -u
+set -x
 
 function echo_info() {
     local MESSAGE=$1
