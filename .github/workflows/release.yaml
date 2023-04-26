@@ -58,10 +58,10 @@ jobs:
     # Attach the packaged artifacts to the workflow output. These can be manually
     # downloaded for later inspection if necessary.
     - name: Archive artifacts
-      uses: actions/upload-artifact@v1
+      uses: actions/upload-artifact@v3
       with:
         name: dist
-        path: dist
+        path: dist/
 
   publish_release:
     needs: stage_release
@@ -81,11 +81,11 @@ jobs:
 
     steps:
     - name: Checkout source for publish
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
 
     # Download the artifacts created by the stage_release job.
     - name: Download release candidates
-      uses: actions/download-artifact@v1
+      uses: actions/download-artifact@v3
       with:
         name: dist
 
