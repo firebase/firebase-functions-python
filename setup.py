@@ -33,7 +33,8 @@ dev_requires = [
 
 # Read in the package metadata per recommendations from:
 # https://packaging.python.org/guides/single-sourcing-package-version/
-init_path = path.join(path.dirname(path.abspath(__file__)), 'src', 'firebase_functions', '__init__.py')
+init_path = path.join(path.dirname(path.abspath(__file__)), 'src',
+                      'firebase_functions', '__init__.py')
 version = {}
 with open(init_path) as fp:
     exec(fp.read(), version)  # pylint: disable=exec-used
