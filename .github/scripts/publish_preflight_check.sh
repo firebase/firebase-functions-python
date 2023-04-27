@@ -134,6 +134,10 @@ echo_info "Checking release tag"
 echo_info "--------------------------------------------"
 echo_info ""
 
+echo_info "---< git fetch --depth=1 origin +refs/tags/*:refs/tags/* || true >---"
+git fetch --depth=1 origin +refs/tags/*:refs/tags/* || true
+echo ""
+
 readonly EXISTING_TAG=`git rev-parse -q --verify "refs/tags/v${RELEASE_VERSION}"` || true
 if [[ -n "${EXISTING_TAG}" ]]; then
   echo_warn "Tag v${RELEASE_VERSION} already exists. Exiting."
@@ -155,8 +159,8 @@ echo_info "Generating changelog"
 echo_info "--------------------------------------------"
 echo_info ""
 
-echo_info "---< git fetch origin main >---"
-git fetch origin main
+echo_info "---< git fetch origin main --prune --unshallow >---"
+git fetch origin main --prune --unshallow
 echo ""
 
 echo_info "Generating changelog from history..."
@@ -166,11 +170,11 @@ echo "$CHANGELOG"
 
 # Parse and preformat the text to handle multi-line output.
 # https://docs.github.com/en/actions/using-workflows/workflow-commands-for-github-actions#example-of-a-multiline-string
-FILTERED_CHANGELOG=`echo "$CHANGELOG" | grep -v "\\[INFO\\]"`
+FILTERED_CHANGELOG=`echo "$CHANGELOG" | grep -v "[INFO]"`
 EOF=$(dd if=/dev/urandom bs=15 count=1 status=none | base64)
-echo "changelog=<<$EOF" >> "$GITHUB_OUTPUT"
-echo $CHANGELOG >> "$GITHUB_OUTPUT"
-echo $EOF >> "$GITHUG_OUTPUT"
+echo "changelog<<$EOF" >> "$GITHUB_OUTPUT"
+echo "$CHANGELOG" >> "$GITHUB_OUTPUT"
+echo "$EOF" >> "$GITHUB_OUTPUT"
 
 
 echo ""

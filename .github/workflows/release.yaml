@@ -25,9 +25,10 @@ jobs:
     # To publish a release, merge the release PR with the label 'release:publish'.
     # To stage a release without publishing it, manually invoke the workflow.
     # .  or apply the 'release:stage' label to a PR.
-    if: (github.event.pull_request.merged && contains(github.event.pull_request.labels.*.name, 'release:publish')) ||
+    if: >
+      (github.event.pull_request.merged && contains(github.event.pull_request.labels.*.name, 'release:publish')) ||
       github.event.workflow_dispatch ||
-      contains(github.event.pull_request.labels.*.name, 'release:stage')
+      (!github.event.pull_request.merged && contains(github.event.pull_request.labels.*.name, 'release:stage'))
 
     runs-on: ubuntu-latest
 
