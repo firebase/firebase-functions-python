@@ -40,14 +40,14 @@ fi
 
 LAST_TAG=`git describe --tags $(git rev-list --tags --max-count=1) 2> /dev/null` || true
 if [[ -z "${LAST_TAG}" ]]; then
-  echo_info "No tags found. Including all commits up to ${GITHUB_SHA}."
+  echo "[INFO] No tags found. Including all commits up to ${GITHUB_SHA}."
   VERSION_RANGE="${GITHUB_SHA}"
 else
-  echo_info "Last release tag: ${LAST_TAG}."
+  echo "[INFO] Last release tag: ${LAST_TAG}."
   COMMIT_SHA=`git show-ref -s ${LAST_TAG}`
-  echo_info "Last release commit: ${COMMIT_SHA}."
+  echo "[INFO] Last release commit: ${COMMIT_SHA}."
   VERSION_RANGE="${COMMIT_SHA}..${GITHUB_SHA}"
-  echo_info "Including all commits in the range ${VERSION_RANGE}."
+  echo "[INFO] Including all commits in the range ${VERSION_RANGE}."
 fi
 
 echo ""
