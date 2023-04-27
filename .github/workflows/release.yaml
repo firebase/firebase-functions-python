@@ -72,11 +72,11 @@ jobs:
     #   2. to the main branch
     #   3. with the label 'release:publish', and
     #   4. the title prefix 'chore: Release '.
-    # if: >
-    #   github.event.pull_request.merged &&
-    #   github.ref == 'main' &&
-    #   contains(github.event.pull_request.labels.*.name, 'release:publish') &&
-    #   startsWith(github.event.pull_request.title, 'chore: Release ')
+    if: >
+      github.event.pull_request.merged &&
+      github.ref == 'main' &&
+      contains(github.event.pull_request.labels.*.name, 'release:publish') &&
+      startsWith(github.event.pull_request.title, 'chore: Release ')
 
     runs-on: ubuntu-latest
 
@@ -112,4 +112,4 @@ jobs:
       uses: pypa/gh-action-pypi-publish@release/v1
       with:
         user: firebase
-        password: "abc"
+        password: ${{ secrets.PYPI_PASSWORD }}
