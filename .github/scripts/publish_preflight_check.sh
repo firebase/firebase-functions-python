@@ -24,7 +24,6 @@
 
 set -e
 set -u
-set -x
 
 function echo_info() {
     local MESSAGE=$1
@@ -175,7 +174,7 @@ FILTERED_CHANGELOG=`echo "$CHANGELOG" | grep -v "\\[INFO\\]"`
 EOF=$(dd if=/dev/urandom bs=15 count=1 status=none | base64)
 echo "changelog=<<$EOF" >> "$GITHUB_OUTPUT"
 echo $CHANGELOG >> "$GITHUB_OUTPUT"
-echo $EOF >> "$GITHUG_OUTPUT"
+echo $EOF >> "$GITHUB_OUTPUT"
 
 
 echo ""
