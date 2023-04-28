@@ -26,6 +26,7 @@ import firebase_functions.private.path_pattern as _path_pattern
 import firebase_functions.core as _core
 import cloudevents.http as _ce
 
+from firebase_admin import get_app, _apps, _DEFAULT_APP_NAME
 from google.cloud._helpers import _datetime_to_pb_timestamp
 from google.cloud.firestore_v1 import _helpers as _firestore_helpers
 
@@ -115,7 +116,10 @@ def _firestore_endpoint_handler(
         "%Y-%m-%dT%H:%M:%S.%f%z",
     )
 
-    firestore_client = _firestore_v1.Client(database=event_database)
+    if _DEFAULT_APP_NAME not in _apps:
+        initialize_app()
+    app = get_app()
+    firestore_client = _firestore_v1.Client(project=app.project_id, database=event_database)
     firestore_ref: DocumentReference = firestore_client.document(event_document)
     value_snapshot: DocumentSnapshot | None = None
     old_value_snapshot: DocumentSnapshot | None = None
