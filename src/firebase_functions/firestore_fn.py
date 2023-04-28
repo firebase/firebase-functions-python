@@ -119,7 +119,8 @@ def _firestore_endpoint_handler(
     if _DEFAULT_APP_NAME not in _apps:
         initialize_app()
     app = get_app()
-    firestore_client = _firestore_v1.Client(project=app.project_id, database=event_database)
+    firestore_client = _firestore_v1.Client(project=app.project_id,
+                                            database=event_database)
     firestore_ref: DocumentReference = firestore_client.document(event_document)
     value_snapshot: DocumentSnapshot | None = None
     old_value_snapshot: DocumentSnapshot | None = None
