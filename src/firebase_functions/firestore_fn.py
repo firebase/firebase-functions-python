@@ -26,7 +26,7 @@ import firebase_functions.private.path_pattern as _path_pattern
 import firebase_functions.core as _core
 import cloudevents.http as _ce
 
-from firebase_admin import get_app, _apps, _DEFAULT_APP_NAME
+from firebase_admin import initialize_app, get_app, _apps, _DEFAULT_APP_NAME
 from google.cloud._helpers import _datetime_to_pb_timestamp
 from google.cloud.firestore_v1 import _helpers as _firestore_helpers
 
