@@ -123,6 +123,7 @@ todo_include_todos = False
 html_theme = "devsite_sphinx_theme"
 html_theme_path = ["$THEMEPATH"]
 html_permalinks = False
+smartquotes = False
 project = u'$TITLE'
 copyright = u'2022, Google'
 author = u'Google'
