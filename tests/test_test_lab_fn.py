@@ -78,9 +78,6 @@ class TestTestLab(unittest.TestCase):
                 },
                 "clientInfo": {
                     "client": "gcloud",
-                    "details": {
-                        "someKey": "someValue",
-                    },
                 },
                 "testMatrixId": "testmatrix-123",
             })
