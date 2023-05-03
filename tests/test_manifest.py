@@ -99,7 +99,7 @@ full_stack_dict = {
         "name": "STRING_TEST",
         "type": "string"
     }, {
-        "default": "1,2,3",
+        "default": ["1", "2", "3"],
         "name": "LIST_TEST",
         "type": "list"
     }],
