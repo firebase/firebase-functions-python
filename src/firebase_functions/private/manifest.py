@@ -180,6 +180,48 @@ class ManifestStack:
         default_factory=list[ManifestRequiredApi])
 
 
+def _param_input_to_spec(
+    param_input: _params.TextInput | _params.ResourceInput |
+    _params.SelectInput | _params.MultiSelectInput
+) -> dict[str, _typing.Any]:
+    if isinstance(param_input, _params.TextInput):
+        return {
+            "text": {
+                key: value for key, value in {
+                    "example":
+                        param_input.example,
+                    "validationRegex":
+                        param_input.validation_regex,
+                    "validationErrorMessage":
+                        param_input.validation_error_message,
+                }.items() if value is not None
+            }
+        }
+
+    if isinstance(param_input, _params.ResourceInput):
+        return {
+            "resource": {
+                "type": param_input.type,
+            },
+        }
+
+    if isinstance(param_input, (_params.MultiSelectInput, _params.SelectInput)):
+        key = "select" if isinstance(param_input,
+                                     _params.SelectInput) else "multiSelect"
+        return {
+            key: {
+                "options": [{
+                    key: value for key, value in {
+                        "value": option.value,
+                        "label": option.label,
+                    }.items() if value is not None
+                } for option in param_input.options],
+            },
+        }
+
+    return {}
+
+
 def _param_to_spec(
         param: _params.Param | _params.SecretParam) -> dict[str, _typing.Any]:
     spec_dict: dict[str, _typing.Any] = {
@@ -190,8 +232,10 @@ def _param_to_spec(
     }
 
     if isinstance(param, _params.Param):
-        spec_dict["default"] = param.default
-        # TODO spec representation of inputs
+        spec_dict["default"] = f"{param.default}" if isinstance(
+            param.default, _params.Expression) else param.default
+        if param.input:
+            spec_dict["input"] = _param_input_to_spec(param.input)
 
     if isinstance(param, _params.BoolParam):
         spec_dict["type"] = "boolean"
@@ -203,8 +247,6 @@ def _param_to_spec(
         spec_dict["type"] = "secret"
     elif isinstance(param, _params.ListParam):
         spec_dict["type"] = "list"
-        if spec_dict["default"] is not None:
-            spec_dict["default"] = ",".join(spec_dict["default"])
     elif isinstance(param, _params.StringParam):
         spec_dict["type"] = "string"
     else:
@@ -217,7 +259,7 @@ def _object_to_spec(data) -> object:
     if isinstance(data, _Enum):
         return data.value
     elif isinstance(data, _params.Expression):
-        return data.to_cel()
+        return f"{data}"
     elif _dataclasses.is_dataclass(data):
         return _dataclass_to_spec(data)
     elif isinstance(data, list):

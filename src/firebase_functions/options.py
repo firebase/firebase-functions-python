@@ -313,6 +313,17 @@ class RuntimeOptions:
             for option in resettable_options:
                 if option not in merged_options:
                     merged_options[option] = RESET_VALUE
+
+        if self.secrets and not self.secrets == _util.Sentinel:
+
+            def convert_secret(secret) -> str:
+                secret_value = secret
+                if isinstance(secret, SecretParam):
+                    secret_value = secret.name
+                return secret_value
+
+            merged_options["secrets"] = list(
+                map(convert_secret, _typing.cast(list, self.secrets)))
         # _util.Sentinel values are converted to `None` in ManifestEndpoint generation
         # after other None values are removed - so as to keep them in the generated
         # YAML output as 'null' values.
@@ -322,7 +333,6 @@ class RuntimeOptions:
         assert kwargs["func_name"] is not None
         options_dict = self._asdict_with_global_options()
         options = self.__class__(**options_dict)
-
         secret_envs: list[
             _manifest.SecretEnvironmentVariable] | _util.Sentinel = []
         if options.secrets is not None:
@@ -330,10 +340,7 @@ class RuntimeOptions:
 
                 def convert_secret(
                         secret) -> _manifest.SecretEnvironmentVariable:
-                    secret_value = secret
-                    if isinstance(secret, SecretParam):
-                        secret_value = secret.name
-                    return {"key": secret_value}
+                    return {"key": secret}
 
                 secret_envs = list(
                     map(convert_secret, _typing.cast(list, options.secrets)))
@@ -834,7 +841,7 @@ class StorageOptions(RuntimeOptions):
     Internal use only.
     """
 
-    bucket: str | None = None
+    bucket: str | Expression[str] | None = None
     """
     The name of the bucket to watch for Storage events.
     """

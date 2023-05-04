@@ -14,9 +14,11 @@
 """Module for params that can make Cloud Functions codebases generic."""
 
 import abc as _abc
+import json as _json
 import dataclasses as _dataclasses
 import os as _os
 import re as _re
+import enum as _enum
 import typing as _typing
 
 _T = _typing.TypeVar("_T", str, int, float, bool, list)
@@ -30,21 +32,28 @@ class Expression(_abc.ABC, _typing.Generic[_T]):
     an Expression<number> as the value of an option that normally accepts numbers.
     """
 
+    def __cel__(self, expression: str):
+        object.__setattr__(self, "_cel_", expression)
+
+    def __str__(self):
+        return f"{{{{ {self._cel_} }}}}"
+
+    @property
     def value(self) -> _T:
         """
         Returns the Expression's runtime value, based on the CLI's resolution of params.
         """
         raise NotImplementedError()
 
-    def to_cel(self) -> str:
-        """
-        Returns the Expression's representation as a braced CEL expression.
-        """
-        return f"{{{{ {self} }}}}"
+
+def _obj_cel_name(obj: _T) -> _T:
+    return obj if not isinstance(obj, Expression) else object.__getattribute__(
+        obj, "_cel_")
 
 
 def _quote_if_string(literal: _T) -> _T:
-    return literal if not isinstance(literal, str) else f'"{literal}"'
+    return _obj_cel_name(literal) if not isinstance(literal,
+                                                    str) else f'"{literal}"'
 
 
 _params: dict[str, Expression] = {}
@@ -52,15 +61,24 @@ _params: dict[str, Expression] = {}
 
 @_dataclasses.dataclass(frozen=True)
 class TernaryExpression(Expression[_T], _typing.Generic[_T]):
+    """
+    A CEL expression that evaluates to one of two values based on the value of
+    another expression.
+    """
     test: Expression[bool]
     if_true: _T
     if_false: _T
 
-    def value(self) -> _T:
-        return self.if_true if self.test.value() else self.if_false
+    def __post_init__(self):
+        test_str = _obj_cel_name(self.test)
+        true_str = _quote_if_string(self.if_true)
+        false_str = _quote_if_string(self.if_false)
+        expression = f"{test_str} ? {true_str} : {false_str}"
+        super().__cel__(expression)
 
-    def __str__(self) -> str:
-        return f"{self.test} ? {_quote_if_string(self.if_true)} : {_quote_if_string(self.if_false)}"
+    @property
+    def value(self) -> _T:
+        return self.if_true if self.test.value else self.if_false
 
 
 @_dataclasses.dataclass(frozen=True)
@@ -73,8 +91,14 @@ class CompareExpression(Expression[bool], _typing.Generic[_T]):
     left: Expression[_T]
     right: _T
 
+    def __post_init__(self):
+        super().__cel__(
+            f"{_obj_cel_name(self.left)} {self.comparator} {_quote_if_string(self.right)}"
+        )
+
+    @property
     def value(self) -> bool:
-        left: _T = self.left.value()
+        left: _T = self.left.value
         if self.comparator == "==":
             return left == self.right
         elif self.comparator == ">":
@@ -88,15 +112,12 @@ class CompareExpression(Expression[bool], _typing.Generic[_T]):
         else:
             raise ValueError(f"Unknown comparator {self.comparator}")
 
-    def __str__(self) -> str:
-        return f"{self.left} {self.comparator} {_quote_if_string(self.right)}"
-
     def then(self, if_true: _T, if_false: _T) -> TernaryExpression[_T]:
         return TernaryExpression(self, if_true, if_false)
 
 
 @_dataclasses.dataclass(frozen=True)
-class SelectOptions(_typing.Generic[_T]):
+class SelectOption(_typing.Generic[_T]):
     """
     A representation of an option that can be selected via a SelectInput.
     """
@@ -115,7 +136,19 @@ class SelectInput(_typing.Generic[_T]):
     from a list of pre-canned options interactively at deploy-time.
     """
 
-    options: list[SelectOptions[_T]]
+    options: list[SelectOption[_T]]
+    """A list of user selectable options."""
+
+
+@_dataclasses.dataclass(frozen=True)
+class MultiSelectInput():
+    """
+    Specifies that a Param's value should be determined by having the user select
+    a subset from a list of pre-canned options interactively at deploy-time.
+    Will result in errors if used on Params of type other than string[].
+    """
+
+    options: list[SelectOption[str]]
     """A list of user selectable options."""
 
 
@@ -144,6 +177,11 @@ class TextInput:
     """
 
 
+class ResourceType(str, _enum.Enum):
+    """The type of resource that a picker should pick."""
+    STORAGE_BUCKET = "storage.googleapis.com/Bucket"
+
+
 @_dataclasses.dataclass(frozen=True)
 class ResourceInput:
     """
@@ -152,7 +190,7 @@ class ResourceInput:
     type. Currently, only type:"storage.googleapis.com/Bucket" is supported.
     """
 
-    type: str
+    type: ResourceType | str
     """
     The resource type. Currently, only type:"storage.googleapis.com/Bucket" is supported.
     """
@@ -169,7 +207,7 @@ class Param(Expression[_T]):
     The environment variable of this parameter. Must be upper case.
     """
 
-    default: _T | None = None
+    default: _T | Expression[_T] | None = None
     """
     The default value to assign to this param if none provided.
     """
@@ -190,11 +228,13 @@ class Param(Expression[_T]):
     deployments.
     """
 
-    input: TextInput | ResourceInput | SelectInput[_T] = TextInput()
+    input: TextInput | ResourceInput | SelectInput[
+        _T] | MultiSelectInput | None = None
     """
     The type of input that is required for this param, e.g. TextInput.
     """
 
+    @property
     def value(self) -> _T:
         raise NotImplementedError()
 
@@ -204,10 +244,8 @@ class Param(Expression[_T]):
     def equals(self, right: _T) -> CompareExpression:
         return self.compare("==", right)
 
-    def __str__(self) -> str:
-        return f"params.{self.name}"
-
     def __post_init__(self):
+        super().__cel__(f"params.{self.name}")
         if isinstance(self, _DefaultStringParam):
             return
         if not _re.match(r"^[A-Z0-9_]+$", self.name):
@@ -248,10 +286,8 @@ class SecretParam(Expression[str]):
     deployments.
     """
 
-    def __str__(self):
-        return f"params.{self.name}"
-
     def __post_init__(self):
+        super().__cel__(f"params.{self.name}")
         if not _re.match(r"^[A-Z0-9_]+$", self.name):
             raise ValueError(
                 "Parameter names must only use uppercase letters, numbers and "
@@ -262,6 +298,7 @@ class SecretParam(Expression[str]):
             )
         _params[self.name] = self
 
+    @property
     def value(self) -> str:
         """Current value of this parameter."""
         return _os.environ.get(self.name, "")
@@ -277,12 +314,14 @@ class SecretParam(Expression[str]):
 class StringParam(Param[str]):
     """A parameter as a string value."""
 
+    @property
     def value(self) -> str:
         if _os.environ.get(self.name) is not None:
             return _os.environ[self.name]
 
         if self.default is not None:
-            return self.default
+            return self.default.value if isinstance(
+                self.default, Expression) else self.default
 
         return str()
 
@@ -291,11 +330,13 @@ class StringParam(Param[str]):
 class IntParam(Param[int]):
     """A parameter as a int value."""
 
+    @property
     def value(self) -> int:
         if _os.environ.get(self.name) is not None:
             return int(_os.environ[self.name])
         if self.default is not None:
-            return self.default
+            return self.default.value if isinstance(
+                self.default, Expression) else self.default
         return int()
 
 
@@ -303,11 +344,13 @@ class IntParam(Param[int]):
 class FloatParam(Param[float]):
     """A parameter as a float value."""
 
+    @property
     def value(self) -> float:
         if _os.environ.get(self.name) is not None:
             return float(_os.environ[self.name])
         if self.default is not None:
-            return self.default
+            return self.default.value if isinstance(
+                self.default, Expression) else self.default
         return float()
 
 
@@ -315,16 +358,14 @@ class FloatParam(Param[float]):
 class BoolParam(Param[bool]):
     """A parameter as a bool value."""
 
+    @property
     def value(self) -> bool:
         env_value = _os.environ.get(self.name)
         if env_value is not None:
-            if env_value.lower() in ["true", "t", "1", "y", "yes"]:
-                return True
-            if env_value.lower() in ["false", "f", "0", "n", "no"]:
-                return False
-            raise ValueError(f"Invalid value for {self.name}: {env_value}")
+            return env_value.lower() == "true"
         if self.default is not None:
-            return self.default
+            return self.default.value if isinstance(
+                self.default, Expression) else self.default
         return False
 
 
@@ -332,11 +373,25 @@ class BoolParam(Param[bool]):
 class ListParam(Param[list]):
     """A parameter as a list of strings."""
 
+    @property
     def value(self) -> list[str]:
         if _os.environ.get(self.name) is not None:
+            # If the environment variable starts with "[" and ends with "]",
+            # then assume it is a JSON array and try to parse it.
+            # (This is for Cloud Run (v2 Functions), the environment variable is a JSON array.)
+            if _os.environ[self.name].startswith("[") and _os.environ[
+                    self.name].endswith("]"):
+                try:
+                    return _json.loads(_os.environ[self.name])
+                except _json.JSONDecodeError:
+                    return []
+            # Otherwise, split the string by commas.
+            # (This is for emulator & the Firebase CLI generated .env file, the environment
+            # variable is a comma-separated list.)
             return list(filter(len, _os.environ[self.name].split(",")))
         if self.default is not None:
-            return self.default
+            return self.default.value if isinstance(
+                self.default, Expression) else self.default
         return []
 
 
