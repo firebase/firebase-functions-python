@@ -1,4 +1,4 @@
-# Cloud Functions for Firebase Python SDK
+# Cloud Functions for Firebase Python SDK (Public Preview)
 
 The [`firebase-functions`](https://pypi.org/project/firebase-functions/) package provides an SDK for defining Cloud Functions for Firebase in Python.
 
@@ -29,6 +29,10 @@ def new_post(event):
     print(f"Received new post with ID: {event.params.get('post_id')}")
     return notifyUsers(event.data)
 ```
+
+## Contributing
+
+To contribute a change, [check out the contributing guide](.github/CONTRIBUTING.md).
 
 ## License
 
