@@ -23,10 +23,7 @@ import firebase_functions.private.util as _util
 import firebase_functions.private.path_pattern as _path_pattern
 import firebase_functions.core as _core
 import cloudevents.http as _ce
-import firebase_admin as _fa
-import firebase_admin.db as _db
 
-from firebase_admin.db import Reference
 from firebase_functions.options import DatabaseOptions
 from firebase_functions.core import Change, T
 
@@ -52,9 +49,9 @@ class Event(_core.CloudEvent[T]):
     The instance ID portion of the fully qualified resource name.
     """
 
-    reference: Reference
+    reference: str
     """
-    The database reference.
+    The database reference path.
     """
 
     location: str
@@ -99,24 +96,16 @@ def _db_endpoint_handler(
             before=before,
             after=after,
         )
-    if _fa._DEFAULT_APP_NAME not in _fa._apps:
-        _fa.initialize_app()
-    app = _fa.get_app()
     event_instance = event_attributes["instance"]
-    event_database_host = event_attributes["firebasedatabasehost"]
-    database_reference = _db.reference(
-        path=event_attributes["ref"],
-        app=app,
-        url=f"https://{event_instance}.{event_database_host}",
-    )
+    event_ref = event_attributes["ref"]
     params: dict[str, str] = {
-        **ref_pattern.extract_matches(event_attributes["ref"]),
+        **ref_pattern.extract_matches(event_ref),
         **instance_pattern.extract_matches(event_instance),
     }
     database_event = Event(
-        firebase_database_host=event_database_host,
+        firebase_database_host=event_attributes["firebasedatabasehost"],
         instance=event_instance,
-        reference=database_reference,
+        reference=event_ref,
         location=event_attributes["location"],
         specversion=event_attributes["specversion"],
         id=event_attributes["id"],
