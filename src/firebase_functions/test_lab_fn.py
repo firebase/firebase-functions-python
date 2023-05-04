@@ -222,7 +222,7 @@ def _event_handler(func: _C1, raw: _ce.CloudEvent) -> None:
         ),
         client_info=ClientInfo(
             client=event_data["clientInfo"]["client"],
-            details=event_data["clientInfo"]["details"],
+            details=event_data["clientInfo"].get("details", {}),
         ),
         test_matrix_id=event_data["testMatrixId"],
     )
