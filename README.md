@@ -20,7 +20,7 @@ If the official documentation doesn't help, try asking through our official supp
 ## Usage
 
 ```python
-// functions/index.js
+# functions/main.py
 from firebase_functions import db_fn
 from notify_users import api
 
