@@ -28,18 +28,6 @@ output_path = params.StringParam(
     default="/images/processed",
 )
 
-image_type = params.ListParam(
-    "IMAGE_TYPE",
-    label="convert image to preferred types",
-    description="The image types you'd like your source image to convert to.",
-    input=params.MultiSelectInput([
-        params.SelectOption(value="jpeg", label="jpeg"),
-        params.SelectOption(value="png", label="png"),
-        params.SelectOption(value="webp", label="webp"),
-    ]),
-    default=["jpeg", "png"],
-)
-
 delete_original = params.BoolParam(
     "DELETE_ORIGINAL_FILE",
     label="delete the original file",
@@ -68,7 +56,6 @@ def resize_images(event: storage_fn.CloudEvent[storage_fn.StorageObjectData]):
     This function will be triggered when a new object is created in the bucket.
     """
     print("Got a new image:", event)
-    print("Selected image types:", image_type.value)
     print("Selected bucket resource:", bucket.value)
     print("Selected output location:", output_path.value)
     print("Testing a not so secret api key:", image_resize_api_secret.value)
