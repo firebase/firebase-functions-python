@@ -71,7 +71,7 @@ Prerequisites:
 ./docs/generate.sh --out=./docs/build/ --pypath=src/
 ```
 
-## Deploying a sample for testing
+### Deploying a sample for testing
 
 Example:
 
