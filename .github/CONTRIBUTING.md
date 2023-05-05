@@ -21,4 +21,69 @@ All submissions, including submissions by project members, require review. We
 use GitHub pull requests for this purpose. Consult [GitHub Help] for more
 information on using pull requests.
 
+## Setup local environment
+
+Clone the project and run the following commands to setup your environment 
+
+```sh
+python3.11 -m venv venv
+source venv/bin/activate 
+pip3 install --upgrade pip 
+python3.11 -m pip install -e ".[dev]"
+```
+
+(this also applies to setting up samples environment for each sample)
+
+### Running tests
+
+Without coverage:
+```bash
+python3.11 -m pytest
+```
+
+With coverage:
+```bash
+python3.11 -m pytest --cov=src --cov-report term --cov-report html --cov-report xml -vv
+```
+
+### Formatting code
+
+```bash
+yapf -i -r -p .
+```
+
+### Running lints & type checking
+
+```bash
+# Type checking
+python3.11 -m mypy .
+# Linting
+python3.11 -m pylint $(git ls-files '*.py')
+```
+
+### Generating Docs
+
+Prerequisites:
+  - On OSX, install getopt:
+    -  `brew install gnu-getopt`
+
+```sh
+./docs/generate.sh --out=./docs/build/ --pypath=src/
+```
+
+## Deploying a sample for testing
+
+Example:
+
+```sh
+cd samples/basic_https
+firebase deploy --only=functions
+```
+
+Note to test your local changes of `firebase-functions` when deploying you sohuld push your changes to a branch on GitHub and then locally in the `sample/*/requirements.txt` change `firebase-functions` dependency line to instead come from git, e.g. :
+
+```
+git+https://github.com/YOUR_USERNAME/firebase-functions-python.git@YOURBRANCH#egg=firebase-functions
+```
+
 [github help]: https://help.github.com/articles/about-pull-requests/
