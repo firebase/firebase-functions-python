@@ -80,7 +80,7 @@ cd samples/basic_https
 firebase deploy --only=functions
 ```
 
-Note to test your local changes of `firebase-functions` when deploying you sohuld push your changes to a branch on GitHub and then locally in the `sample/*/requirements.txt` change `firebase-functions` dependency line to instead come from git, e.g. :
+Note to test your local changes of `firebase-functions` when deploying you should push your changes to a branch on GitHub and then locally in the `sample/*/requirements.txt` change `firebase-functions` dependency line to instead come from git, e.g. :
 
 ```
 git+https://github.com/YOUR_USERNAME/firebase-functions-python.git@YOURBRANCH#egg=firebase-functions
