@@ -95,10 +95,13 @@ jobs:
       id: preflight
       run: ./.github/scripts/publish_preflight_check.sh
 
+      # We pull this action from a custom fork of a contributor until
+      # https://github.com/actions/create-release/pull/32 is merged. Also note that v1 of
+      # this action does not support the "body" parameter.
     - name: Create release tag
       # Skip creating a release tag for prereleases
       if: (!contains(github.event.pull_request.labels.*.name, 'release:prerelease'))
-      uses: elgohr/Github-Release-Action@v4
+      uses: fleskesvor/create-release@1a72e235c178bf2ae6c51a8ae36febc24568c5fe
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
