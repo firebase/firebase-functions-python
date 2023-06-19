@@ -201,9 +201,8 @@ def on_document_written(**kwargs) -> _typing.Callable[[_C1], _C1]:
     options = FirestoreOptions(**kwargs)
 
     def on_document_written_inner_decorator(func: _C1):
-        print("WWWWWWWWWW: ", options.document)
         document_pattern = _path_pattern.PathPattern(_util.normalize_path(options.document))
-        print("WWWWWWWWWW 1111111: ", _util.normalize_path(options.document))
+
         @_functools.wraps(func)
         def on_document_written_wrapped(raw: _ce.CloudEvent):
             return _firestore_endpoint_handler(
