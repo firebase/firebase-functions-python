@@ -118,7 +118,6 @@ def _firestore_endpoint_handler(
         event_time = _util.nanoseconds_timestamp_conversion(time)
     else:
         event_time = _util.microsecond_timestamp_conversion(time)
-        event_time = _util.nanoseconds_timestamp_conversion(time)
 
     if _DEFAULT_APP_NAME not in _apps:
         initialize_app()
