@@ -117,7 +117,6 @@ def _firestore_endpoint_handler(
 
     if (is_nanoseconds):
         event_time = _util.nanoseconds_timestamp_conversion(time)
-
     else:
         event_time = _util.microsecond_timestamp_conversion(time)
         event_time = _util.nanoseconds_timestamp_conversion(time)
