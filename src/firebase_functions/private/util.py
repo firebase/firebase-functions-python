@@ -308,3 +308,10 @@ def firebase_config() -> None | FirebaseConfig:
             f'FIREBASE_CONFIG JSON string "{json_str}" is not valid json. {err}'
         ) from err
     return FirebaseConfig(storage_bucket=json_data.get("storageBucket"))
+
+
+def normalize_path(path: str) -> str:
+    """
+    Normalize a path string to a consistent format.
+    """
+    return path.strip("/")

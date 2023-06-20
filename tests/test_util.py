@@ -15,7 +15,7 @@
 Internal utils tests.
 """
 from os import environ, path
-from firebase_functions.private.util import firebase_config
+from firebase_functions.private.util import firebase_config, normalize_path
 
 test_bucket = "python-functions-testing.appspot.com"
 test_config_file = path.join(path.dirname(path.realpath(__file__)),
@@ -40,3 +40,21 @@ def test_firebase_config_loads_from_env_file():
     environ["FIREBASE_CONFIG"] = test_config_file
     assert firebase_config().storage_bucket == test_bucket, (
         "Failure, firebase_config did not load from env variable.")
+
+
+def test_normalize_document_path():
+    """
+    Testing "document" path passed to Firestore event listener 
+    is normalized.
+    """
+    test_path = "/test/document/"
+    assert normalize_path(test_path) == "test/document", (
+        "Failure, path was not normalized.")
+
+    test_path1 = "//////test/document//////////"
+    assert normalize_path(test_path1) == "test/document", (
+        "Failure, path was not normalized.")
+
+    test_path2 = "test/document"
+    assert normalize_path(test_path2) == "test/document", (
+        "Failure, path should not be changed if it is already normalized.")
