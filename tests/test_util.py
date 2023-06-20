@@ -15,7 +15,8 @@
 Internal utils tests.
 """
 from os import environ, path
-from firebase_functions.private.util import firebase_config
+from firebase_functions.private.util import firebase_config, microsecond_timestamp_conversion, nanoseconds_timestamp_conversion, is_nanoseconds_timestamp
+import datetime as _dt
 
 test_bucket = "python-functions-testing.appspot.com"
 test_config_file = path.join(path.dirname(path.realpath(__file__)),
@@ -40,3 +41,65 @@ def test_firebase_config_loads_from_env_file():
     environ["FIREBASE_CONFIG"] = test_config_file
     assert firebase_config().storage_bucket == test_bucket, (
         "Failure, firebase_config did not load from env variable.")
+
+
+def test_microsecond_conversion():
+    """
+    Testing microsecond_timestamp_conversion works as intended
+    """
+    timestamps = [
+        ("2023-06-20T10:15:22.396358Z", "2023-06-20T10:15:22.396358Z"),
+        ("2021-02-20T11:23:45.987123Z", "2021-02-20T11:23:45.987123Z"),
+        ("2022-09-18T09:15:38.246824Z", "2022-09-18T09:15:38.246824Z"),
+        ("2010-09-18T09:15:38.246824Z", "2010-09-18T09:15:38.246824Z"),
+    ]
+
+    for input_timestamp, expected_output in timestamps:
+        expected_datetime = _dt.datetime.strptime(expected_output,
+                                                  "%Y-%m-%dT%H:%M:%S.%fZ")
+        expected_datetime = expected_datetime.replace(tzinfo=_dt.timezone.utc)
+        assert microsecond_timestamp_conversion(
+            input_timestamp) == expected_datetime
+
+
+def test_nanosecond_conversion():
+    """
+    Testing nanoseconds_timestamp_conversion works as intended
+    """
+    timestamps = [
+        ("2023-01-01T12:34:56.123456789Z", "2023-01-01T12:34:56.123456Z"),
+        ("2023-02-14T14:37:52.987654321Z", "2023-02-14T14:37:52.987654Z"),
+        ("2023-03-21T06:43:58.564738291Z", "2023-03-21T06:43:58.564738Z"),
+        ("2023-08-15T22:22:22.222222222Z", "2023-08-15T22:22:22.222222Z"),
+    ]
+
+    for input_timestamp, expected_output in timestamps:
+        expected_datetime = _dt.datetime.strptime(expected_output,
+                                                  "%Y-%m-%dT%H:%M:%S.%fZ")
+        expected_datetime = expected_datetime.replace(tzinfo=_dt.timezone.utc)
+        assert nanoseconds_timestamp_conversion(
+            input_timestamp) == expected_datetime
+
+
+def test_is_nanoseconds_timestamp():
+    """
+    Testing is_nanoseconds_timestamp works as intended
+    """
+    microsecond_timestamp1 = "2023-06-20T10:15:22.396358Z"
+    microsecond_timestamp2 = "2021-02-20T11:23:45.987123Z"
+    microsecond_timestamp3 = "2022-09-18T09:15:38.246824Z"
+    microsecond_timestamp4 = "2010-09-18T09:15:38.246824Z"
+
+    nanosecond_timestamp1 = "2023-01-01T12:34:56.123456789Z"
+    nanosecond_timestamp2 = "2023-02-14T14:37:52.987654321Z"
+    nanosecond_timestamp3 = "2023-03-21T06:43:58.564738291Z"
+    nanosecond_timestamp4 = "2023-08-15T22:22:22.222222222Z"
+
+    assert is_nanoseconds_timestamp(microsecond_timestamp1) is False
+    assert is_nanoseconds_timestamp(microsecond_timestamp2) is False
+    assert is_nanoseconds_timestamp(microsecond_timestamp3) is False
+    assert is_nanoseconds_timestamp(microsecond_timestamp4) is False
+    assert is_nanoseconds_timestamp(nanosecond_timestamp1) is True
+    assert is_nanoseconds_timestamp(nanosecond_timestamp2) is True
+    assert is_nanoseconds_timestamp(nanosecond_timestamp3) is True
+    assert is_nanoseconds_timestamp(nanosecond_timestamp4) is True
