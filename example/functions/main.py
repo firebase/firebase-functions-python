@@ -31,8 +31,7 @@ def oncallexample(req: https_fn.CallableRequest):
     return "Hello from https on call function example"
 
 
-@pubsub_fn.on_message_published(
-    topic="hello",)
+@pubsub_fn.on_message_published(topic="hello",)
 def onmessagepublishedexample(
         event: pubsub_fn.CloudEvent[pubsub_fn.MessagePublishedData]) -> None:
     print("Hello from pubsub event:", event)

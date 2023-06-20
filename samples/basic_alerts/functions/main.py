@@ -7,8 +7,8 @@ from firebase_functions.alerts import crashlytics_fn
 from firebase_functions.alerts import performance_fn
 
 
-@alerts_fn.on_alert_published(alert_type=alerts_fn.AlertType.BILLING_PLAN_UPDATE
-                             )
+@alerts_fn.on_alert_published(
+    alert_type=alerts_fn.AlertType.BILLING_PLAN_UPDATE)
 def onalertpublished(
     alert: alerts_fn.AlertEvent[alerts_fn.FirebaseAlertData[
         billing_fn.PlanUpdatePayload]]
