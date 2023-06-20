@@ -134,3 +134,7 @@ pytest-coverage.txt
 
 # reference docs
 doc/dist
+
+# IDE files
+.idea
+.vscode
