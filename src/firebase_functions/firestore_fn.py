@@ -111,10 +111,16 @@ def _firestore_endpoint_handler(
     event_namespace = event_attributes["namespace"]
     event_document = event_attributes["document"]
     event_database = event_attributes["database"]
-    event_time = _dt.datetime.strptime(
-        event_attributes["time"],
-        "%Y-%m-%dT%H:%M:%S.%f%z",
-    )
+
+    time = event_attributes["time"]
+    is_nanoseconds = _util.is_nanoseconds_timestamp(time)
+
+    if (is_nanoseconds):
+        event_time = _util.nanoseconds_timestamp_conversion(time)
+
+    else:
+        event_time = _util.microsecond_timestamp_conversion(time)
+        event_time = _util.nanoseconds_timestamp_conversion(time)
 
     if _DEFAULT_APP_NAME not in _apps:
         initialize_app()

@@ -19,6 +19,7 @@ import os as _os
 import json as _json
 import typing as _typing
 import dataclasses as _dataclasses
+import datetime as _dt
 import enum as _enum
 from flask import Request as _Request
 from functions_framework import logging as _logging
@@ -308,3 +309,48 @@ def firebase_config() -> None | FirebaseConfig:
             f'FIREBASE_CONFIG JSON string "{json_str}" is not valid json. {err}'
         ) from err
     return FirebaseConfig(storage_bucket=json_data.get("storageBucket"))
+
+
+def nanoseconds_timestamp_conversion(time: str) -> _dt.datetime:
+    """Converts a nanosecond timestamp and returns a datetime object of the current time in UTC"""
+
+    # Split the string into date-time and nanoseconds
+    s_datetime, s_ns = time.split(".")
+
+    # Split the nanoseconds from the timezone specifier ('Z')
+    s_ns, _ = s_ns.split("Z")
+
+    # Only take the first 6 digits of the nanoseconds
+    s_ns = s_ns[:6]
+
+    # Put the string back together
+    s_processed = f"{s_datetime}.{s_ns}Z"
+
+    # Now parse the date-time string
+    event_time = _dt.datetime.strptime(s_processed, "%Y-%m-%dT%H:%M:%S.%fZ")
+
+    # strptime assumes local time, we know it's UTC and so:
+    event_time = event_time.replace(tzinfo=_dt.timezone.utc)
+
+    return event_time
+
+
+def is_nanoseconds_timestamp(time: str) -> bool:
+    """Return a bool which indicates if the timestamp is in nanoseconds"""
+    # Split the string into date-time and fraction of second
+    _, s_fraction = time.split(".")
+
+    # Split the fraction from the timezone specifier ('Z' or 'z')
+    s_fraction, _ = s_fraction.split(
+        "Z") if "Z" in s_fraction else s_fraction.split("z")
+
+    # If the fraction is 9 digits long, it's a nanosecond timestamp
+    return len(s_fraction) == 9
+
+
+def microsecond_timestamp_conversion(time: str) -> _dt.datetime:
+    """Converts a microsecond timestamp and returns a datetime object of the current time in UTC"""
+    return _dt.datetime.strptime(
+        time,
+        "%Y-%m-%dT%H:%M:%S.%f%z",
+    )
