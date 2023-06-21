@@ -112,7 +112,7 @@ def _firestore_endpoint_handler(
     event_database = event_attributes["database"]
 
     time = event_attributes["time"]
-    is_nanoseconds = _util.is_nanoseconds_timestamp(time)
+    is_nanoseconds = _util.is_precision_timestamp(time)
 
     if is_nanoseconds:
         event_time = _util.nanoseconds_timestamp_conversion(time)

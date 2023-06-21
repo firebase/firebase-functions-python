@@ -314,28 +314,18 @@ def firebase_config() -> None | FirebaseConfig:
 def nanoseconds_timestamp_conversion(time: str) -> _dt.datetime:
     """Converts a nanosecond timestamp and returns a datetime object of the current time in UTC"""
 
-    # Split the string into date-time and nanoseconds
-    s_datetime, s_ns = time.split(".")
-
-    # Split the nanoseconds from the timezone specifier ('Z')
-    s_ns, _ = s_ns.split("Z")
-
-    # Only take the first 6 digits of the nanoseconds
-    s_ns = s_ns[:6]
-
-    # Put the string back together
-    s_processed = f"{s_datetime}.{s_ns}Z"
-
-    # Now parse the date-time string
-    event_time = _dt.datetime.strptime(s_processed, "%Y-%m-%dT%H:%M:%S.%fZ")
-
-    # strptime assumes local time, we know it's UTC and so:
-    event_time = event_time.replace(tzinfo=_dt.timezone.utc)
+    # Separate the date and time part from the nanoseconds.
+    datetime_str, nanosecond_str = time.replace("Z", "").split(".")
+    # Parse the date and time part of the string.
+    event_time = _dt.datetime.strptime(datetime_str, "%Y-%m-%dT%H:%M:%S")
+    # Add the microseconds and timezone.
+    event_time = event_time.replace(microsecond=int(nanosecond_str[:6]),
+                                    tzinfo=_dt.timezone.utc)
 
     return event_time
 
 
-def is_nanoseconds_timestamp(time: str) -> bool:
+def is_precision_timestamp(time: str) -> bool:
     """Return a bool which indicates if the timestamp is in nanoseconds"""
     # Split the string into date-time and fraction of second
     _, s_fraction = time.split(".")
@@ -345,7 +335,7 @@ def is_nanoseconds_timestamp(time: str) -> bool:
         "Z") if "Z" in s_fraction else s_fraction.split("z")
 
     # If the fraction is 9 digits long, it's a nanosecond timestamp
-    return len(s_fraction) == 9
+    return len(s_fraction) > 6
 
 
 def microsecond_timestamp_conversion(time: str) -> _dt.datetime:

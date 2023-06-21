@@ -15,7 +15,7 @@
 Internal utils tests.
 """
 from os import environ, path
-from firebase_functions.private.util import firebase_config, microsecond_timestamp_conversion, nanoseconds_timestamp_conversion, is_nanoseconds_timestamp
+from firebase_functions.private.util import firebase_config, microsecond_timestamp_conversion, nanoseconds_timestamp_conversion, is_precision_timestamp
 import datetime as _dt
 
 test_bucket = "python-functions-testing.appspot.com"
@@ -95,11 +95,11 @@ def test_is_nanoseconds_timestamp():
     nanosecond_timestamp3 = "2023-03-21T06:43:58.564738291Z"
     nanosecond_timestamp4 = "2023-08-15T22:22:22.222222222Z"
 
-    assert is_nanoseconds_timestamp(microsecond_timestamp1) is False
-    assert is_nanoseconds_timestamp(microsecond_timestamp2) is False
-    assert is_nanoseconds_timestamp(microsecond_timestamp3) is False
-    assert is_nanoseconds_timestamp(microsecond_timestamp4) is False
-    assert is_nanoseconds_timestamp(nanosecond_timestamp1) is True
-    assert is_nanoseconds_timestamp(nanosecond_timestamp2) is True
-    assert is_nanoseconds_timestamp(nanosecond_timestamp3) is True
-    assert is_nanoseconds_timestamp(nanosecond_timestamp4) is True
+    assert is_precision_timestamp(microsecond_timestamp1) is False
+    assert is_precision_timestamp(microsecond_timestamp2) is False
+    assert is_precision_timestamp(microsecond_timestamp3) is False
+    assert is_precision_timestamp(microsecond_timestamp4) is False
+    assert is_precision_timestamp(nanosecond_timestamp1) is True
+    assert is_precision_timestamp(nanosecond_timestamp2) is True
+    assert is_precision_timestamp(nanosecond_timestamp3) is True
+    assert is_precision_timestamp(nanosecond_timestamp4) is True
