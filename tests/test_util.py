@@ -15,7 +15,7 @@
 Internal utils tests.
 """
 from os import environ, path
-from firebase_functions.private.util import firebase_config, microsecond_timestamp_conversion, nanoseconds_timestamp_conversion, is_precision_timestamp
+from firebase_functions.private.util import firebase_config, microsecond_timestamp_conversion, nanoseconds_timestamp_conversion, is_precision_timestamp, normalize_path
 import datetime as _dt
 
 test_bucket = "python-functions-testing.appspot.com"
@@ -103,3 +103,21 @@ def test_is_nanoseconds_timestamp():
     assert is_precision_timestamp(nanosecond_timestamp2) is True
     assert is_precision_timestamp(nanosecond_timestamp3) is True
     assert is_precision_timestamp(nanosecond_timestamp4) is True
+
+
+def test_normalize_document_path():
+    """
+    Testing "document" path passed to Firestore event listener 
+    is normalized.
+    """
+    test_path = "/test/document/"
+    assert normalize_path(test_path) == "test/document", (
+        "Failure, path was not normalized.")
+
+    test_path1 = "//////test/document//////////"
+    assert normalize_path(test_path1) == "test/document", (
+        "Failure, path was not normalized.")
+
+    test_path2 = "test/document"
+    assert normalize_path(test_path2) == "test/document", (
+        "Failure, path should not be changed if it is already normalized.")

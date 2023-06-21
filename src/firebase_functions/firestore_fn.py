@@ -204,7 +204,8 @@ def on_document_written(**kwargs) -> _typing.Callable[[_C1], _C1]:
     options = FirestoreOptions(**kwargs)
 
     def on_document_written_inner_decorator(func: _C1):
-        document_pattern = _path_pattern.PathPattern(options.document)
+        document_pattern = _path_pattern.PathPattern(
+            _util.normalize_path(options.document))
 
         @_functools.wraps(func)
         def on_document_written_wrapped(raw: _ce.CloudEvent):
@@ -251,7 +252,8 @@ def on_document_updated(**kwargs) -> _typing.Callable[[_C1], _C1]:
     options = FirestoreOptions(**kwargs)
 
     def on_document_updated_inner_decorator(func: _C1):
-        document_pattern = _path_pattern.PathPattern(options.document)
+        document_pattern = _path_pattern.PathPattern(
+            _util.normalize_path(options.document))
 
         @_functools.wraps(func)
         def on_document_updated_wrapped(raw: _ce.CloudEvent):
@@ -298,7 +300,8 @@ def on_document_created(**kwargs) -> _typing.Callable[[_C2], _C2]:
     options = FirestoreOptions(**kwargs)
 
     def on_document_created_inner_decorator(func: _C2):
-        document_pattern = _path_pattern.PathPattern(options.document)
+        document_pattern = _path_pattern.PathPattern(
+            _util.normalize_path(options.document))
 
         @_functools.wraps(func)
         def on_document_created_wrapped(raw: _ce.CloudEvent):
@@ -345,7 +348,8 @@ def on_document_deleted(**kwargs) -> _typing.Callable[[_C2], _C2]:
     options = FirestoreOptions(**kwargs)
 
     def on_document_deleted_inner_decorator(func: _C2):
-        document_pattern = _path_pattern.PathPattern(options.document)
+        document_pattern = _path_pattern.PathPattern(
+            _util.normalize_path(options.document))
 
         @_functools.wraps(func)
         def on_document_deleted_wrapped(raw: _ce.CloudEvent):

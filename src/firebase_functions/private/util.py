@@ -344,3 +344,8 @@ def microsecond_timestamp_conversion(time: str) -> _dt.datetime:
         time,
         "%Y-%m-%dT%H:%M:%S.%f%z",
     )
+def normalize_path(path: str) -> str:
+    """
+    Normalize a path string to a consistent format.
+    """
+    return path.strip("/")
