@@ -315,7 +315,8 @@ def nanoseconds_timestamp_conversion(time: str) -> _dt.datetime:
     """Converts a nanosecond timestamp and returns a datetime object of the current time in UTC"""
 
     # Separate the date and time part from the nanoseconds.
-    datetime_str, nanosecond_str = time.replace("Z", "").replace("z", "").split(".")
+    datetime_str, nanosecond_str = time.replace("Z", "").replace("z",
+                                                                 "").split(".")
     # Parse the date and time part of the string.
     event_time = _dt.datetime.strptime(datetime_str, "%Y-%m-%dT%H:%M:%S")
     # Add the microseconds and timezone.
