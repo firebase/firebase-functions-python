@@ -315,7 +315,7 @@ def nanoseconds_timestamp_conversion(time: str) -> _dt.datetime:
     """Converts a nanosecond timestamp and returns a datetime object of the current time in UTC"""
 
     # Separate the date and time part from the nanoseconds.
-    datetime_str, nanosecond_str = time.replace("Z", "").split(".")
+    datetime_str, nanosecond_str = time.replace("Z", "").replace("z", "").split(".")
     # Parse the date and time part of the string.
     event_time = _dt.datetime.strptime(datetime_str, "%Y-%m-%dT%H:%M:%S")
     # Add the microseconds and timezone.
@@ -334,7 +334,7 @@ def is_precision_timestamp(time: str) -> bool:
     s_fraction, _ = s_fraction.split(
         "Z") if "Z" in s_fraction else s_fraction.split("z")
 
-    # If the fraction is 9 digits long, it's a nanosecond timestamp
+    # If the fraction is more than 6 digits long, it's a nanosecond timestamp
     return len(s_fraction) > 6
 
 
