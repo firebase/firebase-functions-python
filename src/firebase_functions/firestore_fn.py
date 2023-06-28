@@ -18,7 +18,6 @@ Module for Cloud Functions that are triggered by Firestore.
 import dataclasses as _dataclass
 import functools as _functools
 import typing as _typing
-import datetime as _dt
 import google.events.cloud.firestore as _firestore
 import google.cloud.firestore_v1 as _firestore_v1
 import firebase_functions.private.util as _util
@@ -111,10 +110,14 @@ def _firestore_endpoint_handler(
     event_namespace = event_attributes["namespace"]
     event_document = event_attributes["document"]
     event_database = event_attributes["database"]
-    event_time = _dt.datetime.strptime(
-        event_attributes["time"],
-        "%Y-%m-%dT%H:%M:%S.%f%z",
-    )
+
+    time = event_attributes["time"]
+    is_nanoseconds = _util.is_precision_timestamp(time)
+
+    if is_nanoseconds:
+        event_time = _util.nanoseconds_timestamp_conversion(time)
+    else:
+        event_time = _util.microsecond_timestamp_conversion(time)
 
     if _DEFAULT_APP_NAME not in _apps:
         initialize_app()
