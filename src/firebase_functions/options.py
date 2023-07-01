@@ -89,7 +89,7 @@ class MemoryOption(int, _enum.Enum):
     GB_32 = 32 << 10
 
 
-class SupportedRegion(str, _enum.Enum):
+class SupportedRegion(_enum.StrEnum):
     """
     All regions supported by Cloud Functions (2nd gen).
     """
