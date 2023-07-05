@@ -91,7 +91,7 @@ class MemoryOption(int, _enum.Enum):
 
 class SupportedRegion(str, _enum.Enum):
     """
-    All regions supported by Cloud Functions v2.
+    All regions supported by Cloud Functions (2nd gen).
     """
 
     ASIA_NORTHEAST1 = "asia-northeast1"
@@ -225,7 +225,7 @@ class RuntimeOptions:
     concurrency: int | Expression[int] | _util.Sentinel | None = None
     """
     Number of requests a function can serve at once.
-    Can only be applied to functions running on Cloud Functions v2.
+    Can only be applied to functions running on Cloud Functions (2nd gen).
     A value of RESET_VALUE restores the default concurrency (80 when CPU >= 1, 1 otherwise).
     Concurrency cannot be set to any value other than 1 if `cpu` is less than 1.
     The maximum value for concurrency is 1,000.

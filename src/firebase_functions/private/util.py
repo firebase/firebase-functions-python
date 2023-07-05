@@ -19,6 +19,7 @@ import os as _os
 import json as _json
 import typing as _typing
 import dataclasses as _dataclasses
+import datetime as _dt
 import enum as _enum
 from flask import Request as _Request
 from functions_framework import logging as _logging
@@ -308,6 +309,42 @@ def firebase_config() -> None | FirebaseConfig:
             f'FIREBASE_CONFIG JSON string "{json_str}" is not valid json. {err}'
         ) from err
     return FirebaseConfig(storage_bucket=json_data.get("storageBucket"))
+
+
+def nanoseconds_timestamp_conversion(time: str) -> _dt.datetime:
+    """Converts a nanosecond timestamp and returns a datetime object of the current time in UTC"""
+
+    # Separate the date and time part from the nanoseconds.
+    datetime_str, nanosecond_str = time.replace("Z", "").replace("z",
+                                                                 "").split(".")
+    # Parse the date and time part of the string.
+    event_time = _dt.datetime.strptime(datetime_str, "%Y-%m-%dT%H:%M:%S")
+    # Add the microseconds and timezone.
+    event_time = event_time.replace(microsecond=int(nanosecond_str[:6]),
+                                    tzinfo=_dt.timezone.utc)
+
+    return event_time
+
+
+def is_precision_timestamp(time: str) -> bool:
+    """Return a bool which indicates if the timestamp is in nanoseconds"""
+    # Split the string into date-time and fraction of second
+    _, s_fraction = time.split(".")
+
+    # Split the fraction from the timezone specifier ('Z' or 'z')
+    s_fraction, _ = s_fraction.split(
+        "Z") if "Z" in s_fraction else s_fraction.split("z")
+
+    # If the fraction is more than 6 digits long, it's a nanosecond timestamp
+    return len(s_fraction) > 6
+
+
+def microsecond_timestamp_conversion(time: str) -> _dt.datetime:
+    """Converts a microsecond timestamp and returns a datetime object of the current time in UTC"""
+    return _dt.datetime.strptime(
+        time,
+        "%Y-%m-%dT%H:%M:%S.%f%z",
+    )
 
 
 def normalize_path(path: str) -> str:
