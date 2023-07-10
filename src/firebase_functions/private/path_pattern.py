@@ -164,14 +164,18 @@ class PathPattern:
                    for segment in self.segments)
 
     def extract_matches(self, path: str) -> dict[str, str]:
+        segments = self.segments
+        if self.segments[0].value == "":
+            # if leading slash, there will be an empty segment which increases the path index, we pop to remove it
+            segments.pop(0)
         matches: dict[str, str] = {}
         if not self.has_captures:
             return matches
         path_segments = path_parts(path)
         path_ndx = 0
-        for segment_ndx in range(len(self.segments)):
-            segment = self.segments[segment_ndx]
-            remaining_segments = len(self.segments) - 1 - segment_ndx
+        for segment_ndx in range(len(segments)):
+            segment = segments[segment_ndx]
+            remaining_segments = len(segments) - 1 - segment_ndx
             next_path_ndx = len(path_segments) - remaining_segments
             if segment.name == SegmentName.SINGLE_CAPTURE:
                 matches[segment.trimmed] = path_segments[path_ndx]
