@@ -217,3 +217,11 @@ def test_merge_apis_duplicate_apis():
     for actual_item in merged_apis:
         assert (actual_item in expected_output
                ), f"Unexpected item {actual_item} found in the merged list"
+
+def test_supported_region_enum_uses_str_representation():
+    """
+    Test SupportedRegion enum values are converted to their
+    string values for representation.
+    """
+    assert options.SupportedRegion.US_CENTRAL1 == "us-central1"
+    assert f"{options.SupportedRegion.US_CENTRAL1}" == "us-central1"
