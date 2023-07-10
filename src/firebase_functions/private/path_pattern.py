@@ -166,7 +166,8 @@ class PathPattern:
     def extract_matches(self, path: str) -> dict[str, str]:
         segments = self.segments
         if self.segments[0].value == "":
-            # if leading slash, there will be an empty segment which increases the path index, we pop to remove it
+            # if leading slash, there will be an empty segment which increases 
+            # the path index, we pop to remove it
             segments.pop(0)
         matches: dict[str, str] = {}
         if not self.has_captures:
