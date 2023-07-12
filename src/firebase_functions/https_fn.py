@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Module for Cloud Functions that listen to HTTPS endpoints.
+"""Module for functions that listen to HTTPS endpoints.
 These can be raw web requests and Callable RPCs.
 """
 # pylint: disable=protected-access
@@ -32,7 +32,7 @@ from flask_cors import cross_origin as _cross_origin
 
 class FunctionsErrorCode(str, _enum.Enum):
     """
-    The set of Firebase Functions status codes. The codes are the same at the
+    The set of Cloud Functions status codes. The codes are the same as the
     ones exposed by gRPC here:
     https://github.com/grpc/grpc/blob/master/doc/statuscodes.md
     """
@@ -54,7 +54,7 @@ class FunctionsErrorCode(str, _enum.Enum):
     Client specified an invalid argument. Note that this
     differs from `failed-precondition`. `invalid-argument` indicates
     arguments that are problematic regardless of the state of the system
-    (e.g. an invalid field name).
+    (such an invalid field name).
     """
 
     DEADLINE_EXCEEDED = "deadline-exceeded"
@@ -120,7 +120,7 @@ class FunctionsErrorCode(str, _enum.Enum):
     INTERNAL = "internal"
     """
     Internal errors. Means some invariants expected by
-    underlying system has been broken. If you see one of these errors,
+    underlying system have been broken. If you see one of these errors,
     something is very broken.
     """
 
@@ -208,7 +208,7 @@ _error_code_map = {
 """
 Standard error codes and HTTP statuses for different ways a request can fail,
 as defined by:
-https://github.com/googleapis/googleapis/blob/master/google/rpc/code.proto
+https://github.com/googleapis/googleapis/blob/master/google/rpc/code.proto.
 This map is used primarily to convert from a client error code string to
 to the HTTP format error code string and status, and make sure it's in the
 supported set.
@@ -282,12 +282,12 @@ class AuthData:
 
     uid: str
     """
-    User ID of the Id token.
+    User ID of the ID token.
     """
 
     token: dict[str, _typing.Any]
     """
-    The Id token's decoded claims.
+    The ID token's decoded claims.
     """
 
 
@@ -409,7 +409,7 @@ def _on_call_handler(func: _C2, request: Request,
 def on_request(**kwargs) -> _typing.Callable[[_C1], _C1]:
     """
     Handler which handles HTTPS requests.
-    Requires a function that takes a Request and Response object, same signature as an Flask app.
+    Requires a function that takes a ``Request`` and ``Response`` object, the same signature as a Flask app.
 
     Example:
 
@@ -450,7 +450,7 @@ def on_request(**kwargs) -> _typing.Callable[[_C1], _C1]:
 def on_call(**kwargs) -> _typing.Callable[[_C2], _C2]:
     """
     Declares a callable method for clients to call using a Firebase SDK.
-    Requires a function that takes a CallableRequest.
+    Requires a function that takes a ``CallableRequest``.
 
     Example:
 
@@ -465,7 +465,7 @@ def on_call(**kwargs) -> _typing.Callable[[_C2], _C2]:
     :rtype: :exc:`typing.Callable`
             \\[ \\[ :exc:`firebase_functions.https.CallableRequest` \\[
             :exc:`object` \\] \\], :exc:`object` \\]
-            A function that takes a CallableRequest and returns an :exc:`object`.
+            A function that takes a ``CallableRequest`` and returns an :exc:`object`.
     """
     options = HttpsOptions(**kwargs)
 

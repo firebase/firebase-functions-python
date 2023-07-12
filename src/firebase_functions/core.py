@@ -24,7 +24,7 @@ T = _typing.TypeVar("T")
 @_dataclass.dataclass(frozen=True)
 class CloudEvent(_typing.Generic[T]):
     """
-    A Cloud Event is the base of a cross-platform format for encoding a serverless event.
+    A CloudEvent is the base of a cross-platform format for encoding a serverless event.
     More information can be found at https://github.com/cloudevents/spec
     """
 
@@ -60,15 +60,15 @@ class CloudEvent(_typing.Generic[T]):
 
     subject: str | None
     """
-    The resource, provided by source, that this event relates to
+    The resource, provided by source, that this event relates to.
     """
 
 
 @_dataclass.dataclass(frozen=True)
 class Change(_typing.Generic[T]):
     """
-    * The Functions interface for events that change state, such as
-    * Realtime Database `on_value_written`.
+    The Cloud Functions interface for events that change state, such as
+    Realtime Database `on_value_written`.
     """
 
     before: T
