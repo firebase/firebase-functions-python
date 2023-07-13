@@ -54,7 +54,7 @@ class FunctionsErrorCode(str, _enum.Enum):
     Client specified an invalid argument. Note that this
     differs from `failed-precondition`. `invalid-argument` indicates
     arguments that are problematic regardless of the state of the system
-    (such an invalid field name).
+    (such as an invalid field name).
     """
 
     DEADLINE_EXCEEDED = "deadline-exceeded"
