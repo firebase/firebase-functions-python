@@ -35,23 +35,23 @@ from firebase_functions.options import Timezone
 @_dataclasses.dataclass(frozen=True)
 class ScheduledEvent:
     """
-    A ScheduleEvent that is passed to the function handler
+    A `ScheduleEvent` that is passed to the function handler.
     """
 
     job_name: str | None
     """
     The Cloud Scheduler job name.
-    Populated via the X-CloudScheduler-JobName header.
-    If invoked manually, this field is None.
+    Populated via the ``X-CloudScheduler-JobName`` header.
+    If invoked manually, this field is `None`.
     """
 
     schedule_time: _dt.datetime
     """
     For Cloud Scheduler jobs specified in the unix-cron format,
     this is the job schedule time in RFC3339 UTC "Zulu" format.
-    Populated via the X-CloudScheduler-ScheduleTime header.
+    Populated via the ``X-CloudScheduler-ScheduleTime`` header.
 
-    If the schedule is manually triggered, this field will be
+    If the schedule is manually triggered, this field is
     the function execution time.
     """
 
@@ -63,7 +63,7 @@ _C = _typing.Callable[[ScheduledEvent], None]
 def on_schedule(**kwargs) -> _typing.Callable[[_C], _Response]:
     """
     Creates a handler for tasks sent to a Google Cloud Tasks queue.
-    Requires a function that takes a CallableRequest.
+    Requires a function that takes a ``CallableRequest``.
 
     Example:
 
@@ -85,7 +85,7 @@ def on_schedule(**kwargs) -> _typing.Callable[[_C], _Response]:
     :type \\*\\*kwargs: as :exc:`firebase_functions.options.ScheduleOptions`
     :rtype: :exc:`typing.Callable`
             \\[ \\[ :exc:`firebase_functions.schedule_fn.ScheduledEvent` \\], :exc:`None` \\]
-            A function that takes a ScheduledEvent and returns nothing.
+            A function that takes a ``ScheduledEvent`` and returns nothing.
     """
     options = _options.ScheduleOptions(**kwargs)
 

@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """
-Cloud functions to handle events from Google Cloud Pub/Sub.
+Functions to handle events from Google Cloud Pub/Sub.
 """
 # pylint: disable=protected-access
 import dataclasses as _dataclasses
@@ -173,7 +173,7 @@ def on_message_published(**kwargs) -> _typing.Callable[[_C1], _C1]:
             \\[ \\[ :exc:`firebase_functions.core.CloudEvent` \\[
             :exc:`firebase_functions.pubsub_fn.MessagePublishedData` \\[
             :exc:`typing.Any` \\] \\] \\], `None` \\]
-            A function that takes a CloudEvent and returns None.
+            A function that takes a CloudEvent and returns ``None``.
     """
     options = PubSubOptions(**kwargs)
 
