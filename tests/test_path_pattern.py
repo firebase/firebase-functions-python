@@ -41,6 +41,28 @@ class TestPathPattern(TestCase):
         self.assertEqual(trim_param("{something=*}"), "something")
 
     def test_extract_matches(self):
+        # parse single-capture segments with leading slash
+        pp = PathPattern("/messages/{a}/{b}/{c}")
+        self.assertEqual(
+            pp.extract_matches("messages/match_a/match_b/match_c"),
+            {
+                "a": "match_a",
+                "b": "match_b",
+                "c": "match_c",
+            },
+        )
+
+        # parse single-capture segments without leading slash
+        pp = PathPattern("messages/{a}/{b}/{c}")
+        self.assertEqual(
+            pp.extract_matches("messages/match_a/match_b/match_c"),
+            {
+                "a": "match_a",
+                "b": "match_b",
+                "c": "match_c",
+            },
+        )
+
         # parse without multi-capture segments
         pp = PathPattern("{a}/something/else/{b}/end/{c}")
         self.assertEqual(

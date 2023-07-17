@@ -129,9 +129,10 @@ class PathPattern:
     segments: list[PathSegment]
 
     def __init__(self, raw_path: str):
-        self.raw = raw_path
+        normalized_path = raw_path.strip("/")
+        self.raw = normalized_path
         self.segments = []
-        self.init_path_segments(raw_path)
+        self.init_path_segments(normalized_path)
 
     def init_path_segments(self, raw: str):
         parts = raw.split("/")
