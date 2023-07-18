@@ -186,8 +186,6 @@ cp _build/objects.inv "$OUTDIR"
 TOC="$OUTDIR"/_toc.yaml
 cat >"$TOC" <<EOL
 toc:
-- title: Overview
-  path: ${DEVSITE_PATH}/
 EOL
 for m in ${PY_MODULES}; do
   echo "- title: ${m}" >>"$TOC"

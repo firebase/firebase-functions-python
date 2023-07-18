@@ -409,7 +409,8 @@ def _on_call_handler(func: _C2, request: Request,
 def on_request(**kwargs) -> _typing.Callable[[_C1], _C1]:
     """
     Handler which handles HTTPS requests.
-    Requires a function that takes a ``Request`` and ``Response`` object, the same signature as a Flask app.
+    Requires a function that takes a ``Request`` and ``Response`` object, 
+    the same signature as a Flask app.
 
     Example:
 
