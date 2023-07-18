@@ -61,7 +61,8 @@ def _remove_circular(obj: _typing.Any, refs: _typing.Set[_typing.Any] = set()):
     elif isinstance(obj, list):
         return [_remove_circular(value, refs) for _, value in enumerate(obj)]
     elif isinstance(obj, tuple):
-        return tuple(_remove_circular(value, refs) for _, value in enumerate(obj))
+        return tuple(
+            _remove_circular(value, refs) for _, value in enumerate(obj))
     else:
         return obj
 
