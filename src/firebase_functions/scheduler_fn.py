@@ -35,7 +35,7 @@ from firebase_functions.options import Timezone
 @_dataclasses.dataclass(frozen=True)
 class ScheduledEvent:
     """
-    A `ScheduleEvent` that is passed to the function handler.
+    A ``ScheduleEvent`` that is passed to the function handler.
     """
 
     job_name: str | None
@@ -81,7 +81,7 @@ def on_schedule(**kwargs) -> _typing.Callable[[_C], _Response]:
           print(event.schedule_time)
 
 
-    :param \\*\\*kwargs: ScheduleOptions options.
+    :param \\*\\*kwargs: `ScheduleOptions` options.
     :type \\*\\*kwargs: as :exc:`firebase_functions.options.ScheduleOptions`
     :rtype: :exc:`typing.Callable`
             \\[ \\[ :exc:`firebase_functions.schedule_fn.ScheduledEvent` \\], :exc:`None` \\]
