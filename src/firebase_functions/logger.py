@@ -1,3 +1,7 @@
+"""
+Logger module for Firebase Functions.
+"""
+
 import enum as _enum
 import json as _json
 import sys as _sys
@@ -7,7 +11,8 @@ import typing_extensions as _typing_extensions
 
 class LogSeverity(str, _enum.Enum):
     """
-    `LogSeverity` indicates the detailed severity of the log entry. See [LogSeverity](https://cloud.google.com/logging/docs/reference/v2/rest/v2/LogEntry#logseverity).
+    `LogSeverity` indicates the detailed severity of the log entry. See 
+    [LogSeverity](https://cloud.google.com/logging/docs/reference/v2/rest/v2/LogEntry#logseverity).
     """
 
     DEBUG = "DEBUG"
@@ -45,12 +50,15 @@ def _entry_from_args(severity: LogSeverity, **kwargs) -> LogEntry:
     return {"severity": severity, "message": message}
 
 
-def _remove_circular(obj: _typing.Any, refs: _typing.Set[_typing.Any] = set()):
+def _remove_circular(obj: _typing.Any, refs: _typing.Set[_typing.Any] | None = None):
     """
     Removes circular references from the given object and replaces them with "[CIRCULAR]".
     """
 
-    if (id(obj) in refs):
+    if refs is None:
+        refs = set()
+
+    if id(obj) in refs:
         return "[CIRCULAR]"
 
     if not isinstance(obj, (str, int, float, bool, type(None))):
@@ -74,7 +82,7 @@ def _get_write_file(severity: LogSeverity) -> _typing.TextIO:
 
 
 def write(entry: LogEntry) -> None:
-    write_file = _get_write_file(entry['severity'])
+    write_file = _get_write_file(entry["severity"])
     print(_json.dumps(_remove_circular(entry)), file=write_file)
 
 

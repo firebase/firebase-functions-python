@@ -1,9 +1,16 @@
+"""
+Logger module tests.
+"""
+
 import pytest
 import json
 from firebase_functions import logger
 
 
 class TestLogger:
+    """
+    Tests for the logger module.
+    """
     def test_format_should_be_valid_json(self, capsys: pytest.CaptureFixture[str]):
         logger.log(foo="bar")
         raw_log_output = capsys.readouterr().out
