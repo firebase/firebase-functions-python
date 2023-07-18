@@ -50,7 +50,8 @@ def _entry_from_args(severity: LogSeverity, **kwargs) -> LogEntry:
     return {"severity": severity, "message": message}
 
 
-def _remove_circular(obj: _typing.Any, refs: _typing.Set[_typing.Any] | None = None):
+def _remove_circular(obj: _typing.Any,
+                     refs: _typing.Set[_typing.Any] | None = None):
     """
     Removes circular references from the given object and replaces them with "[CIRCULAR]".
     """
