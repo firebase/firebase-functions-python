@@ -40,12 +40,11 @@ def _entry_from_args(severity: LogSeverity, **kwargs) -> LogEntry:
     Creates a `LogEntry` from the given arguments.
     """
 
-    message: str = " ".join(
-        # do we need to replace_circular here?
-        [
-            value if isinstance(value, str) else _json.dumps(
-                _remove_circular(value)) for value in kwargs.values()
-        ])
+    message: str = " ".join([
+        value
+        if isinstance(value, str) else _json.dumps(_remove_circular(value))
+        for value in kwargs.values()
+    ])
 
     return {"severity": severity, "message": message}
 
