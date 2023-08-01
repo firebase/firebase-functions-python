@@ -210,7 +210,7 @@ class RuntimeOptions:
 
     min_instances: int | Expression[int] | _util.Sentinel | None = None
     """
-    Mininum number of actual instances to be running at a given time.
+    Minimum number of actual instances to be running at a given time.
     Instances are billed for memory allocation and 10% of CPU allocation
     while idle.
     A value of ``RESET_VALUE`` restores the default minimum instances.
