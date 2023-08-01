@@ -855,7 +855,7 @@ class ScheduleOptions(RuntimeOptions):
 @_dataclasses.dataclass(frozen=True, kw_only=True)
 class StorageOptions(RuntimeOptions):
     """
-    Options specific to CLoud Storage function types.
+    Options specific to Cloud Storage function types.
     Internal use only.
     """
 
