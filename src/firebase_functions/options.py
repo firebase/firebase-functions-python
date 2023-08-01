@@ -198,7 +198,7 @@ class RuntimeOptions:
 
     timeout_sec: int | Expression[int] | _util.Sentinel | None = None
     """
-    Timeout for the function in sections. Ppossible values are 0 to 540.
+    Timeout for the function in sections. Possible values are 0 to 540.
     HTTP functions can specify a higher timeout.
     A value of ``RESET_VALUE`` restores the default of 60s
     The minimum timeout for a 2nd gen function is 1s. The maximum timeout for a
