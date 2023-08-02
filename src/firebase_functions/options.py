@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """
-Module for options that can be used to configure Firebase Cloud Functions
+Module for options that can be used to configure Cloud Functions
 deployments.
 """
 # pylint: disable=protected-access
@@ -43,7 +43,7 @@ class VpcEgressSetting(str, _enum.Enum):
 
 
 class IngressSetting(str, _enum.Enum):
-    """What kind of traffic can access the Cloud Function."""
+    """What kind of traffic can access the function."""
 
     ALLOW_ALL = "ALLOW_ALL"
     ALLOW_INTERNAL_ONLY = "ALLOW_INTERNAL_ONLY"
@@ -53,23 +53,23 @@ class IngressSetting(str, _enum.Enum):
 @_dataclasses.dataclass(frozen=True)
 class CorsOptions:
     """
-    CORS options for Https functions.
-    Internally this maps to Flask-Cors configuration see:
+    CORS options for HTTP functions.
+    Internally this maps to Flask-Cors configuration. See:
     https://flask-cors.corydolphin.com/en/latest/configuration.html
     """
 
     cors_origins: str | list[str] | _re.Pattern | None = None
     """
     The origin(s) to allow requests from. An origin configured here that matches the value of
-    the Origin header in a preflight OPTIONS request is returned as the value of the
-    Access-Control-Allow-Origin response header.
+    the ``Origin`` header in a preflight ``OPTIONS`` request is returned as the value of the
+    ``Access-Control-Allow-Origin`` response header.
     """
 
     cors_methods: str | list[str] | None = None
     """
     The method(s) which the allowed origins are allowed to access.
-    These are included in the Access-Control-Allow-Methods response headers
-    to the preflight OPTIONS requests.
+    These are included in the ``Access-Control-Allow-Methods`` response headers
+    to the preflight ``OPTIONS`` requests.
     """
 
 
@@ -130,14 +130,14 @@ class RateLimits():
         int] | _util.Sentinel | None = None
     """
     The maximum number of requests that can be outstanding at a time.
-    If left unspecified, will default to 1000.
+    If left unspecified, defaults to 1000.
     """
 
     max_dispatches_per_second: int | Expression[
         int] | _util.Sentinel | None = None
     """
     The maximum number of requests that can be invoked per second.
-    If left unspecified, will default to 500.
+    If left unspecified, defaults to 500.
     """
 
 
@@ -150,25 +150,25 @@ class RetryConfig():
     max_attempts: int | Expression[int] | _util.Sentinel | None = None
     """
     The maximum number of times a request should be attempted.
-    If left unspecified, will default to 3.
+    If left unspecified, defaults to 3.
     """
 
     max_retry_seconds: int | Expression[int] | _util.Sentinel | None = None
     """
-    The maximum amount of time for retrying failed task.
+    The maximum amount of time for retrying a failed task.
     If left unspecified will retry indefinitely.
     """
 
     max_backoff_seconds: int | Expression[int] | _util.Sentinel | None = None
     """
     The maximum amount of time to wait between attempts.
-    If left unspecified will default to 1hr.
+    If left unspecified defaults to 1hr.
     """
 
     max_doublings: int | Expression[int] | _util.Sentinel | None = None
     """
     The maximum number of times to double the backoff between
-    retries. If left unspecified will default to 16.
+    retries. If left unspecified defaults to 16.
     """
 
     min_backoff_seconds: int | Expression[int] | _util.Sentinel | None = None
@@ -180,7 +180,7 @@ class RetryConfig():
 @_dataclasses.dataclass(frozen=True, kw_only=True)
 class RuntimeOptions:
     """
-    RuntimeOptions are options that can be set on any function or globally.
+    ``RuntimeOptions`` are options that can be set on any function or globally.
     Internal use only.
     """
 
@@ -193,40 +193,40 @@ class RuntimeOptions:
     memory: int | MemoryOption | Expression[int] | _util.Sentinel | None = None
     """
     Amount of memory to allocate to a function.
-    A value of RESET_VALUE restores the defaults of 256MB.
+    A value of ``RESET_VALUE`` restores the defaults of 256MB.
     """
 
     timeout_sec: int | Expression[int] | _util.Sentinel | None = None
     """
-    Timeout for the function in sections, possible values are 0 to 540.
-    HTTPS functions can specify a higher timeout.
-    A value of RESET_VALUE restores the default of 60s
-    The minimum timeout for a gen 2 function is 1s. The maximum timeout for a
+    Timeout for the function in sections. Possible values are 0 to 540.
+    HTTP functions can specify a higher timeout.
+    A value of ``RESET_VALUE`` restores the default of 60s
+    The minimum timeout for a 2nd gen function is 1s. The maximum timeout for a
     function depends on the type of function: Event handling functions have a
-    maximum timeout of 540s (9 minutes). HTTPS and callable functions have a
+    maximum timeout of 540s (9 minutes). HTTP and callable functions have a
     maximum timeout of 3,600s (1 hour). Task queue functions have a maximum
     timeout of 1,800s (30 minutes)
     """
 
     min_instances: int | Expression[int] | _util.Sentinel | None = None
     """
-    Min number of actual instances to be running at a given time.
-    Instances will be billed for memory allocation and 10% of CPU allocation
+    Minimum number of actual instances to be running at a given time.
+    Instances are billed for memory allocation and 10% of CPU allocation
     while idle.
-    A value of RESET_VALUE restores the default min instances.
+    A value of ``RESET_VALUE`` restores the default minimum instances.
     """
 
     max_instances: int | Expression[int] | _util.Sentinel | None = None
     """
-    Max number of instances to be running in parallel.
-    A value of RESET_VALUE restores the default max instances.
+    Maximum number of instances to be running in parallel.
+    A value of ``RESET_VALUE`` restores the default max instances.
     """
 
     concurrency: int | Expression[int] | _util.Sentinel | None = None
     """
     Number of requests a function can serve at once.
-    Can only be applied to functions running on Cloud Functions (2nd gen).
-    A value of RESET_VALUE restores the default concurrency (80 when CPU >= 1, 1 otherwise).
+    Can be applied only to functions running on Cloud Functions (2nd gen).
+    A value of ``RESET_VALUE`` restores the default concurrency (80 when CPU >= 1, 1 otherwise).
     Concurrency cannot be set to any value other than 1 if `cpu` is less than 1.
     The maximum value for concurrency is 1,000.
     """
@@ -236,33 +236,33 @@ class RuntimeOptions:
     Fractional number of CPUs to allocate to a function.
     Defaults to 1 for functions with <= 2GB RAM and increases for larger memory sizes.
     This is different from the defaults when using the gcloud utility and is different from
-    the fixed amount assigned in Google Cloud Functions generation 1.
-    To revert to the CPU amounts used in gcloud or in Cloud Functions generation 1, set this
+    the fixed amount assigned in Cloud Functions (1st gen).
+    To revert to the CPU amounts used in gcloud or in Cloud Functions (1st gen), set this
     to the value "gcf_gen1"
     """
 
     vpc_connector: str | _util.Sentinel | None = None
     """
-    Connect cloud function to specified VPC connector.
-    A value of RESET_VALUE removes the VPC connector.
+    Connect function to specified VPC connector.
+    A value of ``RESET_VALUE`` removes the VPC connector.
     """
 
     vpc_connector_egress_settings: VpcEgressSetting | _util.Sentinel | None = None
     """
     Egress settings for VPC connector.
-    A value of RESET_VALUE turns off VPC connector egress settings.
+    A value of ``RESET_VALUE`` turns off VPC connector egress settings.
     """
 
     service_account: str | _util.Sentinel | None = None
     """
     Specific service account for the function to run as.
-    A value of RESET_VALUE restores the default service account.
+    A value of ``RESET_VALUE`` restores the default service account.
     """
 
     ingress: IngressSetting | _util.Sentinel | None = None
     """
     Ingress settings which control where this function can be called from.
-    A value of RESET_VALUE turns off ingress settings.
+    A value of ``RESET_VALUE`` turns off ingress settings.
     """
 
     labels: dict[str, str] | None = None
@@ -280,7 +280,7 @@ class RuntimeOptions:
     Determines whether Firebase AppCheck is enforced.
     When true, requests with invalid tokens auto respond with a 401
     Unauthorized response.
-    When false, requests with invalid tokens set event.app to None.
+    When false, requests with invalid tokens set ``event.app`` to ``None``.
     """
 
     preserve_external_changes: bool | None = None
@@ -289,8 +289,8 @@ class RuntimeOptions:
     Internally defaults to false.
 
     When setting configuration available in the underlying platform that is not yet available
-    in the Firebase Functions SDK, we highly recommend setting `preserve_external_changes` to
-    `True`. Otherwise, when the Firebase Functions SDK releases a new version of the SDK
+    in the Cloud Functions SDK, we highly recommend setting `preserve_external_changes` to
+    `True`. Otherwise, when the SDK releases a new version
     with support for the missing configuration, your function's manually configured setting
     may inadvertently be wiped out.
     """
@@ -406,7 +406,7 @@ class RuntimeOptions:
 @_dataclasses.dataclass(frozen=True, kw_only=True)
 class TaskQueueOptions(RuntimeOptions):
     """
-    Options specific to Tasks function types.
+    Options specific to tasks function types.
     """
 
     retry_config: RetryConfig | None = None
@@ -470,7 +470,7 @@ class TaskQueueOptions(RuntimeOptions):
 @_dataclasses.dataclass(frozen=True, kw_only=True)
 class EventHandlerOptions(RuntimeOptions):
     """
-    Options specific to any event handling Cloud function.
+    Options specific to any event handling function.
     Internal use only.
     """
 
@@ -529,7 +529,7 @@ class PubSubOptions(EventHandlerOptions):
 
 class AlertType(str, _enum.Enum):
     """
-    The underlying alert type of the Firebase Alerts provider.
+    The underlying alert type of the Firebase alerts provider.
     """
 
     CRASHLYTICS_NEW_FATAL_ISSUE = "crashlytics.newFatalIssue"
@@ -591,13 +591,13 @@ class AlertType(str, _enum.Enum):
 @_dataclasses.dataclass(frozen=True, kw_only=True)
 class FirebaseAlertOptions(EventHandlerOptions):
     """
-    Options specific to Firebase Alert function types.
+    Options specific to Firebase alert function types.
     Internal use only.
     """
 
     alert_type: str | AlertType
     """
-    The Firebase Alert type to listen to. Can be an AlertType enum
+    The Firebase alert type to listen to. Can be an ``AlertType`` enum
     or string.
     """
 
@@ -736,7 +736,7 @@ class EventarcTriggerOptions(EventHandlerOptions):
         function and `us-central1` as location will be used:
         `{channel-id}`
 
-    If not specified, the default Firebase channel will be used:
+    If not specified, the default Firebase channel is used:
     `projects/{project}/locations/us-central1/channels/firebase`
     """
 
@@ -775,7 +775,7 @@ class EventarcTriggerOptions(EventHandlerOptions):
 @_dataclasses.dataclass(frozen=True, kw_only=True)
 class ScheduleOptions(RuntimeOptions):
     """
-    Options that can be set on a Schedule trigger.
+    Options that can be set on a ``Schedule`` trigger.
     """
 
     schedule: str
@@ -855,7 +855,7 @@ class ScheduleOptions(RuntimeOptions):
 @_dataclasses.dataclass(frozen=True, kw_only=True)
 class StorageOptions(RuntimeOptions):
     """
-    Options specific to Storage function types.
+    Options specific to Cloud Storage function types.
     Internal use only.
     """
 
@@ -900,7 +900,7 @@ class StorageOptions(RuntimeOptions):
 @_dataclasses.dataclass(frozen=True, kw_only=True)
 class DatabaseOptions(RuntimeOptions):
     """
-    Options specific to Database function types.
+    Options specific to Realtime Database function types.
     Internal use only.
     """
 
@@ -956,7 +956,7 @@ class DatabaseOptions(RuntimeOptions):
 @_dataclasses.dataclass(frozen=True, kw_only=True)
 class BlockingOptions(RuntimeOptions):
     """
-    Options that can be set on an Auth Blocking Trigger.
+    Options that can be set on an Auth Blocking trigger.
     Internal use only.
     """
 
@@ -967,12 +967,12 @@ class BlockingOptions(RuntimeOptions):
 
     access_token: bool | None = None
     """
-    Pass the Access Token credential to the function.
+    Pass the access token credential to the function.
     """
 
     refresh_token: bool | None = None
     """
-    Pass the Refresh Token credential to the function.
+    Pass the refresh token credential to the function.
     """
 
     def _endpoint(
@@ -1071,25 +1071,25 @@ class FirestoreOptions(RuntimeOptions):
 @_dataclasses.dataclass(frozen=True, kw_only=True)
 class HttpsOptions(RuntimeOptions):
     """
-    Options specific to Http function types.
+    Options specific to HTTP function types.
     Internal use only.
     """
 
     invoker: str | list[str] | _typing.Literal["public",
                                                "private"] | None = None
     """
-    Invoker to set access control on https functions.
+    Invoker to set access control on HTTP functions.
     """
 
     cors: CorsOptions | None = None
     """
-    Optionally set CORS options for Https functions.
+    Optionally set CORS options for HTTP functions.
     """
 
     def _asdict_with_global_options(self) -> dict:
         """
-        Returns the Https options merged with globally defined options and
-        client only options like "cors" removed.
+        Returns the HTTP options merged with globally defined options and
+        client-only options like "cors" removed.
         """
         merged_options = super()._asdict_with_global_options()
         # "cors" is only used locally by the functions framework

@@ -42,12 +42,12 @@ _event_type_deleted = "google.cloud.firestore.document.v1.deleted"
 @_dataclass.dataclass(frozen=True)
 class Event(_core.CloudEvent[_core.T]):
     """
-    A CloudEvent that contains a DocumentSnapshot or a Change<DocumentSnapshot>.
+    A CloudEvent that contains a ``DocumentSnapshot`` or a ``Change<DocumentSnapshot>``.
     """
 
     location: str
     """
-    The location of the database
+    The location of the database.
     """
 
     project: str
@@ -184,7 +184,7 @@ def _firestore_endpoint_handler(
 @_util.copy_func_kwargs(FirestoreOptions)
 def on_document_written(**kwargs) -> _typing.Callable[[_C1], _C1]:
     """
-    Event handler which triggers when a document is created, updated, or deleted in Firestore.
+    Event handler that triggers when a document is created, updated, or deleted in Firestore.
 
     Example:
 
@@ -199,7 +199,7 @@ def on_document_written(**kwargs) -> _typing.Callable[[_C1], _C1]:
     :rtype: :exc:`typing.Callable`
             \\[ \\[ :exc:`firebase_functions.firestore_fn.Event` \\[
             :exc:`firebase_functions.db.Change` \\] \\], `None` \\]
-            A function that takes a Firestore Event and returns None.
+            A function that takes a Firestore event and returns ``None``.
     """
     options = FirestoreOptions(**kwargs)
 
@@ -232,7 +232,7 @@ def on_document_written(**kwargs) -> _typing.Callable[[_C1], _C1]:
 @_util.copy_func_kwargs(FirestoreOptions)
 def on_document_updated(**kwargs) -> _typing.Callable[[_C1], _C1]:
     """
-    Event handler which triggers when a document is updated in Firestore.
+    Event handler that triggers when a document is updated in Firestore.
 
     Example:
 
@@ -247,7 +247,7 @@ def on_document_updated(**kwargs) -> _typing.Callable[[_C1], _C1]:
     :rtype: :exc:`typing.Callable`
             \\[ \\[ :exc:`firebase_functions.firestore_fn.Event` \\[
             :exc:`firebase_functions.db.Change` \\] \\], `None` \\]
-            A function that takes a Firestore Event and returns None.
+            A function that takes a Firestore event and returns ``None``.
     """
     options = FirestoreOptions(**kwargs)
 
@@ -280,7 +280,7 @@ def on_document_updated(**kwargs) -> _typing.Callable[[_C1], _C1]:
 @_util.copy_func_kwargs(FirestoreOptions)
 def on_document_created(**kwargs) -> _typing.Callable[[_C2], _C2]:
     """
-    Event handler which triggers when a document is created in Firestore.
+    Event handler that triggers when a document is created in Firestore.
 
     Example:
 
@@ -295,7 +295,7 @@ def on_document_created(**kwargs) -> _typing.Callable[[_C2], _C2]:
     :rtype: :exc:`typing.Callable`
             \\[ \\[ :exc:`firebase_functions.firestore_fn.Event` \\[
             :exc:`object` \\] \\], `None` \\]
-            A function that takes a Firestore Event and returns None.
+            A function that takes a Firestore event and returns ``None``.
     """
     options = FirestoreOptions(**kwargs)
 
@@ -328,7 +328,7 @@ def on_document_created(**kwargs) -> _typing.Callable[[_C2], _C2]:
 @_util.copy_func_kwargs(FirestoreOptions)
 def on_document_deleted(**kwargs) -> _typing.Callable[[_C2], _C2]:
     """
-    Event handler which triggers when a document is deleted in Firestore.
+    Event handler that triggers when a document is deleted in Firestore.
 
     Example:
 
@@ -343,7 +343,7 @@ def on_document_deleted(**kwargs) -> _typing.Callable[[_C2], _C2]:
     :rtype: :exc:`typing.Callable`
             \\[ \\[ :exc:`firebase_functions.firestore_fn.Event` \\[
             :exc:`object` \\] \\], `None` \\]
-            A function that takes a Firestore Event and returns None.
+            A function that takes a Firestore event and returns ``None``.
     """
     options = FirestoreOptions(**kwargs)
 
