@@ -76,6 +76,7 @@ def prune_nones(obj: dict) -> dict:
             prune_nones(obj[key])
     return obj
 
+
 def deep_merge(dict1, dict2):
     result = dict1.copy()
     for key, value in dict2.items():
