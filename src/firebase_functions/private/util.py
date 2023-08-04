@@ -77,6 +77,17 @@ def prune_nones(obj: dict) -> dict:
     return obj
 
 
+def deep_merge(dict1, dict2):
+    result = dict1.copy()
+    for key, value in dict2.items():
+        if isinstance(value, dict):
+            node = result.get(key, {})
+            result[key] = deep_merge(node, value)
+        else:
+            result[key] = value
+    return result
+
+
 def valid_on_call_request(request: _Request) -> bool:
     """Validate request"""
     if (_on_call_valid_method(request) and

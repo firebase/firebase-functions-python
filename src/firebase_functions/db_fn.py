@@ -91,7 +91,7 @@ def _db_endpoint_handler(
         after = event_data["delta"]
         # Merge delta into data to generate an 'after' view of the data.
         if isinstance(before, dict) and isinstance(after, dict):
-            after = _util.prune_nones({**before, **after})
+            after = _util.prune_nones(_util.deep_merge(before, after))
         database_event_data = Change(
             before=before,
             after=after,

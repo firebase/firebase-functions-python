@@ -15,7 +15,7 @@
 Internal utils tests.
 """
 from os import environ, path
-from firebase_functions.private.util import firebase_config, microsecond_timestamp_conversion, nanoseconds_timestamp_conversion, is_precision_timestamp, normalize_path
+from firebase_functions.private.util import firebase_config, microsecond_timestamp_conversion, nanoseconds_timestamp_conversion, is_precision_timestamp, normalize_path, deep_merge
 import datetime as _dt
 
 test_bucket = "python-functions-testing.appspot.com"
@@ -121,3 +121,27 @@ def test_normalize_document_path():
     test_path2 = "test/document"
     assert normalize_path(test_path2) == "test/document", (
         "Failure, path should not be changed if it is already normalized.")
+
+
+def test_toplevel_keys():
+    dict1 = {"baz": {"answer": 42, "qux": "quux"}, "foo": "bar"}
+    dict2 = {"baz": {"answer": 33}}
+    result = deep_merge(dict1, dict2)
+    assert "foo" in result
+    assert "baz" in result
+
+
+def test_nested_merge():
+    dict1 = {"baz": {"answer": 42, "qux": "quux"}, "foo": "bar"}
+    dict2 = {"baz": {"answer": 33}}
+    result = deep_merge(dict1, dict2)
+    assert result["baz"]["answer"] == 33
+    assert result["baz"]["qux"] == "quux"
+
+
+def test_does_not_modify_originals():
+    dict1 = {"baz": {"answer": 42, "qux": "quux"}, "foo": "bar"}
+    dict2 = {"baz": {"answer": 33}}
+    deep_merge(dict1, dict2)
+    assert dict1["baz"]["answer"] == 42
+    assert dict2["baz"]["answer"] == 33
