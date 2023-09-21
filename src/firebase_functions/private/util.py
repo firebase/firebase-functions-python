@@ -114,7 +114,7 @@ def _on_call_valid_body(request: _Request) -> bool:
         return False
 
     # The body must have data.
-    if request.json is None or "data" not in request.json:
+    if "data" not in request.json:
         _logging.warning("Request body is missing data.", request.json)
         return False
 
@@ -143,7 +143,7 @@ def _on_call_valid_content_type(request: _Request) -> bool:
     content_type: str | None = request.headers.get("Content-Type")
 
     if content_type is None:
-        _logging.warning("Request is missing Content-Type.", content_type)
+        _logging.warning("Request is missing Content-Type.")
         return False
 
     # If it has a charset, just ignore it for now.
