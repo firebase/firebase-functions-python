@@ -133,7 +133,7 @@ def _on_call_valid_body(request: _Request) -> bool:
 def _on_call_valid_method(request: _Request) -> bool:
     """Make sure it's a POST."""
     if request.method != "POST":
-        _logging.warning("Request has invalid method.", request.method)
+        _logging.warning("Request has invalid method. %s", request.method)
         return False
     return True
 
