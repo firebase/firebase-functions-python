@@ -115,7 +115,7 @@ def _on_call_valid_body(request: _Request) -> bool:
 
     # The body must have data.
     if request.json is None or "data" not in request.json:
-        _logging.warning("Request body is missing data.", request.json)
+        _logging.warning("Request body is missing data: %s", request.json)
         return False
 
     extra_keys = {
@@ -123,7 +123,7 @@ def _on_call_valid_body(request: _Request) -> bool:
     }
     if len(extra_keys) != 0:
         _logging.warning(
-            "Request body has extra fields: ",
+            "Request body has extra fields: %s",
             "".join(f"{key}: {value}," for (key, value) in extra_keys.items()),
         )
         return False
@@ -143,7 +143,7 @@ def _on_call_valid_content_type(request: _Request) -> bool:
     content_type: str | None = request.headers.get("Content-Type")
 
     if content_type is None:
-        _logging.warning("Request is missing Content-Type.", content_type)
+        _logging.warning("Request is missing Content-Type.")
         return False
 
     # If it has a charset, just ignore it for now.
@@ -156,7 +156,7 @@ def _on_call_valid_content_type(request: _Request) -> bool:
 
     # Check that the Content-Type is JSON.
     if content_type.lower() != "application/json":
-        _logging.warning("Request has incorrect Content-Type.", content_type)
+        _logging.warning("Request has incorrect Content-Type: %s", content_type)
         return False
 
     return True
@@ -273,7 +273,7 @@ def on_call_check_tokens(request: _Request,) -> _OnCallTokenVerification:
         errs.append(("Auth token was rejected.", log_payload))
 
     if len(errs) == 0:
-        _logging.info("Callable request verification passed", log_payload)
+        _logging.info("Callable request verification passed: %s", log_payload)
     else:
         _logging.warning(f"Callable request verification failed: ${errs}",
                          log_payload)
