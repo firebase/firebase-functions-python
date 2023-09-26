@@ -114,8 +114,8 @@ def _on_call_valid_body(request: _Request) -> bool:
         return False
 
     # The body must have data.
-    if request.json is None or "data" not in request.json:
-        _logging.warning("Request body is missing data: %s", request.json)
+    if "data" not in request.json:
+        _logging.warning("Request body is missing data.", request.json)
         return False
 
     extra_keys = {
