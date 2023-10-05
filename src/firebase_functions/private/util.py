@@ -340,7 +340,10 @@ def nanoseconds_timestamp_conversion(time: str) -> _dt.datetime:
 def is_precision_timestamp(time: str) -> bool:
     """Return a bool which indicates if the timestamp is in nanoseconds"""
     # Split the string into date-time and fraction of second
-    _, s_fraction = time.split(".")
+    try:
+        _, s_fraction = time.split(".")
+    except ValueError:
+        return False  # If there's no decimal, it's not a nanosecond timestamp.
 
     # Split the fraction from the timezone specifier ('Z' or 'z')
     s_fraction, _ = s_fraction.split(
