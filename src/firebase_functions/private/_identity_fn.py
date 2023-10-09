@@ -111,7 +111,7 @@ def _auth_user_record_from_token_data(token_data: dict[str, _typing.Any]):
     return AuthUserRecord(
         uid=token_data["uid"],
         email=token_data.get("email"),
-        email_verified=token_data["email_verified"],
+        email_verified=token_data.get("email_verified"),
         display_name=token_data.get("display_name"),
         photo_url=token_data.get("photo_url"),
         phone_number=token_data.get("phone_number"),
