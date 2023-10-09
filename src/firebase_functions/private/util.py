@@ -114,7 +114,7 @@ def _on_call_valid_body(request: _Request) -> bool:
         return False
 
     # The body must have data.
-    if request.json is None or "data" not in request.json:
+    if "data" not in request.json:
         _logging.warning("Request body is missing data.", request.json)
         return False
 
@@ -133,7 +133,7 @@ def _on_call_valid_body(request: _Request) -> bool:
 def _on_call_valid_method(request: _Request) -> bool:
     """Make sure it's a POST."""
     if request.method != "POST":
-        _logging.warning("Request has invalid method.", request.method)
+        _logging.warning("Request has invalid method. %s", request.method)
         return False
     return True
 
@@ -143,7 +143,7 @@ def _on_call_valid_content_type(request: _Request) -> bool:
     content_type: str | None = request.headers.get("Content-Type")
 
     if content_type is None:
-        _logging.warning("Request is missing Content-Type.", content_type)
+        _logging.warning("Request is missing Content-Type.")
         return False
 
     # If it has a charset, just ignore it for now.
@@ -340,7 +340,10 @@ def nanoseconds_timestamp_conversion(time: str) -> _dt.datetime:
 def is_precision_timestamp(time: str) -> bool:
     """Return a bool which indicates if the timestamp is in nanoseconds"""
     # Split the string into date-time and fraction of second
-    _, s_fraction = time.split(".")
+    try:
+        _, s_fraction = time.split(".")
+    except ValueError:
+        return False  # If there's no decimal, it's not a nanosecond timestamp.
 
     # Split the fraction from the timezone specifier ('Z' or 'z')
     s_fraction, _ = s_fraction.split(
