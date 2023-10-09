@@ -64,11 +64,11 @@ def _auth_user_info_from_token_data(token_data: dict[str, _typing.Any]):
 
 def _auth_user_metadata_from_token_data(token_data: dict[str, _typing.Any]):
     from firebase_functions.identity_fn import AuthUserMetadata
+    creation_time = int(token_data["creation_time"]) / 1000.0
+    last_sign_in_time = int(token_data["last_sign_in_time"]) / 1000.0
     return AuthUserMetadata(
-        creation_time=_dt.datetime.utcfromtimestamp(
-            token_data["creation_time"] / 1000.0),
-        last_sign_in_time=_dt.datetime.utcfromtimestamp(
-            token_data["last_sign_in_time"] / 1000.0),
+        creation_time=_dt.datetime.utcfromtimestamp(creation_time),
+        last_sign_in_time=_dt.datetime.utcfromtimestamp(last_sign_in_time),
     )
 
 
