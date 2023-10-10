@@ -13,7 +13,7 @@
 # limitations under the License.
 """Cloud functions to handle Eventarc events."""
 
-# pylint: disable=protected-access
+# pylint: disable=protected-access,cyclic-import
 import typing as _typing
 import functools as _functools
 import datetime as _dt
@@ -59,7 +59,7 @@ class AuthUserMetadata:
     creation_time: _dt.datetime
     """The date the user was created."""
 
-    last_sign_in_time: _dt.datetime
+    last_sign_in_time: _typing.Optional[_dt.datetime]
     """The date the user last signed in."""
 
 
@@ -345,7 +345,7 @@ def before_user_signed_in(
     :param \\*\\*kwargs: Options.
     :type \\*\\*kwargs: as :exc:`firebase_functions.options.BlockingOptions`
     :rtype: :exc:`typing.Callable`
-            \\[ \\[ :exc:`firebase_functions.identity_fn.AuthBlockingEvent` \\], 
+            \\[ \\[ :exc:`firebase_functions.identity_fn.AuthBlockingEvent` \\],
             :exc:`firebase_functions.identity_fn.BeforeSignInResponse` \\| `None` \\]
             A function that takes a AuthBlockingEvent and optionally returns BeforeSignInResponse.
     """
@@ -399,7 +399,7 @@ def before_user_created(
     :param \\*\\*kwargs: Options.
     :type \\*\\*kwargs: as :exc:`firebase_functions.options.BlockingOptions`
     :rtype: :exc:`typing.Callable`
-            \\[ \\[ :exc:`firebase_functions.identity_fn.AuthBlockingEvent` \\], 
+            \\[ \\[ :exc:`firebase_functions.identity_fn.AuthBlockingEvent` \\],
             :exc:`firebase_functions.identity_fn.BeforeCreateResponse` \\| `None` \\]
             A function that takes a AuthBlockingEvent and optionally returns BeforeCreateResponse.
     """

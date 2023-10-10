@@ -64,12 +64,15 @@ def _auth_user_info_from_token_data(token_data: dict[str, _typing.Any]):
 
 def _auth_user_metadata_from_token_data(token_data: dict[str, _typing.Any]):
     from firebase_functions.identity_fn import AuthUserMetadata
-    return AuthUserMetadata(
-        creation_time=_dt.datetime.utcfromtimestamp(
-            token_data["creation_time"] / 1000.0),
-        last_sign_in_time=_dt.datetime.utcfromtimestamp(
-            token_data["last_sign_in_time"] / 1000.0),
-    )
+    creation_time = _dt.datetime.utcfromtimestamp(
+        int(token_data["creation_time"]) / 1000.0)
+    last_sign_in_time = None
+    if "last_sign_in_time" in token_data:
+        last_sign_in_time = _dt.datetime.utcfromtimestamp(
+            int(token_data["last_sign_in_time"]) / 1000.0)
+
+    return AuthUserMetadata(creation_time=creation_time,
+                            last_sign_in_time=last_sign_in_time)
 
 
 def _auth_multi_factor_info_from_token_data(token_data: dict[str, _typing.Any]):
@@ -111,7 +114,7 @@ def _auth_user_record_from_token_data(token_data: dict[str, _typing.Any]):
     return AuthUserRecord(
         uid=token_data["uid"],
         email=token_data.get("email"),
-        email_verified=token_data["email_verified"],
+        email_verified=token_data.get("email_verified"),
         display_name=token_data.get("display_name"),
         photo_url=token_data.get("photo_url"),
         phone_number=token_data.get("phone_number"),

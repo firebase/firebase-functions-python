@@ -123,7 +123,7 @@ def _on_call_valid_body(request: _Request) -> bool:
     }
     if len(extra_keys) != 0:
         _logging.warning(
-            "Request body has extra fields: ",
+            "Request body has extra fields: %s",
             "".join(f"{key}: {value}," for (key, value) in extra_keys.items()),
         )
         return False
@@ -156,7 +156,7 @@ def _on_call_valid_content_type(request: _Request) -> bool:
 
     # Check that the Content-Type is JSON.
     if content_type.lower() != "application/json":
-        _logging.warning("Request has incorrect Content-Type.", content_type)
+        _logging.warning("Request has incorrect Content-Type: %s", content_type)
         return False
 
     return True
@@ -273,7 +273,7 @@ def on_call_check_tokens(request: _Request,) -> _OnCallTokenVerification:
         errs.append(("Auth token was rejected.", log_payload))
 
     if len(errs) == 0:
-        _logging.info("Callable request verification passed", log_payload)
+        _logging.info("Callable request verification passed: %s", log_payload)
     else:
         _logging.warning(f"Callable request verification failed: ${errs}",
                          log_payload)
@@ -337,20 +337,55 @@ def nanoseconds_timestamp_conversion(time: str) -> _dt.datetime:
     return event_time
 
 
-def is_precision_timestamp(time: str) -> bool:
+def second_timestamp_conversion(time: str) -> _dt.datetime:
+    """Converts a second timestamp and returns a datetime object of the current time in UTC"""
+    return _dt.datetime.strptime(
+        time,
+        "%Y-%m-%dT%H:%M:%S%z",
+    )
+
+
+class PrecisionTimestamp(_enum.Enum):
+    """
+    The status of a token.
+    """
+
+    NANOSECONDS = "NANOSECONDS"
+
+    MICROSECONDS = "MICROSECONDS"
+
+    SECONDS = "SECONDS"
+
+
+def get_precision_timestamp(time: str) -> PrecisionTimestamp:
     """Return a bool which indicates if the timestamp is in nanoseconds"""
     # Split the string into date-time and fraction of second
     try:
         _, s_fraction = time.split(".")
     except ValueError:
-        return False  # If there's no decimal, it's not a nanosecond timestamp.
+        return PrecisionTimestamp.SECONDS
 
     # Split the fraction from the timezone specifier ('Z' or 'z')
     s_fraction, _ = s_fraction.split(
         "Z") if "Z" in s_fraction else s_fraction.split("z")
 
     # If the fraction is more than 6 digits long, it's a nanosecond timestamp
-    return len(s_fraction) > 6
+    if len(s_fraction) > 6:
+        return PrecisionTimestamp.NANOSECONDS
+    else:
+        return PrecisionTimestamp.MICROSECONDS
+
+
+def timestamp_conversion(time: str) -> _dt.datetime:
+    """Converts a timestamp and returns a datetime object of the current time in UTC"""
+    precision_timestamp = get_precision_timestamp(time)
+
+    if precision_timestamp == PrecisionTimestamp.NANOSECONDS:
+        return nanoseconds_timestamp_conversion(time)
+    elif precision_timestamp == PrecisionTimestamp.MICROSECONDS:
+        return microsecond_timestamp_conversion(time)
+    elif precision_timestamp == PrecisionTimestamp.SECONDS:
+        return second_timestamp_conversion(time)
 
 
 def microsecond_timestamp_conversion(time: str) -> _dt.datetime:
