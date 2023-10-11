@@ -64,16 +64,15 @@ def _auth_user_info_from_token_data(token_data: dict[str, _typing.Any]):
 
 def _auth_user_metadata_from_token_data(token_data: dict[str, _typing.Any]):
     from firebase_functions.identity_fn import AuthUserMetadata
-    creation_time = _dt.datetime.utcfromtimestamp(int(token_data["creation_time"]) / 1000.0)
+    creation_time = _dt.datetime.utcfromtimestamp(
+        int(token_data["creation_time"]) / 1000.0)
     last_sign_in_time = None
     if "last_sign_in_time" in token_data:
         last_sign_in_time = _dt.datetime.utcfromtimestamp(
             int(token_data["last_sign_in_time"]) / 1000.0)
 
-    return AuthUserMetadata(
-        creation_time=creation_time,
-        last_sign_in_time=last_sign_in_time
-    )
+    return AuthUserMetadata(creation_time=creation_time,
+                            last_sign_in_time=last_sign_in_time)
 
 
 def _auth_multi_factor_info_from_token_data(token_data: dict[str, _typing.Any]):
@@ -93,7 +92,7 @@ def _auth_multi_factor_info_from_token_data(token_data: dict[str, _typing.Any]):
 
 
 def _auth_multi_factor_settings_from_token_data(token_data: dict[str,
-_typing.Any]):
+                                                                 _typing.Any]):
     if not token_data:
         return None
 
@@ -218,14 +217,14 @@ event_type_before_sign_in = "providers/cloud.auth/eventTypes/user.beforeSignIn"
 
 
 def _validate_auth_response(
-        event_type: str,
-        auth_response,
+    event_type: str,
+    auth_response,
 ) -> dict[str, _typing.Any]:
     if auth_response is None:
         auth_response = {}
 
     custom_claims: dict[str,
-    _typing.Any] | None = auth_response.get("custom_claims")
+                        _typing.Any] | None = auth_response.get("custom_claims")
     session_claims: dict[str, _typing.Any] | None = auth_response.get(
         "session_claims")
 
@@ -307,9 +306,9 @@ def _validate_auth_response(
 
 
 def before_operation_handler(
-        func: _typing.Callable,
-        event_type: str,
-        request: _Request,
+    func: _typing.Callable,
+    event_type: str,
+    request: _Request,
 ) -> _Response:
     from firebase_functions.identity_fn import BeforeCreateResponse, BeforeSignInResponse
     try:
