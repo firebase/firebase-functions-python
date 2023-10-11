@@ -123,7 +123,7 @@ def _on_call_valid_body(request: _Request) -> bool:
     }
     if len(extra_keys) != 0:
         _logging.warning(
-            "Request body has extra fields: ",
+            "Request body has extra fields: %s",
             "".join(f"{key}: {value}," for (key, value) in extra_keys.items()),
         )
         return False
@@ -156,7 +156,7 @@ def _on_call_valid_content_type(request: _Request) -> bool:
 
     # Check that the Content-Type is JSON.
     if content_type.lower() != "application/json":
-        _logging.warning("Request has incorrect Content-Type.", content_type)
+        _logging.warning("Request has incorrect Content-Type: %s", content_type)
         return False
 
     return True
@@ -273,7 +273,7 @@ def on_call_check_tokens(request: _Request,) -> _OnCallTokenVerification:
         errs.append(("Auth token was rejected.", log_payload))
 
     if len(errs) == 0:
-        _logging.info("Callable request verification passed", log_payload)
+        _logging.info("Callable request verification passed: %s", log_payload)
     else:
         _logging.warning(f"Callable request verification failed: ${errs}",
                          log_payload)
