@@ -67,7 +67,8 @@ def _auth_user_metadata_from_token_data(token_data: dict[str, _typing.Any]):
     creation_time = _dt.datetime.utcfromtimestamp(int(token_data["creation_time"]) / 1000.0)
     last_sign_in_time = None
     if "last_sign_in_time" in token_data:
-        last_sign_in_time = _dt.datetime.utcfromtimestamp(int(token_data["last_sign_in_time"]) / 1000.0)
+        last_sign_in_time = _dt.datetime.utcfromtimestamp(
+            int(token_data["last_sign_in_time"]) / 1000.0)
 
     return AuthUserMetadata(
         creation_time=creation_time,
