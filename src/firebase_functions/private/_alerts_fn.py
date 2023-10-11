@@ -13,7 +13,7 @@
 # limitations under the License.
 """Internal utilities for Firebase Alert function types."""
 
-# pylint: disable=protected-access
+# pylint: disable=protected-access,cyclic-import
 import typing as _typing
 import datetime as _dt
 import cloudevents.http as _ce
