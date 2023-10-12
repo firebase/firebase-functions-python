@@ -15,7 +15,7 @@
 Internal utils tests.
 """
 from os import environ, path
-from firebase_functions.private.util import firebase_config, microsecond_timestamp_conversion, nanoseconds_timestamp_conversion, is_precision_timestamp, normalize_path, deep_merge
+from firebase_functions.private.util import firebase_config, microsecond_timestamp_conversion, nanoseconds_timestamp_conversion, get_precision_timestamp, normalize_path, deep_merge, PrecisionTimestamp, second_timestamp_conversion
 import datetime as _dt
 
 test_bucket = "python-functions-testing.appspot.com"
@@ -80,6 +80,23 @@ def test_nanosecond_conversion():
         assert nanoseconds_timestamp_conversion(
             input_timestamp) == expected_datetime
 
+def test_second_conversion():
+    """
+    Testing seconds_timestamp_conversion works as intended
+    """
+    timestamps = [
+        ("2023-01-01T12:34:56Z", "2023-01-01T12:34:56Z"),
+        ("2023-02-14T14:37:52Z", "2023-02-14T14:37:52Z"),
+        ("2023-03-21T06:43:58Z", "2023-03-21T06:43:58Z"),
+        ("2023-10-06T07:00:00Z", "2023-10-06T07:00:00Z"),
+    ]
+
+    for input_timestamp, expected_output in timestamps:
+        expected_datetime = _dt.datetime.strptime(expected_output,
+                                                  "%Y-%m-%dT%H:%M:%SZ")
+        expected_datetime = expected_datetime.replace(tzinfo=_dt.timezone.utc)
+        assert second_timestamp_conversion(
+            input_timestamp) == expected_datetime
 
 def test_is_nanoseconds_timestamp():
     """
@@ -95,19 +112,28 @@ def test_is_nanoseconds_timestamp():
     nanosecond_timestamp3 = "2023-03-21T06:43:58.564738291Z"
     nanosecond_timestamp4 = "2023-08-15T22:22:22.222222222Z"
 
-    assert is_precision_timestamp(microsecond_timestamp1) is False
-    assert is_precision_timestamp(microsecond_timestamp2) is False
-    assert is_precision_timestamp(microsecond_timestamp3) is False
-    assert is_precision_timestamp(microsecond_timestamp4) is False
-    assert is_precision_timestamp(nanosecond_timestamp1) is True
-    assert is_precision_timestamp(nanosecond_timestamp2) is True
-    assert is_precision_timestamp(nanosecond_timestamp3) is True
-    assert is_precision_timestamp(nanosecond_timestamp4) is True
+    second_timestamp1 = "2023-01-01T12:34:56Z"
+    second_timestamp2 = "2023-02-14T14:37:52Z"
+    second_timestamp3 = "2023-03-21T06:43:58Z"
+    second_timestamp4 = "2023-08-15T22:22:22Z"
+
+    assert get_precision_timestamp(microsecond_timestamp1) is PrecisionTimestamp.MICROSECONDS
+    assert get_precision_timestamp(microsecond_timestamp2) is PrecisionTimestamp.MICROSECONDS
+    assert get_precision_timestamp(microsecond_timestamp3) is PrecisionTimestamp.MICROSECONDS
+    assert get_precision_timestamp(microsecond_timestamp4) is PrecisionTimestamp.MICROSECONDS
+    assert get_precision_timestamp(nanosecond_timestamp1) is PrecisionTimestamp.NANOSECONDS
+    assert get_precision_timestamp(nanosecond_timestamp2) is PrecisionTimestamp.NANOSECONDS
+    assert get_precision_timestamp(nanosecond_timestamp3) is PrecisionTimestamp.NANOSECONDS
+    assert get_precision_timestamp(nanosecond_timestamp4) is PrecisionTimestamp.NANOSECONDS
+    assert get_precision_timestamp(second_timestamp1) is PrecisionTimestamp.SECONDS
+    assert get_precision_timestamp(second_timestamp2) is PrecisionTimestamp.SECONDS
+    assert get_precision_timestamp(second_timestamp3) is PrecisionTimestamp.SECONDS
+    assert get_precision_timestamp(second_timestamp4) is PrecisionTimestamp.SECONDS
 
 
 def test_normalize_document_path():
     """
-    Testing "document" path passed to Firestore event listener 
+    Testing "document" path passed to Firestore event listener
     is normalized.
     """
     test_path = "/test/document/"

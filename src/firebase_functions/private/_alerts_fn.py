@@ -15,8 +15,8 @@
 
 # pylint: disable=protected-access,cyclic-import
 import typing as _typing
-import datetime as _dt
 import cloudevents.http as _ce
+import util as _util
 from firebase_functions.alerts import FirebaseAlertData
 
 from functions_framework import logging as _logging
@@ -105,10 +105,7 @@ def regression_alert_payload_from_ce_payload(payload: dict):
     return RegressionAlertPayload(
         type=payload["type"],
         issue=issue_from_ce_payload(payload["issue"]),
-        resolve_time=_dt.datetime.strptime(
-            payload["resolveTime"],
-            "%Y-%m-%dT%H:%M:%S.%f%z",
-        ),
+        resolve_time= _util.timestamp_conversion(payload["resolveTime"])
     )
 
 
@@ -125,10 +122,7 @@ def trending_issue_details_from_ce_payload(payload: dict):
 def stability_digest_payload_from_ce_payload(payload: dict):
     from firebase_functions.alerts.crashlytics_fn import StabilityDigestPayload
     return StabilityDigestPayload(
-        digest_date=_dt.datetime.strptime(
-            payload["digestDate"],
-            "%Y-%m-%dT%H:%M:%S.%f%z",
-        ),
+        digest_date=_util.timestamp_conversion(payload["digestDate"]),
         trending_issues=[
             trending_issue_details_from_ce_payload(issue)
             for issue in payload["trendingIssues"]
@@ -139,10 +133,7 @@ def velocity_alert_payload_from_ce_payload(payload: dict):
     from firebase_functions.alerts.crashlytics_fn import VelocityAlertPayload
     return VelocityAlertPayload(
         issue=issue_from_ce_payload(payload["issue"]),
-        create_time=_dt.datetime.strptime(
-            payload["createTime"],
-            "%Y-%m-%dT%H:%M:%S.%f%z",
-        ),
+        create_time=_util.timestamp_conversion(payload["createTime"]),
         crash_count=payload["crashCount"],
         crash_percentage=payload["crashPercentage"],
         first_version=payload["firstVersion"],
@@ -186,14 +177,9 @@ def firebase_alert_data_from_ce(event_dict: dict,) -> FirebaseAlertData:
         _logging.warning(f"Unhandled Firebase Alerts alert type: {alert_type}")
 
     return FirebaseAlertData(
-        create_time=_dt.datetime.strptime(
-            event_dict["createTime"],
-            "%Y-%m-%dT%H:%M:%S.%f%z",
-        ),
-        end_time=_dt.datetime.strptime(
-            event_dict["endTime"],
-            "%Y-%m-%dT%H:%M:%S.%f%z",
-        ) if "endTime" in event_dict else None,
+        create_time=_util.timestamp_conversion(event_dict["createTime"]),
+        end_time=_util.timestamp_conversion(event_dict["endTime"])
+          if "endTime" in event_dict else None,
         payload=alert_payload,
     )
 
@@ -217,10 +203,7 @@ def event_from_ce_helper(raw: _ce.CloudEvent, cls, app_id=True):
         "subject":
             event_dict["subject"] if "subject" in event_dict else None,
         "time":
-            _dt.datetime.strptime(
-                event_dict["time"],
-                "%Y-%m-%dT%H:%M:%S.%f%z",
-            ),
+            _util.timestamp_conversion(event_dict["time"]),
         "type":
             event_dict["type"],
     }
