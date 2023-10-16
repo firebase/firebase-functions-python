@@ -59,7 +59,7 @@ class AuthUserMetadata:
     creation_time: _dt.datetime
     """The date the user was created."""
 
-    last_sign_in_time: _dt.datetime
+    last_sign_in_time: _typing.Optional[_dt.datetime]
     """The date the user last signed in."""
 
 
