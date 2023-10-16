@@ -102,11 +102,10 @@ def new_nonfatal_issue_payload_from_ce_payload(payload: dict):
 
 def regression_alert_payload_from_ce_payload(payload: dict):
     from firebase_functions.alerts.crashlytics_fn import RegressionAlertPayload
-    return RegressionAlertPayload(
-        type=payload["type"],
-        issue=issue_from_ce_payload(payload["issue"]),
-        resolve_time= _util.timestamp_conversion(payload["resolveTime"])
-    )
+    return RegressionAlertPayload(type=payload["type"],
+                                  issue=issue_from_ce_payload(payload["issue"]),
+                                  resolve_time=_util.timestamp_conversion(
+                                      payload["resolveTime"]))
 
 
 def trending_issue_details_from_ce_payload(payload: dict):
@@ -179,7 +178,7 @@ def firebase_alert_data_from_ce(event_dict: dict,) -> FirebaseAlertData:
     return FirebaseAlertData(
         create_time=_util.timestamp_conversion(event_dict["createTime"]),
         end_time=_util.timestamp_conversion(event_dict["endTime"])
-          if "endTime" in event_dict else None,
+        if "endTime" in event_dict else None,
         payload=alert_payload,
     )
 
@@ -190,22 +189,14 @@ def event_from_ce_helper(raw: _ce.CloudEvent, cls, app_id=True):
     event_dict = {**event_data, **event_attributes}
     alert_type: str = event_dict["alerttype"]
     event_kwargs = {
-        "alert_type":
-            alert_type,
-        "data":
-            firebase_alert_data_from_ce(event_dict),
-        "id":
-            event_dict["id"],
-        "source":
-            event_dict["source"],
-        "specversion":
-            event_dict["specversion"],
-        "subject":
-            event_dict["subject"] if "subject" in event_dict else None,
-        "time":
-            _util.timestamp_conversion(event_dict["time"]),
-        "type":
-            event_dict["type"],
+        "alert_type": alert_type,
+        "data": firebase_alert_data_from_ce(event_dict),
+        "id": event_dict["id"],
+        "source": event_dict["source"],
+        "specversion": event_dict["specversion"],
+        "subject": event_dict["subject"] if "subject" in event_dict else None,
+        "time": _util.timestamp_conversion(event_dict["time"]),
+        "type": event_dict["type"],
     }
     if app_id:
         event_kwargs["app_id"] = event_dict.get("appid")

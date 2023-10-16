@@ -336,12 +336,14 @@ def nanoseconds_timestamp_conversion(time: str) -> _dt.datetime:
 
     return event_time
 
+
 def second_timestamp_conversion(time: str) -> _dt.datetime:
     """Converts a second timestamp and returns a datetime object of the current time in UTC"""
     return _dt.datetime.strptime(
         time,
         "%Y-%m-%dT%H:%M:%S%z",
     )
+
 
 class PrecisionTimestamp(_enum.Enum):
     """
@@ -384,6 +386,7 @@ def timestamp_conversion(time: str) -> _dt.datetime:
         return microsecond_timestamp_conversion(time)
     elif precision_timestamp == PrecisionTimestamp.SECONDS:
         return second_timestamp_conversion(time)
+
 
 def microsecond_timestamp_conversion(time: str) -> _dt.datetime:
     """Converts a microsecond timestamp and returns a datetime object of the current time in UTC"""

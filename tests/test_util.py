@@ -80,6 +80,7 @@ def test_nanosecond_conversion():
         assert nanoseconds_timestamp_conversion(
             input_timestamp) == expected_datetime
 
+
 def test_second_conversion():
     """
     Testing seconds_timestamp_conversion works as intended
@@ -95,8 +96,8 @@ def test_second_conversion():
         expected_datetime = _dt.datetime.strptime(expected_output,
                                                   "%Y-%m-%dT%H:%M:%SZ")
         expected_datetime = expected_datetime.replace(tzinfo=_dt.timezone.utc)
-        assert second_timestamp_conversion(
-            input_timestamp) == expected_datetime
+        assert second_timestamp_conversion(input_timestamp) == expected_datetime
+
 
 def test_is_nanoseconds_timestamp():
     """
@@ -117,18 +118,30 @@ def test_is_nanoseconds_timestamp():
     second_timestamp3 = "2023-03-21T06:43:58Z"
     second_timestamp4 = "2023-08-15T22:22:22Z"
 
-    assert get_precision_timestamp(microsecond_timestamp1) is PrecisionTimestamp.MICROSECONDS
-    assert get_precision_timestamp(microsecond_timestamp2) is PrecisionTimestamp.MICROSECONDS
-    assert get_precision_timestamp(microsecond_timestamp3) is PrecisionTimestamp.MICROSECONDS
-    assert get_precision_timestamp(microsecond_timestamp4) is PrecisionTimestamp.MICROSECONDS
-    assert get_precision_timestamp(nanosecond_timestamp1) is PrecisionTimestamp.NANOSECONDS
-    assert get_precision_timestamp(nanosecond_timestamp2) is PrecisionTimestamp.NANOSECONDS
-    assert get_precision_timestamp(nanosecond_timestamp3) is PrecisionTimestamp.NANOSECONDS
-    assert get_precision_timestamp(nanosecond_timestamp4) is PrecisionTimestamp.NANOSECONDS
-    assert get_precision_timestamp(second_timestamp1) is PrecisionTimestamp.SECONDS
-    assert get_precision_timestamp(second_timestamp2) is PrecisionTimestamp.SECONDS
-    assert get_precision_timestamp(second_timestamp3) is PrecisionTimestamp.SECONDS
-    assert get_precision_timestamp(second_timestamp4) is PrecisionTimestamp.SECONDS
+    assert get_precision_timestamp(
+        microsecond_timestamp1) is PrecisionTimestamp.MICROSECONDS
+    assert get_precision_timestamp(
+        microsecond_timestamp2) is PrecisionTimestamp.MICROSECONDS
+    assert get_precision_timestamp(
+        microsecond_timestamp3) is PrecisionTimestamp.MICROSECONDS
+    assert get_precision_timestamp(
+        microsecond_timestamp4) is PrecisionTimestamp.MICROSECONDS
+    assert get_precision_timestamp(
+        nanosecond_timestamp1) is PrecisionTimestamp.NANOSECONDS
+    assert get_precision_timestamp(
+        nanosecond_timestamp2) is PrecisionTimestamp.NANOSECONDS
+    assert get_precision_timestamp(
+        nanosecond_timestamp3) is PrecisionTimestamp.NANOSECONDS
+    assert get_precision_timestamp(
+        nanosecond_timestamp4) is PrecisionTimestamp.NANOSECONDS
+    assert get_precision_timestamp(
+        second_timestamp1) is PrecisionTimestamp.SECONDS
+    assert get_precision_timestamp(
+        second_timestamp2) is PrecisionTimestamp.SECONDS
+    assert get_precision_timestamp(
+        second_timestamp3) is PrecisionTimestamp.SECONDS
+    assert get_precision_timestamp(
+        second_timestamp4) is PrecisionTimestamp.SECONDS
 
 
 def test_normalize_document_path():
