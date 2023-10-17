@@ -95,14 +95,14 @@ class _JWTVerifier:
                 'Firebase {0} has incorrect algorithm. Expected "RS256" but got '
                 '"{1}". {2}'.format(self.short_name, header.get('alg'),
                                     verify_id_token_msg))
-        elif self.expected_audience and self.expected_audience not in audience:
+        elif not emulated and self.expected_audience and self.expected_audience not in audience:
             error_message = (
                 'Firebase {0} has incorrect "aud" (audience) claim. Expected "{1}" but '
                 'got "{2}". {3} {4}'.format(self.short_name,
                                             self.expected_audience, audience,
                                             project_id_match_msg,
                                             verify_id_token_msg))
-        elif not self.expected_audience and audience != self.project_id:
+        elif not emulated and not self.expected_audience and audience != self.project_id:
             error_message = (
                 'Firebase {0} has incorrect "aud" (audience) claim. Expected "{1}" but '
                 'got "{2}". {3} {4}'.format(self.short_name, self.project_id,
