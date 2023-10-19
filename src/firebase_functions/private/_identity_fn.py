@@ -114,7 +114,7 @@ def _auth_user_record_from_token_data(token_data: dict[str, _typing.Any]):
     return AuthUserRecord(
         uid=token_data["uid"],
         email=token_data.get("email"),
-        email_verified=token_data.get("email_verified"),
+        email_verified=bool(token_data.get("email_verified")),
         display_name=token_data.get("display_name"),
         photo_url=token_data.get("photo_url"),
         phone_number=token_data.get("phone_number"),
@@ -314,13 +314,16 @@ def before_operation_handler(
     try:
         if not _util.valid_on_call_request(request):
             _logging.error("Invalid request, unable to process.")
-            raise HttpsError(FunctionsErrorCode.INVALID_ARGUMENT, "Bad Request")
+            raise HttpsError(
+                FunctionsErrorCode.INVALID_ARGUMENT, "Bad Request")
         if request.json is None:
             _logging.error("Request is missing body.")
-            raise HttpsError(FunctionsErrorCode.INVALID_ARGUMENT, "Bad Request")
+            raise HttpsError(
+                FunctionsErrorCode.INVALID_ARGUMENT, "Bad Request")
         if request.json is None or "data" not in request.json:
             _logging.error("Request body is missing data.", request.json)
-            raise HttpsError(FunctionsErrorCode.INVALID_ARGUMENT, "Bad Request")
+            raise HttpsError(
+                FunctionsErrorCode.INVALID_ARGUMENT, "Bad Request")
         jwt_token = request.json["data"]["jwt"]
         decoded_token = _token_verifier.verify_auth_blocking_token(jwt_token)
         event = _auth_blocking_event_from_token_data(decoded_token)
