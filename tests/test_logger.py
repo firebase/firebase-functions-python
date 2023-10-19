@@ -65,9 +65,15 @@ class TestLogger:
         log_output = json.loads(raw_log_output)
         assert "message" in log_output
 
+    def test_log_should_have_other_keys(self, capsys: pytest.CaptureFixture[str]):
+        logger.log(foo="bar")
+        raw_log_output = capsys.readouterr().out
+        log_output = json.loads(raw_log_output)
+        assert "foo" in log_output
+
     def test_message_should_be_space_separated(
             self, capsys: pytest.CaptureFixture[str]):
-        logger.log(foo="bar", baz="qux")
+        logger.log("bar", "qux")
         expected_message = "bar qux"
         raw_log_output = capsys.readouterr().out
         log_output = json.loads(raw_log_output)
