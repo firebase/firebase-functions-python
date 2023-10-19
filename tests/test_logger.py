@@ -60,12 +60,13 @@ class TestLogger:
         assert log_output["severity"] == "ERROR"
 
     def test_log_should_have_message(self, capsys: pytest.CaptureFixture[str]):
-        logger.log(foo="bar")
+        logger.log("bar")
         raw_log_output = capsys.readouterr().out
         log_output = json.loads(raw_log_output)
         assert "message" in log_output
 
-    def test_log_should_have_other_keys(self, capsys: pytest.CaptureFixture[str]):
+    def test_log_should_have_other_keys(self,
+                                        capsys: pytest.CaptureFixture[str]):
         logger.log(foo="bar")
         raw_log_output = capsys.readouterr().out
         log_output = json.loads(raw_log_output)

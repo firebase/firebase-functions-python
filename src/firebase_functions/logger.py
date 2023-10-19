@@ -46,11 +46,11 @@ def _entry_from_args(severity: LogSeverity, *args, **kwargs) -> LogEntry:
         for value in args
     ])
 
-    object: _typing.Dict[str, _typing.Any] = {
+    other: _typing.Dict[str, _typing.Any] = {
         key: value if isinstance(value, str) else _remove_circular(value)
         for key, value in kwargs.items()}
 
-    entry = {"severity": severity, **object}
+    entry: _typing.Dict[str, _typing.Any] = {"severity": severity, **other}
     if message:
         entry["message"] = message
 
