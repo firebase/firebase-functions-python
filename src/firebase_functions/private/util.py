@@ -156,8 +156,7 @@ def _on_call_valid_content_type(request: _Request) -> bool:
 
     # Check that the Content-Type is JSON.
     if content_type.lower() != "application/json":
-        _logging.warning(
-            "Request has incorrect Content-Type: %s", content_type)
+        _logging.warning("Request has incorrect Content-Type: %s", content_type)
         return False
 
     return True

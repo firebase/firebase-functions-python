@@ -48,7 +48,8 @@ def _entry_from_args(severity: LogSeverity, *args, **kwargs) -> LogEntry:
 
     other: _typing.Dict[str, _typing.Any] = {
         key: value if isinstance(value, str) else _remove_circular(value)
-        for key, value in kwargs.items()}
+        for key, value in kwargs.items()
+    }
 
     entry: _typing.Dict[str, _typing.Any] = {"severity": severity, **other}
     if message:
@@ -73,8 +74,7 @@ def _remove_circular(obj: _typing.Any,
         refs.add(id(obj))
 
     if isinstance(obj, dict):
-        return {
-            key: _remove_circular(value, refs) for key, value in obj.items()}
+        return {key: _remove_circular(value, refs) for key, value in obj.items()}
     elif isinstance(obj, list):
         return [_remove_circular(value, refs) for _, value in enumerate(obj)]
     elif isinstance(obj, tuple):
@@ -127,4 +127,4 @@ def error(*args, **kwargs) -> None:
     """
     Logs an error message.
     """
-    write(_entry_from_args(LogSeverity.ERROR, *args,  **kwargs))
+    write(_entry_from_args(LogSeverity.ERROR, *args, **kwargs))
