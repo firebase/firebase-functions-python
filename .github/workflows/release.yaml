@@ -64,18 +64,8 @@ jobs:
         name: dist
         path: dist/
 
-  publish_check:
-    needs: stage_release
-    steps:
-      - name: Check publish conditions
-        id: publish-checks
-        run: |
-          echo "should_run=true" >> $GITHUB_OUTPUT
-
-
-
   publish_release:
-    needs: publish_check
+    needs: stage_release
 
     # Check whether the release should be published. We publish only when the trigger PR is
     #   1. merged
