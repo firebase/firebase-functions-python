@@ -123,7 +123,7 @@ class AuthUserRecord:
     The user's primary email, if set.
     """
 
-    email_verified: bool
+    email_verified: bool | None
     """
     Whether or not the user's primary email is verified.
     """
@@ -248,7 +248,7 @@ class AuthBlockingEvent:
 
     locale: str | None
     """
-    The application locale. You can set the locale using the client SDK, 
+    The application locale. You can set the locale using the client SDK,
     or by passing the locale header in the REST API.
     Example: 'fr' or 'sv-SE'
     """
