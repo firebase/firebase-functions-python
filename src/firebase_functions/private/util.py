@@ -387,6 +387,8 @@ def timestamp_conversion(time: str) -> _dt.datetime:
     elif precision_timestamp == PrecisionTimestamp.SECONDS:
         return second_timestamp_conversion(time)
 
+    raise ValueError("Invalid timestamp")
+
 
 def microsecond_timestamp_conversion(time: str) -> _dt.datetime:
     """Converts a microsecond timestamp and returns a datetime object of the current time in UTC"""
