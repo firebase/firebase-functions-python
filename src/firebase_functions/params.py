@@ -144,18 +144,18 @@ class TextInput:
     """
     Specifies that a Param's value should be determined by prompting the user
     to type it in interactively at deploy-time. Input that does not match the provided
-    validation_regex, if present, will be retried.
+    validation_regex, if present, is retried.
     """
 
     example: str | None = None
     """
-    An example of the input required that will be displayed alongside the input prompt.
+    An example of the input required that is displayed alongside the input prompt.
     """
 
     validation_regex: str | None = None
     """
     Validation regex for the input.
-    Input that does not match this regex, if present, will be retried.
+    Input that does not match this regex, if present, is retried.
     """
 
     validation_error_message: str | None = None

@@ -141,8 +141,8 @@ class ConfigUpdateData:
 
     rollback_source: int | None = None
     """
-    Only present if this version is the result of a rollback, and will be
-    the version number of the Remote Config template that was rolled-back to.
+    Only present if this version is the result of a rollback, and is
+    the version number of the Remote Config template that was rolled back to.
     """
 
 

@@ -36,7 +36,7 @@ class AuthUserInfo:
     """The user identifier for the linked provider."""
 
     provider_id: str
-    """The linked provider ID (e.g., "google.com" for the Google provider)."""
+    """The linked provider ID (such as "google.com" for the Google provider)."""
 
     display_name: str | None = None
     """The display name for the linked provider."""
@@ -110,7 +110,7 @@ class AuthMultiFactorSettings:
 @_dataclasses.dataclass(frozen=True)
 class AuthUserRecord:
     """
-    The UserRecord passed to auth blocking Cloud Functions from the identity platform.
+    The UserRecord passed to auth blocking functions from the identity platform.
     """
 
     uid: str
@@ -155,7 +155,7 @@ class AuthUserRecord:
 
     provider_data: list[AuthUserInfo]
     """
-    An array of providers (e.g., Google, Facebook) linked to the user.
+    An array of providers (such as Google or Facebook) linked to the user.
     """
 
     password_hash: str | None
@@ -243,7 +243,7 @@ class AuthBlockingEvent:
 
     data: AuthUserRecord
     """
-    The UserRecord passed to auth blocking Cloud Functions from the identity platform.
+    The UserRecord passed to auth blocking functions from the identity platform.
     """
 
     locale: str | None
