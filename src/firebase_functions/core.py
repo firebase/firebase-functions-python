@@ -25,7 +25,7 @@ T = _typing.TypeVar("T")
 class CloudEvent(_typing.Generic[T]):
     """
     A CloudEvent is the base of a cross-platform format for encoding a serverless event.
-    More information can be found at https://github.com/cloudevents/spec
+    More information can be found at https://github.com/cloudevents/spec.
     """
 
     specversion: str

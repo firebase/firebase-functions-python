@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """
-Cloud functions to handle events from Google Cloud Storage.
+Functions to handle events from Google Cloud Storage.
 """
 # pylint: disable=protected-access
 import dataclasses as _dataclasses

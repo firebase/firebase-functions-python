@@ -46,7 +46,7 @@ class AlertEvent(_CloudEvent[T]):
     app_id: str | None
     """
     The Firebase App ID that's associated with the alert. This is optional,
-    and only present when the alert is targeting at a specific Firebase App.
+    and only present when the alert is targeting a specific Firebase App.
     """
 
 
@@ -66,7 +66,7 @@ def on_alert_published(
     **kwargs
 ) -> _typing.Callable[[OnAlertPublishedCallable], OnAlertPublishedCallable]:
     """
-    Event handler which triggers when a Firebase Alerts event is published.
+    Event handler that triggers when a Firebase Alerts event is published.
 
     Example:
 

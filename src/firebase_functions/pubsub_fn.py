@@ -157,7 +157,7 @@ def _message_handler(
 @_util.copy_func_kwargs(PubSubOptions)
 def on_message_published(**kwargs) -> _typing.Callable[[_C1], _C1]:
     """
-    Event handler which triggers on a message being published to a Pub/Sub topic.
+    Event handler that triggers on a message being published to a Pub/Sub topic.
 
     Example:
 

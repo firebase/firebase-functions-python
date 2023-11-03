@@ -61,7 +61,7 @@ class Event(_core.CloudEvent[T]):
 
     params: dict[str, str]
     """
-    An dict containing the values of the path patterns.
+    A dict containing the values of the path patterns.
     Only named capture groups are populated - {key}, {key=*}, {key=**}
     """
 
@@ -125,7 +125,7 @@ def _db_endpoint_handler(
 @_util.copy_func_kwargs(DatabaseOptions)
 def on_value_written(**kwargs) -> _typing.Callable[[_C1], _C1]:
     """
-    Event handler which triggers when data is created, updated, or deleted in Realtime Database.
+    Event handler that triggers when data is created, updated, or deleted in Realtime Database.
 
     Example:
 
@@ -175,7 +175,7 @@ def on_value_written(**kwargs) -> _typing.Callable[[_C1], _C1]:
 @_util.copy_func_kwargs(DatabaseOptions)
 def on_value_updated(**kwargs) -> _typing.Callable[[_C1], _C1]:
     """
-    Event handler which triggers when data is updated in Realtime Database.
+    Event handler that triggers when data is updated in Realtime Database.
 
     Example:
 
@@ -225,7 +225,7 @@ def on_value_updated(**kwargs) -> _typing.Callable[[_C1], _C1]:
 @_util.copy_func_kwargs(DatabaseOptions)
 def on_value_created(**kwargs) -> _typing.Callable[[_C2], _C2]:
     """
-    Event handler which triggers when data is created in Realtime Database.
+    Event handler that triggers when data is created in Realtime Database.
 
     Example:
 
@@ -275,7 +275,7 @@ def on_value_created(**kwargs) -> _typing.Callable[[_C2], _C2]:
 @_util.copy_func_kwargs(DatabaseOptions)
 def on_value_deleted(**kwargs) -> _typing.Callable[[_C2], _C2]:
     """
-    Event handler which triggers when data is deleted in Realtime Database.
+    Event handler that triggers when data is deleted in Realtime Database.
 
     Example:
 

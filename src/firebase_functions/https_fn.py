@@ -119,9 +119,9 @@ class FunctionsErrorCode(str, _enum.Enum):
 
     INTERNAL = "internal"
     """
-    Internal errors. Means some invariants expected by
+    Internal errors. Means some invariants expected by the
     underlying system have been broken. If you see one of these errors,
-    something is very broken.
+    something is severely broken.
     """
 
     UNAVAILABLE = "unavailable"
