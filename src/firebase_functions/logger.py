@@ -12,7 +12,7 @@ import typing_extensions as _typing_extensions
 class LogSeverity(str, _enum.Enum):
     """
     `LogSeverity` indicates the detailed severity of the log entry. See
-    `LogSeverity <https://cloud.google.com/logging/docs/reference/v2/rest/v2/LogEntry#logseverity>`_.
+    `LogSeverity <https://cloud.google.com/logging/docs/reference/v2/rest/v2/LogEntry#logseverity>`.
     """
 
     DEBUG = "DEBUG"

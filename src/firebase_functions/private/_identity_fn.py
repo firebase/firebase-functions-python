@@ -321,7 +321,7 @@ def _generate_response_payload(
     result = {}
     update_mask = ",".join(formatted_auth_response.keys())
 
-    if len(update_mask):
+    if len(update_mask) != 0:
         result["userRecord"] = {
             **formatted_auth_response, "updateMask": update_mask
         }
