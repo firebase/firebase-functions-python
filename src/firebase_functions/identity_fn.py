@@ -203,6 +203,9 @@ class AdditionalUserInfo:
     is_new_user: bool
     """A boolean indicating if the user is new or not."""
 
+    recaptcha_score: float | None
+    """The user's reCAPTCHA score, if available."""
+
 
 @_dataclasses.dataclass(frozen=True)
 class Credential:
@@ -282,6 +285,12 @@ class AuthBlockingEvent:
     The time the event was triggered."""
 
 
+RecaptchaActionOptions = _typing.Literal["ALLOW", "BLOCK"]
+"""
+The reCAPTCHA action options.
+"""
+
+
 class BeforeCreateResponse(_typing.TypedDict, total=False):
     """
     The handler response type for 'before_user_created' blocking events.
@@ -301,6 +310,8 @@ class BeforeCreateResponse(_typing.TypedDict, total=False):
 
     custom_claims: dict[str, _typing.Any] | None
     """The user's custom claims object if available."""
+
+    recaptcha_action_override: RecaptchaActionOptions | None
 
 
 class BeforeSignInResponse(BeforeCreateResponse, total=False):
