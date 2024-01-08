@@ -16,7 +16,7 @@
 # pylint: disable=protected-access,cyclic-import
 import typing as _typing
 import cloudevents.http as _ce
-import util as _util
+import firebase_functions.private.util as _util
 from firebase_functions.alerts import FirebaseAlertData
 
 from functions_framework import logging as _logging
@@ -110,6 +110,7 @@ def regression_alert_payload_from_ce_payload(payload: dict):
 
 def trending_issue_details_from_ce_payload(payload: dict):
     from firebase_functions.alerts.crashlytics_fn import TrendingIssueDetails
+
     return TrendingIssueDetails(
         type=payload["type"],
         issue=issue_from_ce_payload(payload["issue"]),
@@ -120,16 +121,19 @@ def trending_issue_details_from_ce_payload(payload: dict):
 
 def stability_digest_payload_from_ce_payload(payload: dict):
     from firebase_functions.alerts.crashlytics_fn import StabilityDigestPayload
+
     return StabilityDigestPayload(
         digest_date=_util.timestamp_conversion(payload["digestDate"]),
         trending_issues=[
             trending_issue_details_from_ce_payload(issue)
             for issue in payload["trendingIssues"]
-        ])
+        ],
+    )
 
 
 def velocity_alert_payload_from_ce_payload(payload: dict):
     from firebase_functions.alerts.crashlytics_fn import VelocityAlertPayload
+
     return VelocityAlertPayload(
         issue=issue_from_ce_payload(payload["issue"]),
         create_time=_util.timestamp_conversion(payload["createTime"]),
@@ -141,11 +145,13 @@ def velocity_alert_payload_from_ce_payload(payload: dict):
 
 def new_anr_issue_payload_from_ce_payload(payload: dict):
     from firebase_functions.alerts.crashlytics_fn import NewAnrIssuePayload
+
     return NewAnrIssuePayload(issue=issue_from_ce_payload(payload["issue"]))
 
 
 def firebase_alert_data_from_ce(event_dict: dict,) -> FirebaseAlertData:
     from firebase_functions.options import AlertType
+
     alert_type: str = event_dict["alerttype"]
     alert_payload = event_dict["payload"]
     if alert_type == AlertType.CRASHLYTICS_NEW_FATAL_ISSUE.value:
@@ -205,24 +211,29 @@ def event_from_ce_helper(raw: _ce.CloudEvent, cls, app_id=True):
 
 def billing_event_from_ce(raw: _ce.CloudEvent):
     from firebase_functions.alerts.billing_fn import BillingEvent
+
     return event_from_ce_helper(raw, BillingEvent, app_id=False)
 
 
 def performance_event_from_ce(raw: _ce.CloudEvent):
     from firebase_functions.alerts.performance_fn import PerformanceEvent
+
     return event_from_ce_helper(raw, PerformanceEvent)
 
 
 def app_distribution_event_from_ce(raw: _ce.CloudEvent):
     from firebase_functions.alerts.app_distribution_fn import AppDistributionEvent
+
     return event_from_ce_helper(raw, AppDistributionEvent)
 
 
 def crashlytics_event_from_ce(raw: _ce.CloudEvent):
     from firebase_functions.alerts.crashlytics_fn import CrashlyticsEvent
+
     return event_from_ce_helper(raw, CrashlyticsEvent)
 
 
 def alerts_event_from_ce(raw: _ce.CloudEvent):
     from firebase_functions.alerts_fn import AlertEvent
+
     return event_from_ce_helper(raw, AlertEvent)
