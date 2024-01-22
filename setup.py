@@ -50,7 +50,7 @@ setup(
     long_description=long_description,
     url='https://github.com/firebase/firebase-functions-python',
     author='Firebase Team',
-    keywords=['firebase','functions','google','cloud'],
+    keywords=['firebase', 'functions', 'google', 'cloud'],
     license='Apache License 2.0',
     install_requires=install_requires,
     extras_require={'dev': dev_requires},
