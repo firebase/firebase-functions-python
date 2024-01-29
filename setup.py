@@ -56,6 +56,8 @@ setup(
     extras_require={'dev': dev_requires},
     packages=find_packages(where='src'),
     package_dir={'': 'src'},
+    include_package_data=True,
+    package_data={'firebase_functions': ['py.typed']},
     python_requires='>=3.10',
     classifiers=[
         'Development Status :: 4 - Beta',
