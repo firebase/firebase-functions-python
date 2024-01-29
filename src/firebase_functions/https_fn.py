@@ -347,7 +347,7 @@ _C2 = _typing.Callable[[CallableRequest[_typing.Any]], _typing.Any]
 
 
 def _on_call_handler(func: _C2, request: Request,
-                     enforce_app_check: bool) -> Response:
+                     enforce_app_check: bool, auth: bool = True) -> Response:
     try:
         if not _util.valid_on_call_request(request):
             _logging.error("Invalid request, unable to process.")
@@ -357,29 +357,30 @@ def _on_call_handler(func: _C2, request: Request,
             data=_json.loads(request.data)["data"],
         )
 
-        token_status = _util.on_call_check_tokens(request)
+        if auth:
+            token_status = _util.on_call_check_tokens(request)
 
-        if token_status.auth == _util.OnCallTokenState.INVALID:
-            raise HttpsError(FunctionsErrorCode.UNAUTHENTICATED,
-                             "Unauthenticated")
+            if token_status.auth == _util.OnCallTokenState.INVALID:
+                raise HttpsError(FunctionsErrorCode.UNAUTHENTICATED,
+                                "Unauthenticated")
 
-        if enforce_app_check and token_status.app in (
-                _util.OnCallTokenState.MISSING, _util.OnCallTokenState.INVALID):
-            raise HttpsError(FunctionsErrorCode.UNAUTHENTICATED,
-                             "Unauthenticated")
-        if token_status.app == _util.OnCallTokenState.VALID and token_status.app_token is not None:
-            context = _dataclasses.replace(
-                context,
-                app=AppCheckData(token_status.app_token["sub"],
-                                 token_status.app_token),
-            )
+            if enforce_app_check and token_status.app in (
+                    _util.OnCallTokenState.MISSING, _util.OnCallTokenState.INVALID):
+                raise HttpsError(FunctionsErrorCode.UNAUTHENTICATED,
+                                "Unauthenticated")
+            if token_status.app == _util.OnCallTokenState.VALID and token_status.app_token is not None:
+                context = _dataclasses.replace(
+                    context,
+                    app=AppCheckData(token_status.app_token["sub"],
+                                    token_status.app_token),
+                )
 
-        if token_status.auth_token is not None:
-            context = _dataclasses.replace(
-                context,
-                auth=AuthData(token_status.auth_token["uid"],
-                              token_status.auth_token),
-            )
+            if token_status.auth_token is not None:
+                context = _dataclasses.replace(
+                    context,
+                    auth=AuthData(token_status.auth_token["uid"],
+                                token_status.auth_token),
+                )
 
         instance_id = request.headers.get("Firebase-Instance-ID-Token")
         if instance_id is not None:
