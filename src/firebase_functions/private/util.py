@@ -281,7 +281,7 @@ def on_call_check_tokens(request: _Request,
     verifications = _OnCallTokenVerification()
 
     auth_token = _on_call_check_auth_token(request, verify_token=verify_token)
-    logger.debug(f"auth_token: {auth_token}")
+    logger.warn(f"auth_token: {auth_token}")
     if auth_token is None:
         verifications.auth = OnCallTokenState.MISSING
     elif isinstance(auth_token, dict):
@@ -289,7 +289,7 @@ def on_call_check_tokens(request: _Request,
         verifications.auth_token = auth_token
 
     app_token = _on_call_check_app_token(request, verify_token=verify_token)
-    logger.debug(f"app_token: {app_token}")
+    logger.warn(f"app_token: {app_token}")
     if app_token is None:
         verifications.app = OnCallTokenState.MISSING
     elif isinstance(app_token, dict):
