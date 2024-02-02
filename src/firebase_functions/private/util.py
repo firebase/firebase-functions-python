@@ -161,7 +161,8 @@ def _on_call_valid_content_type(request: _Request) -> bool:
 
     # Check that the Content-Type is JSON.
     if content_type.lower() != "application/json":
-        _logging.warning("Request has incorrect Content-Type: %s", content_type)
+        _logging.warning(
+            "Request has incorrect Content-Type: %s", content_type)
         return False
 
     return True
@@ -234,14 +235,18 @@ def _on_call_check_auth_token(
 
 
 def _on_call_check_app_token(
-    request: _Request
+    request: _Request,
+    verify_token: bool = True,
 ) -> None | _typing.Literal[OnCallTokenState.INVALID] | dict[str, _typing.Any]:
     """Validates the app token in a callable request."""
     app_check = request.headers.get("X-Firebase-AppCheck")
     if app_check is None:
         return None
     try:
-        app_token = _app_check.verify_token(app_check)
+        if verify_token:
+            app_token = _app_check.verify_token(app_check)
+        else:
+            app_token = _unsafe_decode_id_token(app_check)
         return app_token
     # pylint: disable=broad-except
     except Exception as err:
@@ -280,7 +285,7 @@ def on_call_check_tokens(request: _Request,
         verifications.auth = OnCallTokenState.VALID
         verifications.auth_token = auth_token
 
-    app_token = _on_call_check_app_token(request)
+    app_token = _on_call_check_app_token(request, verify_token=verify_token)
     if app_token is None:
         verifications.app = OnCallTokenState.MISSING
     elif isinstance(app_token, dict):
