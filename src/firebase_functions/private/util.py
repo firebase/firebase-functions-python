@@ -214,10 +214,8 @@ def _on_call_check_auth_token(
     request: _Request,
     verify_token: bool = True,
 ) -> None | _typing.Literal[OnCallTokenState.INVALID] | dict[str, _typing.Any]:
-    """Validates the auth token in a callable request."""
+    """Validates the auth token in a callable request. If verify_token is False, the token will be decoded without verification."""
     authorization = request.headers.get("Authorization")
-    logger.debug(
-        f"Authorization (verify_token={verify_token}): {authorization}")
     if authorization is None:
         return None
     if not authorization.startswith("Bearer "):
@@ -234,26 +232,17 @@ def _on_call_check_auth_token(
     except Exception as err:
         _logging.error(f"Error validating token: {err}")
         return OnCallTokenState.INVALID
-    return OnCallTokenState.INVALID
 
 
 def _on_call_check_app_token(
-    request: _Request,
-    verify_token: bool = True,
+    request: _Request
 ) -> None | _typing.Literal[OnCallTokenState.INVALID] | dict[str, _typing.Any]:
     """Validates the app token in a callable request."""
     app_check = request.headers.get("X-Firebase-AppCheck")
-    logger.debug(
-        f"X-Firebase-AppCheck (verify_token={verify_token}): {app_check}")
-    logger.debug("All headers", headers={
-                 k: v for k, v in request.headers.items()})
     if app_check is None:
         return None
     try:
-        if verify_token:
-            app_token = _app_check.verify_token(app_check)
-        else:
-            app_token = _unsafe_decode_id_token(app_check)
+        app_token = _app_check.verify_token(app_check)
         return app_token
     # pylint: disable=broad-except
     except Exception as err:
@@ -293,13 +282,13 @@ def on_call_check_tokens(request: _Request,
         verifications.auth = OnCallTokenState.VALID
         verifications.auth_token = auth_token
 
-    app_token = _on_call_check_app_token(request, verify_token=verify_token)
-    logger.warn(f"app_token: {app_token}")
-    if app_token is None:
-        verifications.app = OnCallTokenState.MISSING
-    elif isinstance(app_token, dict):
-        verifications.app = OnCallTokenState.VALID
-        verifications.app_token = app_token
+    if verify_token:
+        app_token = _on_call_check_app_token(request)
+        if app_token is None:
+            verifications.app = OnCallTokenState.MISSING
+        elif isinstance(app_token, dict):
+            verifications.app = OnCallTokenState.VALID
+            verifications.app_token = app_token
 
     log_payload = {
         **verifications.as_dict(),
@@ -309,7 +298,7 @@ def on_call_check_tokens(request: _Request,
     }
 
     errs = []
-    if verifications.app == OnCallTokenState.INVALID:
+    if verify_token and verifications.app == OnCallTokenState.INVALID:
         errs.append(("AppCheck token was rejected.", log_payload))
 
     if verifications.auth == OnCallTokenState.INVALID:
