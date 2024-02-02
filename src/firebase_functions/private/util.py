@@ -216,7 +216,8 @@ def _on_call_check_auth_token(
 ) -> None | _typing.Literal[OnCallTokenState.INVALID] | dict[str, _typing.Any]:
     """Validates the auth token in a callable request."""
     authorization = request.headers.get("Authorization")
-    logger.debug(f"Authorization (verify_token={verify_token}): {authorization}")
+    logger.debug(
+        f"Authorization (verify_token={verify_token}): {authorization}")
     if authorization is None:
         return None
     if not authorization.startswith("Bearer "):
@@ -242,7 +243,10 @@ def _on_call_check_app_token(
 ) -> None | _typing.Literal[OnCallTokenState.INVALID] | dict[str, _typing.Any]:
     """Validates the app token in a callable request."""
     app_check = request.headers.get("X-Firebase-AppCheck")
-    logger.debug(f"X-Firebase-AppCheck (verify_token={verify_token}): {app_check}")
+    logger.debug(
+        f"X-Firebase-AppCheck (verify_token={verify_token}): {app_check}")
+    logger.debug("All headers", headers={
+                 k: v for k, v in request.headers.items()})
     if app_check is None:
         return None
     try:
