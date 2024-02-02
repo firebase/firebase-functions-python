@@ -402,7 +402,7 @@ def _on_call_handler(func: _C2,
     # pylint: disable=broad-except
     except Exception as err:
         if not isinstance(err, HttpsError):
-            _logging.error("Unhandled error", err)
+            _logging.error("Unhandled error: %s", err)
             err = HttpsError(FunctionsErrorCode.INTERNAL, "INTERNAL")
         status = err._http_error_code.status
         return _make_response(_jsonify(error=err._as_dict()), status)
