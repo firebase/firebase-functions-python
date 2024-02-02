@@ -53,7 +53,7 @@ def on_task_dispatched(**kwargs) -> _typing.Callable[[_C], Response]:
 
         @_functools.wraps(func)
         def on_task_dispatched_wrapped(request: Request) -> Response:
-            return _on_call_handler(func, request, verify_token=False)
+            return _on_call_handler(func, request, enforce_app_check=False, verify_token=False)
 
         _util.set_func_endpoint_attr(
             on_task_dispatched_wrapped,
