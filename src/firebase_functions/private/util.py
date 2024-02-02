@@ -27,8 +27,7 @@ from flask import Request as _Request
 from functions_framework import logging as _logging
 from firebase_admin import auth as _auth
 from firebase_admin import app_check as _app_check
-
-import logger
+from firebase_functions import logger
 
 P = _typing.ParamSpec("P")
 R = _typing.TypeVar("R")
