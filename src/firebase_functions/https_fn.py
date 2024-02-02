@@ -346,8 +346,10 @@ _C1 = _typing.Callable[[Request], Response]
 _C2 = _typing.Callable[[CallableRequest[_typing.Any]], _typing.Any]
 
 
-def _on_call_handler(func: _C2, request: Request,
-                     enforce_app_check: bool) -> Response:
+def _on_call_handler(func: _C2,
+                     request: Request,
+                     enforce_app_check: bool,
+                     verify_token: bool = True) -> Response:
     try:
         if not _util.valid_on_call_request(request):
             _logging.error("Invalid request, unable to process.")
@@ -357,7 +359,8 @@ def _on_call_handler(func: _C2, request: Request,
             data=_json.loads(request.data)["data"],
         )
 
-        token_status = _util.on_call_check_tokens(request)
+        token_status = _util.on_call_check_tokens(request,
+                                                  verify_token=verify_token)
 
         if token_status.auth == _util.OnCallTokenState.INVALID:
             raise HttpsError(FunctionsErrorCode.UNAUTHENTICATED,

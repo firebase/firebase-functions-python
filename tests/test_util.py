@@ -15,7 +15,7 @@
 Internal utils tests.
 """
 from os import environ, path
-from firebase_functions.private.util import firebase_config, microsecond_timestamp_conversion, nanoseconds_timestamp_conversion, get_precision_timestamp, normalize_path, deep_merge, PrecisionTimestamp, second_timestamp_conversion
+from firebase_functions.private.util import firebase_config, microsecond_timestamp_conversion, nanoseconds_timestamp_conversion, get_precision_timestamp, normalize_path, deep_merge, PrecisionTimestamp, second_timestamp_conversion, _unsafe_decode_id_token
 import datetime as _dt
 
 test_bucket = "python-functions-testing.appspot.com"
@@ -184,3 +184,10 @@ def test_does_not_modify_originals():
     deep_merge(dict1, dict2)
     assert dict1["baz"]["answer"] == 42
     assert dict2["baz"]["answer"] == 33
+
+
+def test_unsafe_decode_token():
+    TEST_TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJmaXJlYmFzZSIsIm5hbWUiOiJKb2huIERvZSJ9.74A24Y821E7CZx8aYCsCKo0Y-W0qXwqME-14QlEMcB0"
+    result = _unsafe_decode_id_token(TEST_TOKEN)
+    assert result['sub'] == "firebase"
+    assert result['name'] == "John Doe"
