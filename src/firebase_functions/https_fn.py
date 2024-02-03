@@ -377,8 +377,7 @@ def _on_call_handler(func: _C2,
                                  token_status.app_token),
             )
 
-        if token_status.auth_token is not None:
-            _logging.debug(token_status.auth_token)
+        if token_status.auth_token is not None and "uid" in token_status.auth_token:
             context = _dataclasses.replace(
                 context,
                 auth=AuthData(token_status.auth_token["uid"],
