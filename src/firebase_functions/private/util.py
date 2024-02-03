@@ -27,7 +27,6 @@ from flask import Request as _Request
 from functions_framework import logging as _logging
 from firebase_admin import auth as _auth
 from firebase_admin import app_check as _app_check
-from firebase_functions import logger
 
 P = _typing.ParamSpec("P")
 R = _typing.TypeVar("R")
@@ -275,7 +274,6 @@ def on_call_check_tokens(request: _Request,
     verifications = _OnCallTokenVerification()
 
     auth_token = _on_call_check_auth_token(request, verify_token=verify_token)
-    logger.warn(f"auth_token: {auth_token}")
     if auth_token is None:
         verifications.auth = OnCallTokenState.MISSING
     elif isinstance(auth_token, dict):
