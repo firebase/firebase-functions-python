@@ -187,7 +187,8 @@ def test_does_not_modify_originals():
 
 
 def test_unsafe_decode_token():
-    TEST_TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJmaXJlYmFzZSIsIm5hbWUiOiJKb2huIERvZSJ9.74A24Y821E7CZx8aYCsCKo0Y-W0qXwqME-14QlEMcB0"
-    result = _unsafe_decode_id_token(TEST_TOKEN)
-    assert result['sub'] == "firebase"
-    assert result['name'] == "John Doe"
+    # pylint: disable=line-too-long
+    test_token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJmaXJlYmFzZSIsIm5hbWUiOiJKb2huIERvZSJ9.74A24Y821E7CZx8aYCsCKo0Y-W0qXwqME-14QlEMcB0"
+    result = _unsafe_decode_id_token(test_token)
+    assert result["sub"] == "firebase"
+    assert result["name"] == "John Doe"

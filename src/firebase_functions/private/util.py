@@ -32,7 +32,7 @@ P = _typing.ParamSpec("P")
 R = _typing.TypeVar("R")
 
 JWT_REGEX = _re.compile(
-    r'^[a-zA-Z0-9\-_=]+?\.[a-zA-Z0-9\-_=]+?\.([a-zA-Z0-9\-_=]+)?$')
+    r"^[a-zA-Z0-9\-_=]+?\.[a-zA-Z0-9\-_=]+?\.([a-zA-Z0-9\-_=]+)?$")
 
 
 class Sentinel:
@@ -213,7 +213,10 @@ def _on_call_check_auth_token(
     request: _Request,
     verify_token: bool = True,
 ) -> None | _typing.Literal[OnCallTokenState.INVALID] | dict[str, _typing.Any]:
-    """Validates the auth token in a callable request. If verify_token is False, the token will be decoded without verification."""
+    """
+        Validates the auth token in a callable request. 
+        If verify_token is False, the token will be decoded without verification.
+    """
     authorization = request.headers.get("Authorization")
     if authorization is None:
         return None
@@ -255,10 +258,10 @@ def _unsafe_decode_id_token(token: str):
         return {}
 
     # Split the token by '.' and decode each component from base64
-    components = [base64.urlsafe_b64decode(f"{s}==") for s in token.split('.')]
+    components = [base64.urlsafe_b64decode(f"{s}==") for s in token.split(".")]
 
     # Attempt to parse the payload (second component) as JSON
-    payload = components[1].decode('utf-8')
+    payload = components[1].decode("utf-8")
     try:
         payload = _json.loads(payload)
     except _json.JSONDecodeError:
