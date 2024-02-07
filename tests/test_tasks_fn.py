@@ -68,3 +68,37 @@ class TestTasks(unittest.TestCase):
                 response.get_data(as_text=True),
                 '{"result":"Hello World"}\n',
             )
+
+    def test_token_is_decoded(self):
+        """
+        Test that the token is decoded instead of verifying auth first.
+        """
+        app = Flask(__name__)
+
+        @on_task_dispatched()
+        def example(request: CallableRequest[object]) -> str:
+            auth = request.auth
+            # Make mypy happy
+            if auth is None:
+                return "No Auth"
+            self.assertEqual(auth.token["sub"], "firebase")
+            self.assertEqual(auth.token["name"], "John Doe")
+            return "Hello World"
+
+        with app.test_request_context("/"):
+            # pylint: disable=line-too-long
+            test_token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJmaXJlYmFzZSIsIm5hbWUiOiJKb2huIERvZSJ9.74A24Y821E7CZx8aYCsCKo0Y-W0qXwqME-14QlEMcB0"
+            environ = EnvironBuilder(
+                method="POST",
+                headers={
+                    "Authorization": f"Bearer {test_token}"
+                },
+                json={
+                    "data": {
+                        "test": "value"
+                    },
+                },
+            ).get_environ()
+            request = Request(environ)
+            response = example(request)
+            self.assertEqual(response.status_code, 200)

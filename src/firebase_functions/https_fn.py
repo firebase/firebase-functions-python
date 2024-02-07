@@ -280,7 +280,7 @@ class AuthData:
     The interface for Auth tokens verified in Callable functions
     """
 
-    uid: str
+    uid: str | None
     """
     User ID of the ID token.
     """
@@ -377,11 +377,13 @@ def _on_call_handler(func: _C2,
                                  token_status.app_token),
             )
 
-        if token_status.auth_token is not None and "uid" in token_status.auth_token:
+        if token_status.auth_token is not None:
             context = _dataclasses.replace(
                 context,
-                auth=AuthData(token_status.auth_token["uid"],
-                              token_status.auth_token),
+                auth=AuthData(
+                    token_status.auth_token["uid"]
+                    if "uid" in token_status.auth_token else None,
+                    token_status.auth_token),
             )
 
         instance_id = request.headers.get("Firebase-Instance-ID-Token")
