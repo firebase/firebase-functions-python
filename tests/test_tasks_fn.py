@@ -80,6 +80,7 @@ class TestTasks(unittest.TestCase):
             auth = request.auth
             # Make mypy happy
             if auth is None:
+                self.fail("Auth is None")
                 return "No Auth"
             self.assertEqual(auth.token["sub"], "firebase")
             self.assertEqual(auth.token["name"], "John Doe")
