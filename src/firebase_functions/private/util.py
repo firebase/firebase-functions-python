@@ -15,8 +15,10 @@
 Module for internal utilities.
 """
 
+import base64
 import os as _os
 import json as _json
+import re as _re
 import typing as _typing
 import dataclasses as _dataclasses
 import datetime as _dt
@@ -28,6 +30,9 @@ from firebase_admin import app_check as _app_check
 
 P = _typing.ParamSpec("P")
 R = _typing.TypeVar("R")
+
+JWT_REGEX = _re.compile(
+    r"^[a-zA-Z0-9\-_=]+?\.[a-zA-Z0-9\-_=]+?\.([a-zA-Z0-9\-_=]+)?$")
 
 
 class Sentinel:
@@ -204,9 +209,13 @@ class _OnCallTokenVerification:
 
 
 def _on_call_check_auth_token(
-    request: _Request
+    request: _Request,
+    verify_token: bool = True,
 ) -> None | _typing.Literal[OnCallTokenState.INVALID] | dict[str, _typing.Any]:
-    """Validates the auth token in a callable request."""
+    """
+        Validates the auth token in a callable request. 
+        If verify_token is False, the token will be decoded without verification.
+    """
     authorization = request.headers.get("Authorization")
     if authorization is None:
         return None
@@ -215,13 +224,15 @@ def _on_call_check_auth_token(
         return OnCallTokenState.INVALID
     try:
         id_token = authorization.replace("Bearer ", "")
-        auth_token = _auth.verify_id_token(id_token)
+        if verify_token:
+            auth_token = _auth.verify_id_token(id_token)
+        else:
+            auth_token = _unsafe_decode_id_token(id_token)
         return auth_token
     # pylint: disable=broad-except
     except Exception as err:
         _logging.error(f"Error validating token: {err}")
         return OnCallTokenState.INVALID
-    return OnCallTokenState.INVALID
 
 
 def _on_call_check_app_token(
@@ -240,23 +251,44 @@ def _on_call_check_app_token(
         return OnCallTokenState.INVALID
 
 
-def on_call_check_tokens(request: _Request,) -> _OnCallTokenVerification:
+def _unsafe_decode_id_token(token: str):
+    # Check if the token matches the JWT pattern
+    if not JWT_REGEX.match(token):
+        return {}
+
+    # Split the token by '.' and decode each component from base64
+    components = [base64.urlsafe_b64decode(f"{s}==") for s in token.split(".")]
+
+    # Attempt to parse the payload (second component) as JSON
+    payload = components[1].decode("utf-8")
+    try:
+        payload = _json.loads(payload)
+    except _json.JSONDecodeError:
+        # If there's an error during parsing, ignore it and return the payload as is
+        pass
+
+    return payload
+
+
+def on_call_check_tokens(request: _Request,
+                         verify_token: bool = True) -> _OnCallTokenVerification:
     """Check tokens"""
     verifications = _OnCallTokenVerification()
 
-    auth_token = _on_call_check_auth_token(request)
+    auth_token = _on_call_check_auth_token(request, verify_token=verify_token)
     if auth_token is None:
         verifications.auth = OnCallTokenState.MISSING
     elif isinstance(auth_token, dict):
         verifications.auth = OnCallTokenState.VALID
         verifications.auth_token = auth_token
 
-    app_token = _on_call_check_app_token(request)
-    if app_token is None:
-        verifications.app = OnCallTokenState.MISSING
-    elif isinstance(app_token, dict):
-        verifications.app = OnCallTokenState.VALID
-        verifications.app_token = app_token
+    if verify_token:
+        app_token = _on_call_check_app_token(request)
+        if app_token is None:
+            verifications.app = OnCallTokenState.MISSING
+        elif isinstance(app_token, dict):
+            verifications.app = OnCallTokenState.VALID
+            verifications.app_token = app_token
 
     log_payload = {
         **verifications.as_dict(),
@@ -266,7 +298,7 @@ def on_call_check_tokens(request: _Request,) -> _OnCallTokenVerification:
     }
 
     errs = []
-    if verifications.app == OnCallTokenState.INVALID:
+    if verify_token and verifications.app == OnCallTokenState.INVALID:
         errs.append(("AppCheck token was rejected.", log_payload))
 
     if verifications.auth == OnCallTokenState.INVALID:
