@@ -37,10 +37,13 @@ def trim_param(param: str) -> str:
 _WILDCARD_CAPTURE_REGEX = re.compile(r"{[^/{}]+}", re.IGNORECASE)
 
 
-class SegmentName(Enum):
+class SegmentName(str, Enum):
     SEGMENT = "segment"
     SINGLE_CAPTURE = "single-capture"
     MULTI_CAPTURE = "multi-capture"
+
+    def __str__(self) -> str:
+        return self.value
 
 
 class PathSegment:

@@ -75,6 +75,9 @@ class ConfigUpdateOrigin(str, _enum.Enum):
     The update came from the Firebase Admin Node SDK.
     """
 
+    def __str__(self) -> str:
+        return self.value
+
 
 class ConfigUpdateType(str, _enum.Enum):
     """
@@ -101,6 +104,9 @@ class ConfigUpdateType(str, _enum.Enum):
     """
     A rollback to a previous Remote Config template.
     """
+
+    def __str__(self) -> str:
+        return self.value
 
 
 @_dataclasses.dataclass(frozen=True)

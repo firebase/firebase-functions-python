@@ -24,6 +24,9 @@ class LogSeverity(str, _enum.Enum):
     ALERT = "ALERT"
     EMERGENCY = "EMERGENCY"
 
+    def __str__(self) -> str:
+        return self.value
+
 
 class LogEntry(_typing.TypedDict):
     """
