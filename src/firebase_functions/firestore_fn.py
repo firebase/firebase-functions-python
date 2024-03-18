@@ -131,8 +131,6 @@ def _firestore_endpoint_handler(
         raise TypeError(f"Firestore: Cannot parse event payload of data type "
                         f"'{actual_type}' and content type '{content_type}'.")
 
-    logger.debug("Event Attributes", event_attributes=event_attributes)
-
     event_location = event_attributes["location"]
     event_project = event_attributes["project"]
     event_namespace = event_attributes["namespace"]
