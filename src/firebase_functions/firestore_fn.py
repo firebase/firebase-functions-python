@@ -33,8 +33,6 @@ from google.cloud.firestore_v1 import DocumentSnapshot, DocumentReference
 from firebase_functions.options import FirestoreOptions
 from firebase_functions.core import Change
 
-from firebase_functions import logger
-
 _event_type_written = "google.cloud.firestore.document.v1.written"
 _event_type_created = "google.cloud.firestore.document.v1.created"
 _event_type_updated = "google.cloud.firestore.document.v1.updated"
