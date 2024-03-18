@@ -68,43 +68,41 @@ full_stack = _manifest.ManifestStack(
         _params.FloatParam("FLOAT_TEST", immutable=True),
         _params.SecretParam("SECRET_TEST"),
         _params.StringParam("STRING_TEST"),
+        _params.ListParam("LIST_TEST", default=["1", "2", "3"]),
     ],
     requiredAPIs=[{
         "api": "test_api",
         "reason": "testing"
-    }],
-)
+    }])
 
 full_stack_dict = {
     "specVersion": "v1alpha1",
     "endpoints": {
         "test": full_endpoint_dict
     },
-    "params": [
-        {
-            "name": "BOOL_TEST",
-            "type": "boolean",
-            "default": False,
-        },
-        {
-            "name": "INT_TEST",
-            "type": "int",
-            "description": "int_description"
-        },
-        {
-            "name": "FLOAT_TEST",
-            "type": "float",
-            "immutable": True,
-        },
-        {
-            "name": "SECRET_TEST",
-            "type": "secret"
-        },
-        {
-            "name": "STRING_TEST",
-            "type": "string"
-        },
-    ],
+    "params": [{
+        "name": "BOOL_TEST",
+        "type": "boolean",
+        "default": False,
+    }, {
+        "name": "INT_TEST",
+        "type": "int",
+        "description": "int_description"
+    }, {
+        "name": "FLOAT_TEST",
+        "type": "float",
+        "immutable": True,
+    }, {
+        "name": "SECRET_TEST",
+        "type": "secret"
+    }, {
+        "name": "STRING_TEST",
+        "type": "string"
+    }, {
+        "default": ["1", "2", "3"],
+        "name": "LIST_TEST",
+        "type": "list"
+    }],
     "requiredAPIs": [{
         "api": "test_api",
         "reason": "testing"
