@@ -33,6 +33,8 @@ from google.cloud.firestore_v1 import DocumentSnapshot, DocumentReference
 from firebase_functions.options import FirestoreOptions
 from firebase_functions.core import Change
 
+from firebase_functions import logger
+
 _event_type_written = "google.cloud.firestore.document.v1.written"
 _event_type_created = "google.cloud.firestore.document.v1.created"
 _event_type_updated = "google.cloud.firestore.document.v1.updated"
@@ -129,13 +131,15 @@ def _firestore_endpoint_handler(
         raise TypeError(f"Firestore: Cannot parse event payload of data type "
                         f"'{actual_type}' and content type '{content_type}'.")
 
+    logger.debug("Event Attributes", event_attributes=event_attributes)
+
     event_location = event_attributes["location"]
     event_project = event_attributes["project"]
     event_namespace = event_attributes["namespace"]
     event_document = event_attributes["document"]
     event_database = event_attributes["database"]
-    event_auth_type = event_attributes["authType"]
-    event_auth_id = event_attributes["authId"]
+    event_auth_type = event_attributes["authtype"]
+    event_auth_id = event_attributes["authid"]
 
     time = event_attributes["time"]
     event_time = _util.timestamp_conversion(time)
