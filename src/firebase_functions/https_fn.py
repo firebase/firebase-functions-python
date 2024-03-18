@@ -135,6 +135,9 @@ class FunctionsErrorCode(str, _enum.Enum):
     Unrecoverable data loss or corruption.
     """
 
+    def __str__(self) -> str:
+        return self.value
+
 
 class _CanonicalErrorCodeName(str, _enum.Enum):
     """The canonical error code name for a given error code."""
@@ -156,6 +159,9 @@ class _CanonicalErrorCodeName(str, _enum.Enum):
     INTERNAL = "INTERNAL"
     UNAVAILABLE = "UNAVAILABLE"
     DATA_LOSS = "DATA_LOSS"
+
+    def __str__(self) -> str:
+        return self.value
 
 
 @_dataclasses.dataclass(frozen=True)

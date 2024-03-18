@@ -187,6 +187,9 @@ class OnCallTokenState(_enum.Enum):
     The token is invalid.
     """
 
+    def __str__(self) -> str:
+        return self.value
+
 
 @_dataclasses.dataclass()
 class _OnCallTokenVerification:
@@ -387,6 +390,9 @@ class PrecisionTimestamp(_enum.Enum):
     MICROSECONDS = "MICROSECONDS"
 
     SECONDS = "SECONDS"
+
+    def __str__(self) -> str:
+        return self.value
 
 
 def get_precision_timestamp(time: str) -> PrecisionTimestamp:

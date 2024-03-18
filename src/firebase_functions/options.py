@@ -41,6 +41,9 @@ class VpcEgressSetting(str, _enum.Enum):
     PRIVATE_RANGES_ONLY = "PRIVATE_RANGES_ONLY"
     ALL_TRAFFIC = "ALL_TRAFFIC"
 
+    def __str__(self) -> str:
+        return self.value
+
 
 class IngressSetting(str, _enum.Enum):
     """What kind of traffic can access the function."""
@@ -48,6 +51,9 @@ class IngressSetting(str, _enum.Enum):
     ALLOW_ALL = "ALLOW_ALL"
     ALLOW_INTERNAL_ONLY = "ALLOW_INTERNAL_ONLY"
     ALLOW_INTERNAL_AND_GCLB = "ALLOW_INTERNAL_AND_GCLB"
+
+    def __str__(self) -> str:
+        return self.value
 
 
 @_dataclasses.dataclass(frozen=True)
@@ -88,6 +94,9 @@ class MemoryOption(int, _enum.Enum):
     GB_16 = 16 << 10
     GB_32 = 32 << 10
 
+    def __str__(self) -> str:
+        return f"{self.value}MB"
+
 
 class SupportedRegion(str, _enum.Enum):
     """
@@ -119,6 +128,9 @@ class SupportedRegion(str, _enum.Enum):
     US_WEST2 = "us-west2"
     US_WEST3 = "us-west3"
     US_WEST4 = "us-west4"
+
+    def __str__(self) -> str:
+        return self.value
 
 
 @_dataclasses.dataclass(frozen=True)
@@ -586,6 +598,9 @@ class AlertType(str, _enum.Enum):
     """
     Performance threshold alerts.
     """
+
+    def __str__(self) -> str:
+        return self.value
 
 
 @_dataclasses.dataclass(frozen=True, kw_only=True)

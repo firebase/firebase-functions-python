@@ -181,6 +181,9 @@ class ResourceType(str, _enum.Enum):
     """The type of resource that a picker should pick."""
     STORAGE_BUCKET = "storage.googleapis.com/Bucket"
 
+    def __str__(self) -> str:
+        return self.value
+
 
 @_dataclasses.dataclass(frozen=True)
 class ResourceInput:
