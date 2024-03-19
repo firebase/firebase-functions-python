@@ -146,6 +146,42 @@ class TestStringParams:
                 is False), "Failure, equality check returned False"
 
 
+class TestListParams:
+    """ListParam unit tests."""
+
+    def test_list_param_value(self):
+        """Testing if list param correctly returns list values."""
+        environ["LIST_VALUE_TEST1"] = "item1,item2"
+        assert params.ListParam("LIST_VALUE_TEST1").value == ["item1","item2"], \
+            'Failure, params value != ["item1","item2"]'
+
+    def test_list_param_filter_empty_strings(self):
+        """Testing if list param correctly returns list values wth empty strings excluded."""
+        environ["LIST_VALUE_TEST2"] = ",,item1,item2,,,item3,"
+        assert params.ListParam("LIST_VALUE_TEST2").value == ["item1","item2", "item3"], \
+            'Failure, params value != ["item1","item2", "item3"]'
+
+    def test_list_param_empty_default(self):
+        """Testing if list param defaults to an empty list if no value and no default."""
+        assert params.ListParam("LIST_DEFAULT_TEST1").value == [], \
+            "Failure, params value is not an empty list"
+
+    def test_list_param_default(self):
+        """Testing if list param defaults to the provided default value."""
+        assert (params.ListParam("LIST_DEFAULT_TEST2", default=["1", "2"]).value
+                == ["1", "2"]), \
+            'Failure, params default value != ["1", "2"]'
+
+    def test_list_param_equality(self):
+        """Test list equality."""
+        assert (params.ListParam("LIST_TEST1",
+                                 default=["123"]).equals(["123"]).value
+                is True), "Failure, equality check returned False"
+        assert (params.ListParam("LIST_TEST2",
+                                 default=["456"]).equals(["123"]).value
+                is False), "Failure, equality check returned False"
+
+
 class TestParamsManifest:
     """
     Tests any created params are tracked for the purposes

@@ -63,6 +63,9 @@ class TestState(str, _enum.Enum):
     The test matrix was not run because the provided inputs are not valid.
     """
 
+    def __str__(self) -> str:
+        return self.value
+
 
 class OutcomeSummary(str, _enum.Enum):
     """
@@ -100,6 +103,9 @@ class OutcomeSummary(str, _enum.Enum):
     """
     All tests were skipped.
     """
+
+    def __str__(self) -> str:
+        return self.value
 
 
 @_dataclasses.dataclass(frozen=True)

@@ -181,7 +181,8 @@ class ManifestStack:
 
 
 def _param_input_to_spec(
-    param_input: _params.TextInput | _params.ResourceInput | _params.SelectInput
+    param_input: _params.TextInput | _params.ResourceInput |
+    _params.SelectInput | _params.MultiSelectInput
 ) -> dict[str, _typing.Any]:
     if isinstance(param_input, _params.TextInput):
         return {
@@ -204,9 +205,11 @@ def _param_input_to_spec(
             },
         }
 
-    if isinstance(param_input, _params.SelectInput):
+    if isinstance(param_input, (_params.MultiSelectInput, _params.SelectInput)):
+        key = "select" if isinstance(param_input,
+                                     _params.SelectInput) else "multiSelect"
         return {
-            "select": {
+            key: {
                 "options": [{
                     key: value for key, value in {
                         "value": option.value,
@@ -242,6 +245,8 @@ def _param_to_spec(
         spec_dict["type"] = "float"
     elif isinstance(param, _params.SecretParam):
         spec_dict["type"] = "secret"
+    elif isinstance(param, _params.ListParam):
+        spec_dict["type"] = "list"
     elif isinstance(param, _params.StringParam):
         spec_dict["type"] = "string"
     else:

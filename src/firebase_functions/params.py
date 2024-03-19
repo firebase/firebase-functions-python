@@ -14,6 +14,7 @@
 """Module for params that can make Cloud Functions codebases generic."""
 
 import abc as _abc
+import json as _json
 import dataclasses as _dataclasses
 import os as _os
 import re as _re
@@ -140,6 +141,18 @@ class SelectInput(_typing.Generic[_T]):
 
 
 @_dataclasses.dataclass(frozen=True)
+class MultiSelectInput():
+    """
+    Specifies that a Param's value should be determined by having the user select
+    a subset from a list of pre-canned options interactively at deploy-time.
+    Will result in errors if used on Params of type other than string[].
+    """
+
+    options: list[SelectOption[str]]
+    """A list of user selectable options."""
+
+
+@_dataclasses.dataclass(frozen=True)
 class TextInput:
     """
     Specifies that a Param's value should be determined by prompting the user
@@ -167,6 +180,9 @@ class TextInput:
 class ResourceType(str, _enum.Enum):
     """The type of resource that a picker should pick."""
     STORAGE_BUCKET = "storage.googleapis.com/Bucket"
+
+    def __str__(self) -> str:
+        return self.value
 
 
 @_dataclasses.dataclass(frozen=True)
@@ -215,7 +231,8 @@ class Param(Expression[_T]):
     deployments.
     """
 
-    input: TextInput | ResourceInput | SelectInput[_T] | None = None
+    input: TextInput | ResourceInput | SelectInput[
+        _T] | MultiSelectInput | None = None
     """
     The type of input that is required for this param, e.g. TextInput.
     """
@@ -353,6 +370,32 @@ class BoolParam(Param[bool]):
             return self.default.value if isinstance(
                 self.default, Expression) else self.default
         return False
+
+
+@_dataclasses.dataclass(frozen=True)
+class ListParam(Param[list]):
+    """A parameter as a list of strings."""
+
+    @property
+    def value(self) -> list[str]:
+        if _os.environ.get(self.name) is not None:
+            # If the environment variable starts with "[" and ends with "]",
+            # then assume it is a JSON array and try to parse it.
+            # (This is for Cloud Run (v2 Functions), the environment variable is a JSON array.)
+            if _os.environ[self.name].startswith("[") and _os.environ[
+                    self.name].endswith("]"):
+                try:
+                    return _json.loads(_os.environ[self.name])
+                except _json.JSONDecodeError:
+                    return []
+            # Otherwise, split the string by commas.
+            # (This is for emulator & the Firebase CLI generated .env file, the environment
+            # variable is a comma-separated list.)
+            return list(filter(len, _os.environ[self.name].split(",")))
+        if self.default is not None:
+            return self.default.value if isinstance(
+                self.default, Expression) else self.default
+        return []
 
 
 @_dataclasses.dataclass(frozen=True)
