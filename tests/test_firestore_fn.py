@@ -22,7 +22,7 @@ class TestFirestore(TestCase):
         with patch.dict("sys.modules", mocked_modules):
             from cloudevents.http import CloudEvent
             from firebase_functions.firestore_fn import _event_type_created_with_auth_context as event_type, \
-                _firestore_endpoint_handler as firestore_endpoint_handler, Event
+                _firestore_endpoint_handler as firestore_endpoint_handler, EventWithAuthContext
             from firebase_functions.private import path_pattern
 
             func = Mock(__name__="example_func")
@@ -67,6 +67,6 @@ class TestFirestore(TestCase):
 
             event = func.call_args.args[0]
             self.assertIsNotNone(event)
-            self.assertIsInstance(event, Event)
+            self.assertIsInstance(event, EventWithAuthContext)
             self.assertEqual(event.auth_type, "unauthenticated")
             self.assertEqual(event.auth_id, "foo")
