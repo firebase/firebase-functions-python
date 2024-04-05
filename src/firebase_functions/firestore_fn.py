@@ -92,15 +92,15 @@ AuthType = _typing.Literal["service_account", "api_key", "system",
 
 
 @_dataclass.dataclass(frozen=True)
-class EventWithAuthContext(Event[_core.T]):
+class AuthEvent(Event[_core.T]):
     auth_type: AuthType
     """The type of principal that triggered the event"""
     auth_id: str
     """The unique identifier for the principal"""
 
 
-_E3 = EventWithAuthContext[Change[DocumentSnapshot | None]]
-_E4 = EventWithAuthContext[DocumentSnapshot | None]
+_E3 = AuthEvent[Change[DocumentSnapshot | None]]
+_E4 = AuthEvent[DocumentSnapshot | None]
 _C3 = _typing.Callable[[_E3], None]
 _C4 = _typing.Callable[[_E4], None]
 
@@ -206,10 +206,9 @@ def _firestore_endpoint_handler(
     )
 
     if event_type.endswith(".withAuthContext"):
-        database_event_with_auth_context = EventWithAuthContext(
-            **vars(database_event),
-            auth_type=event_auth_type,
-            auth_id=event_auth_id)
+        database_event_with_auth_context = AuthEvent(**vars(database_event),
+                                                     auth_type=event_auth_type,
+                                                     auth_id=event_auth_id)
         func(database_event_with_auth_context)
     else:
         # mypy cannot infer that the event type is correct, hence the cast
@@ -277,13 +276,13 @@ def on_document_written_with_auth_context(**kwargs
     .. code-block:: python
 
       @on_document_written_with_auth_context(document="*")
-      def example(event: EventWithAuthContext[Change[DocumentSnapshot]]) -> None:
+      def example(event: AuthEvent[Change[DocumentSnapshot]]) -> None:
           pass
 
     :param \\*\\*kwargs: Firestore options.
     :type \\*\\*kwargs: as :exc:`firebase_functions.options.FirestoreOptions`
     :rtype: :exc:`typing.Callable`
-            \\[ \\[ :exc:`firebase_functions.firestore_fn.EventWithAuthContext` \\[
+            \\[ \\[ :exc:`firebase_functions.firestore_fn.AuthEvent` \\[
             :exc:`firebase_functions.db.Change` \\] \\], `None` \\]
             A function that takes a Firestore event and returns ``None``.
     """
@@ -376,13 +375,13 @@ def on_document_updated_with_auth_context(**kwargs
     .. code-block:: python
 
       @on_document_updated_with_auth_context(document="*")
-      def example(event: EventWithAuthContext[Change[DocumentSnapshot]]) -> None:
+      def example(event: AuthEvent[Change[DocumentSnapshot]]) -> None:
           pass
 
     :param \\*\\*kwargs: Firestore options.
     :type \\*\\*kwargs: as :exc:`firebase_functions.options.FirestoreOptions`
     :rtype: :exc:`typing.Callable`
-            \\[ \\[ :exc:`firebase_functions.firestore_fn.EventWithAuthContext` \\[
+            \\[ \\[ :exc:`firebase_functions.firestore_fn.AuthEvent` \\[
             :exc:`firebase_functions.db.Change` \\] \\], `None` \\]
             A function that takes a Firestore event and returns ``None``.
     """
@@ -475,13 +474,13 @@ def on_document_created_with_auth_context(**kwargs
     .. code-block:: python
 
         @on_document_created_with_auth_context(document="*")
-        def example(event: EventWithAuthContext[DocumentSnapshot]):
+        def example(event: AuthEvent[DocumentSnapshot]):
           pass
 
     :param \\*\\*kwargs: Firestore options.
     :type \\*\\*kwargs: as :exc:`firebase_functions.options.FirestoreOptions`
     :rtype: :exc:`typing.Callable`
-            \\[ \\[ :exc:`firebase_functions.firestore_fn.EventWithAuthContext` \\[
+            \\[ \\[ :exc:`firebase_functions.firestore_fn.AuthEvent` \\[
             :exc:`object` \\] \\], `None` \\]
             A function that takes a Firestore event and returns ``None``.
     """
@@ -574,13 +573,13 @@ def on_document_deleted_with_auth_context(**kwargs
     .. code-block:: python
 
       @on_document_deleted_with_auth_context(document="*")
-      def example(event: EventWithAuthContext[DocumentSnapshot]) -> None:
+      def example(event: AuthEvent[DocumentSnapshot]) -> None:
           pass
 
     :param \\*\\*kwargs: Firestore options.
     :type \\*\\*kwargs: as :exc:`firebase_functions.options.FirestoreOptions`
     :rtype: :exc:`typing.Callable`
-            \\[ \\[ :exc:`firebase_functions.firestore_fn.EventWithAuthContext` \\[
+            \\[ \\[ :exc:`firebase_functions.firestore_fn.AuthEvent` \\[
             :exc:`object` \\] \\], `None` \\]
             A function that takes a Firestore event and returns ``None``.
     """
