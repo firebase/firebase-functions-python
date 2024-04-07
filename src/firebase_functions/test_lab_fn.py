@@ -24,7 +24,7 @@ import enum as _enum
 
 import firebase_functions.private.util as _util
 
-from firebase_functions.core import CloudEvent
+from firebase_functions.core import CloudEvent, _with_init
 from firebase_functions.options import EventHandlerOptions
 
 
@@ -246,7 +246,7 @@ def _event_handler(func: _C1, raw: _ce.CloudEvent) -> None:
         type=event_dict["type"],
     )
 
-    func(event)
+    _with_init(func)(event)
 
 
 @_util.copy_func_kwargs(EventHandlerOptions)

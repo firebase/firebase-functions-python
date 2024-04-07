@@ -27,6 +27,7 @@ from flask import (
     make_response as _make_response,
 )
 
+from firebase_functions.core import _with_init
 # Export for user convenience.
 # pylint: disable=unused-import
 from firebase_functions.options import Timezone
@@ -108,7 +109,7 @@ def on_schedule(**kwargs) -> _typing.Callable[[_C], _Response]:
                 schedule_time=schedule_time,
             )
             try:
-                func(event)
+                _with_init(func)(event)
                 return _make_response()
             # Disable broad exceptions lint since we want to handle all exceptions.
             # pylint: disable=broad-except

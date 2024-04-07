@@ -403,7 +403,7 @@ def _on_call_handler(func: _C2,
                 instance_id_token=request.headers.get(
                     "Firebase-Instance-ID-Token"),
             )
-        result = func(context)
+        result = _core._with_init(func)(context)
         return _jsonify(result=result)
     # Disable broad exceptions lint since we want to handle all exceptions here
     # and wrap as an HttpsError.
@@ -447,7 +447,7 @@ def on_request(**kwargs) -> _typing.Callable[[_C1], _C1]:
                     methods=options.cors.cors_methods,
                     origins=options.cors.cors_origins,
                 )(func)(request)
-            return func(request)
+            return _core._with_init(func)(request)
 
         _util.set_func_endpoint_attr(
             on_request_wrapped,

@@ -25,7 +25,7 @@ import cloudevents.http as _ce
 
 import firebase_functions.private.util as _util
 
-from firebase_functions.core import CloudEvent, T
+from firebase_functions.core import CloudEvent, T, _with_init
 from firebase_functions.options import PubSubOptions
 
 
@@ -151,7 +151,7 @@ def _message_handler(
         type=event_dict["type"],
     )
 
-    func(event)
+    _with_init(func)(event)
 
 
 @_util.copy_func_kwargs(PubSubOptions)

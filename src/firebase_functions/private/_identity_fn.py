@@ -18,6 +18,8 @@ import typing as _typing
 import datetime as _dt
 import time as _time
 import json as _json
+
+from firebase_functions.core import _with_init
 from firebase_functions.https_fn import HttpsError, FunctionsErrorCode
 
 import firebase_functions.private.util as _util
@@ -351,7 +353,7 @@ def before_operation_handler(
         jwt_token = request.json["data"]["jwt"]
         decoded_token = _token_verifier.verify_auth_blocking_token(jwt_token)
         event = _auth_blocking_event_from_token_data(decoded_token)
-        auth_response: BeforeCreateResponse | BeforeSignInResponse | None = func(
+        auth_response: BeforeCreateResponse | BeforeSignInResponse | None = _with_init(func)(
             event)
         if not auth_response:
             return _jsonify({})
