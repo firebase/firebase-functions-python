@@ -18,6 +18,8 @@ import dataclasses as _dataclass
 import datetime as _datetime
 import typing as _typing
 
+from . import logger as _logger
+
 T = _typing.TypeVar("T")
 
 
@@ -80,3 +82,48 @@ class Change(_typing.Generic[T]):
     """
     The state of data after the change.
     """
+
+
+_didInit = False
+_initCallback: _typing.Callable[[], _typing.Any] | None = None
+
+
+def init(callback: _typing.Callable[[], _typing.Any]) -> None:
+    """
+     Registers a function that should be run when in a production environment
+     before executing any functions code.
+     Calling this decorator more than once leads to undefined behavior.
+    """
+
+    global _didInit
+    global _initCallback
+
+    if _didInit:
+        raise ValueError("Firebase Functions SDK already initialized")
+
+    _initCallback = callback
+
+    if _didInit:
+        _logger.warn("Setting init callback more than once. Only the most recent callback will be called")
+
+    _initCallback = callback
+    _didInit = False
+
+
+def _with_init(fn: _typing.Callable[..., _typing.Any]) -> _typing.Callable[..., _typing.Any]:
+    """
+    A decorator that runs the init callback before running the decorated function.
+    """
+
+    def wrapper(*args, **kwargs):
+        global _didInit
+        global _initCallback
+
+        if not _didInit:
+            if _initCallback is not None:
+                _initCallback()
+            _didInit = True
+
+        return fn(*args, **kwargs)
+
+    return wrapper
