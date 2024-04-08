@@ -95,7 +95,7 @@ AuthType = _typing.Literal["service_account", "api_key", "system",
 class AuthEvent(Event[_core.T]):
     auth_type: AuthType
     """The type of principal that triggered the event"""
-    auth_id: str
+    auth_id: str | None
     """The unique identifier for the principal"""
 
 
