@@ -138,19 +138,19 @@ echo_info "---< git fetch --depth=1 origin +refs/tags/*:refs/tags/* || true >---
 git fetch --depth=1 origin +refs/tags/*:refs/tags/* || true
 echo ""
 
-readonly EXISTING_TAG=`git rev-parse -q --verify "refs/tags/v${RELEASE_VERSION}"` || true
+readonly EXISTING_TAG=`git rev-parse -q --verify "refs/tags/${RELEASE_VERSION}"` || true
 if [[ -n "${EXISTING_TAG}" ]]; then
-  echo_warn "Tag v${RELEASE_VERSION} already exists. Exiting."
+  echo_warn "Tag ${RELEASE_VERSION} already exists. Exiting."
   echo_warn "If the tag was created in a previous unsuccessful attempt, delete it and try again."
-  echo_warn "  $ git tag -d v${RELEASE_VERSION}"
-  echo_warn "  $ git push --delete origin v${RELEASE_VERSION}"
+  echo_warn "  $ git tag -d ${RELEASE_VERSION}"
+  echo_warn "  $ git push --delete origin ${RELEASE_VERSION}"
 
-  readonly RELEASE_URL="https://github.com/firebase/firebase-functions-python/releases/tag/v${RELEASE_VERSION}"
+  readonly RELEASE_URL="https://github.com/firebase/firebase-functions-python/releases/tag/${RELEASE_VERSION}"
   echo_warn "Delete any corresponding releases at ${RELEASE_URL}."
   terminate
 fi
 
-echo_info "Tag v${RELEASE_VERSION} does not exist."
+echo_info "Tag ${RELEASE_VERSION} does not exist."
 
 
 echo_info ""
