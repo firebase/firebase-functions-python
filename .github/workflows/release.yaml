@@ -80,9 +80,16 @@ jobs:
 
     runs-on: ubuntu-latest
 
+    permissions:
+      # Used to create a short-lived OIDC token which is given to PyPi to identify this workflow job
+      # See: https://docs.github.com/en/actions/deployment/security-hardening-your-deployments/about-security-hardening-with-openid-connect#adding-permissions-settings
+      # and https://docs.pypi.org/trusted-publishers/using-a-publisher/
+      id-token: write
+      contents: write
+
     steps:
     - name: Checkout source for publish
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
     # Download the artifacts created by the stage_release job.
     - name: Download release candidates
@@ -113,6 +120,3 @@ jobs:
 
     - name: Publish to Pypi
       uses: pypa/gh-action-pypi-publish@release/v1
-      with:
-        user: firebase
-        password: ${{ secrets.PYPI_PASSWORD }}
