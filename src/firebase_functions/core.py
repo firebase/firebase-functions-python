@@ -98,9 +98,6 @@ def init(callback: _typing.Callable[[], _typing.Any]) -> None:
     global _didInit
     global _initCallback
 
-    if _didInit:
-        raise ValueError("Firebase Functions SDK already initialized")
-
     _initCallback = callback
 
     if _didInit:
