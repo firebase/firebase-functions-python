@@ -17,6 +17,7 @@ import datetime as _dt
 from unittest.mock import MagicMock
 from cloudevents.http import CloudEvent as _CloudEvent
 
+from firebase_functions import core
 from firebase_functions.pubsub_fn import (
     Message,
     MessagePublishedData,
@@ -94,3 +95,38 @@ class TestPubSub(unittest.TestCase):
                          "eyJ0ZXN0IjogInZhbHVlIn0=")
         self.assertIsNone(event_arg.data.message.ordering_key)
         self.assertEqual(event_arg.data.subscription, "my-subscription")
+
+    def test_calls_init(self):
+        hello = None
+
+        @core.init
+        def init():
+            nonlocal hello
+            hello = "world"
+
+        func = MagicMock()
+        raw_event = _CloudEvent(
+            attributes={
+                "id": "test-message",
+                "source": "https://example.com/pubsub",
+                "specversion": "1.0",
+                "time": "2023-03-11T13:25:37.403Z",
+                "type": "com.example.pubsub.message",
+            },
+            data={
+                "message": {
+                    "attributes": {
+                        "key": "value"
+                    },
+                    # {"test": "value"}
+                    "data": "eyJ0ZXN0IjogInZhbHVlIn0=",
+                    "message_id": "message-id-123",
+                    "publish_time": "2023-03-11T13:25:37.403Z",
+                },
+                "subscription": "my-subscription",
+            },
+        )
+
+        _message_handler(func, raw_event)
+
+        self.assertEqual("world", hello)

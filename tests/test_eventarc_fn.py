@@ -14,7 +14,10 @@
 """Eventarc trigger function tests."""
 import unittest
 from unittest.mock import Mock
+
 from cloudevents.http import CloudEvent as _CloudEvent
+
+from firebase_functions import core
 from firebase_functions.core import CloudEvent
 from firebase_functions.eventarc_fn import on_custom_event_published
 
@@ -83,3 +86,34 @@ class TestEventarcFn(unittest.TestCase):
             event_arg.type,
             "firebase.extensions.storage-resize-images.v1.complete",
         )
+
+    def test_calls_init_function(self):
+        hello = None
+
+        @core.init
+        def init():
+            nonlocal hello
+            hello = "world"
+
+        func = Mock(__name__="example_func")
+        raw_event = _CloudEvent(
+            attributes={
+                "specversion": "1.0",
+                "type": "firebase.extensions.storage-resize-images.v1.complete",
+                "source": "https://example.com/testevent",
+                "id": "1234567890",
+                "subject": "test_subject",
+                "time": "2023-03-11T13:25:37.403Z",
+            },
+            data={
+                "some_key": "some_value",
+            },
+        )
+
+        decorated_func = on_custom_event_published(
+            event_type="firebase.extensions.storage-resize-images.v1.complete",
+        )(func)
+
+        decorated_func(raw_event)
+
+        self.assertEqual(hello, "world")

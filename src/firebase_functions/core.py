@@ -84,8 +84,8 @@ class Change(_typing.Generic[T]):
     """
 
 
-_didInit = False
-_initCallback: _typing.Callable[[], _typing.Any] | None = None
+_did_init = False
+_init_callback: _typing.Callable[[], _typing.Any] | None = None
 
 
 def init(callback: _typing.Callable[[], _typing.Any]) -> None:
@@ -95,31 +95,34 @@ def init(callback: _typing.Callable[[], _typing.Any]) -> None:
      Calling this decorator more than once leads to undefined behavior.
     """
 
-    global _didInit
-    global _initCallback
+    global _did_init
+    global _init_callback
 
-    _initCallback = callback
+    _init_callback = callback
 
-    if _didInit:
-        _logger.warn("Setting init callback more than once. Only the most recent callback will be called")
+    if _did_init:
+        _logger.warn(
+            "Setting init callback more than once. Only the most recent callback will be called"
+        )
 
-    _initCallback = callback
-    _didInit = False
+    _init_callback = callback
+    _did_init = False
 
 
-def _with_init(fn: _typing.Callable[..., _typing.Any]) -> _typing.Callable[..., _typing.Any]:
+def _with_init(
+    fn: _typing.Callable[...,
+                         _typing.Any]) -> _typing.Callable[..., _typing.Any]:
     """
     A decorator that runs the init callback before running the decorated function.
     """
 
     def wrapper(*args, **kwargs):
-        global _didInit
-        global _initCallback
+        global _did_init
 
-        if not _didInit:
-            if _initCallback is not None:
-                _initCallback()
-            _didInit = True
+        if not _did_init:
+            if _init_callback is not None:
+                _init_callback()
+            _did_init = True
 
         return fn(*args, **kwargs)
 
