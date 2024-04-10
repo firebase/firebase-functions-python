@@ -118,7 +118,6 @@ class TestPubSub(unittest.TestCase):
                     "attributes": {
                         "key": "value"
                     },
-                    # {"test": "value"}
                     "data": "eyJ0ZXN0IjogInZhbHVlIn0=",
                     "message_id": "message-id-123",
                     "publish_time": "2023-03-11T13:25:37.403Z",
