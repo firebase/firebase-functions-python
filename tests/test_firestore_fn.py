@@ -70,3 +70,54 @@ class TestFirestore(TestCase):
             self.assertIsInstance(event, AuthEvent)
             self.assertEqual(event.auth_type, "unauthenticated")
             self.assertEqual(event.auth_id, "foo")
+
+    def test_calls_init_function(self):
+        with patch.dict("sys.modules", mocked_modules):
+            from firebase_functions import firestore_fn, core
+            from cloudevents.http import CloudEvent
+
+            func = Mock(__name__="example_func")
+
+            hello = None
+
+            @core.init
+            def init():
+                nonlocal hello
+                hello = "world"
+
+            attributes = {
+                "specversion":
+                    "1.0",
+                # pylint: disable=protected-access
+                "type":
+                    firestore_fn._event_type_created,
+                "source":
+                    "https://example.com/testevent",
+                "time":
+                    "2023-03-11T13:25:37.403Z",
+                "subject":
+                    "test_subject",
+                "datacontenttype":
+                    "application/json",
+                "location":
+                    "projects/project-id/databases/(default)/documents/foo/{bar}",
+                "project":
+                    "project-id",
+                "namespace":
+                    "(default)",
+                "document":
+                    "foo/{bar}",
+                "database":
+                    "projects/project-id/databases/(default)",
+                "authtype":
+                    "unauthenticated",
+                "authid":
+                    "foo"
+            }
+            raw_event = CloudEvent(attributes=attributes, data=json.dumps({}))
+            decorated_func = firestore_fn.on_document_created(
+                document="/foo/{bar}")(func)
+
+            decorated_func(raw_event)
+
+            self.assertEqual(hello, "world")

@@ -14,9 +14,11 @@
 """Task Queue function tests."""
 import unittest
 
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, Mock
 from flask import Flask, Request
 from werkzeug.test import EnvironBuilder
+
+from firebase_functions import core
 from firebase_functions.tasks_fn import on_task_dispatched, CallableRequest
 
 
@@ -103,3 +105,30 @@ class TestTasks(unittest.TestCase):
             request = Request(environ)
             response = example(request)
             self.assertEqual(response.status_code, 200)
+
+    def test_calls_init(self):
+        hello = None
+
+        @core.init
+        def init():
+            nonlocal hello
+            hello = "world"
+
+        app = Flask(__name__)
+
+        func = Mock(__name__="example_func")
+
+        with app.test_request_context("/"):
+            environ = EnvironBuilder(
+                method="POST",
+                json={
+                    "data": {
+                        "test": "value"
+                    },
+                },
+            ).get_environ()
+            request = Request(environ)
+            decorated_func = on_task_dispatched()(func)
+            decorated_func(request)
+
+            self.assertEqual("world", hello)

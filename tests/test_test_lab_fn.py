@@ -13,9 +13,10 @@
 # limitations under the License.
 """Test Lab function tests."""
 import unittest
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, Mock
 from cloudevents.http import CloudEvent as _CloudEvent
 
+from firebase_functions import core
 from firebase_functions.test_lab_fn import (
     CloudEvent,
     TestMatrixCompletedData,
@@ -94,3 +95,48 @@ class TestTestLab(unittest.TestCase):
         self.assertEqual(event_arg.data.state, TestState.FINISHED)
         self.assertEqual(event_arg.data.outcome_summary, OutcomeSummary.SUCCESS)
         self.assertEqual(event_arg.data.test_matrix_id, "testmatrix-123")
+
+    def test_calls_init(self):
+        hello = None
+
+        @core.init
+        def init():
+            nonlocal hello
+            hello = "world"
+
+        func = Mock(__name__="example_func")
+        raw_event = _CloudEvent(
+            attributes={
+                "specversion": "1.0",
+                "type": "com.example.someevent",
+                "source": "https://example.com/someevent",
+                "id": "A234-1234-1234",
+                "time": "2023-03-11T13:25:37.403Z",
+            },
+            data={
+                "createTime": "2023-03-11T13:25:37.403Z",
+                "state": "FINISHED",
+                "invalidMatrixDetails": "Some details",
+                "outcomeSummary": "SUCCESS",
+                "resultStorage": {
+                    "toolResultsHistory":
+                        "projects/123/histories/456",
+                    "resultsUri":
+                        "https://example.com/results",
+                    "gcsPath":
+                        "gs://bucket/path/to/somewhere",
+                    "toolResultsExecution":
+                        "projects/123/histories/456/executions/789",
+                },
+                "clientInfo": {
+                    "client": "gcloud",
+                },
+                "testMatrixId": "testmatrix-123",
+            })
+
+        decorated_func = on_test_matrix_completed()(func)
+        decorated_func(raw_event)
+
+        func.assert_called_once()
+
+        self.assertEqual("world", hello)

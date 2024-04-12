@@ -21,7 +21,7 @@ import cloudevents.http as _ce
 
 import firebase_functions.options as _options
 import firebase_functions.private.util as _util
-from firebase_functions.core import CloudEvent
+from firebase_functions.core import CloudEvent, _with_init
 
 
 @_util.copy_func_kwargs(_options.EventarcTriggerOptions)
@@ -73,7 +73,7 @@ def on_custom_event_published(
                 ),
                 type=event_dict["type"],
             )
-            func(event)
+            _with_init(func)(event)
 
         _util.set_func_endpoint_attr(
             on_custom_event_published_wrapped,

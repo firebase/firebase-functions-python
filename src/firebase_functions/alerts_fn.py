@@ -24,7 +24,7 @@ from firebase_functions.alerts import FirebaseAlertData
 
 import firebase_functions.private.util as _util
 
-from firebase_functions.core import T, CloudEvent as _CloudEvent
+from firebase_functions.core import T, CloudEvent as _CloudEvent, _with_init
 from firebase_functions.options import FirebaseAlertOptions
 
 # Explicitly import AlertType to make it available in the public API.
@@ -95,7 +95,7 @@ def on_alert_published(
         @_functools.wraps(func)
         def on_alert_published_wrapped(raw: _ce.CloudEvent):
             from firebase_functions.private._alerts_fn import alerts_event_from_ce
-            func(alerts_event_from_ce(raw))
+            _with_init(func)(alerts_event_from_ce(raw))
 
         _util.set_func_endpoint_attr(
             on_alert_published_wrapped,

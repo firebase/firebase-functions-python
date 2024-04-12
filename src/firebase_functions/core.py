@@ -18,6 +18,8 @@ import dataclasses as _dataclass
 import datetime as _datetime
 import typing as _typing
 
+from . import logger as _logger
+
 T = _typing.TypeVar("T")
 
 
@@ -80,3 +82,46 @@ class Change(_typing.Generic[T]):
     """
     The state of data after the change.
     """
+
+
+_did_init = False
+_init_callback: _typing.Callable[[], _typing.Any] | None = None
+
+
+def init(callback: _typing.Callable[[], _typing.Any]) -> None:
+    """
+     Registers a function that should be run when in a production environment
+     before executing any functions code.
+     Calling this decorator more than once leads to undefined behavior.
+    """
+
+    global _did_init
+    global _init_callback
+
+    if _did_init:
+        _logger.warn(
+            "Setting init callback more than once. Only the most recent callback will be called"
+        )
+
+    _init_callback = callback
+    _did_init = False
+
+
+def _with_init(
+    fn: _typing.Callable[...,
+                         _typing.Any]) -> _typing.Callable[..., _typing.Any]:
+    """
+    A decorator that runs the init callback before running the decorated function.
+    """
+
+    def wrapper(*args, **kwargs):
+        global _did_init
+
+        if not _did_init:
+            if _init_callback is not None:
+                _init_callback()
+            _did_init = True
+
+        return fn(*args, **kwargs)
+
+    return wrapper

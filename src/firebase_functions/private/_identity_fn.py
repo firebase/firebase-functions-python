@@ -12,12 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Cloud functions to handle Eventarc events."""
-
 # pylint: disable=protected-access
 import typing as _typing
 import datetime as _dt
 import time as _time
 import json as _json
+
+from firebase_functions.core import _with_init
 from firebase_functions.https_fn import HttpsError, FunctionsErrorCode
 
 import firebase_functions.private.util as _util
@@ -351,8 +352,8 @@ def before_operation_handler(
         jwt_token = request.json["data"]["jwt"]
         decoded_token = _token_verifier.verify_auth_blocking_token(jwt_token)
         event = _auth_blocking_event_from_token_data(decoded_token)
-        auth_response: BeforeCreateResponse | BeforeSignInResponse | None = func(
-            event)
+        auth_response: BeforeCreateResponse | BeforeSignInResponse | None = _with_init(
+            func)(event)
         if not auth_response:
             return _jsonify({})
         auth_response_dict = _validate_auth_response(event_type, auth_response)
@@ -362,7 +363,7 @@ def before_operation_handler(
     # pylint: disable=broad-except
     except Exception as exception:
         if not isinstance(exception, HttpsError):
-            _logging.error("Unhandled error", exception)
+            _logging.error("Unhandled error %s", exception)
             exception = HttpsError(FunctionsErrorCode.INTERNAL, "INTERNAL")
         status = exception._http_error_code.status
         return _make_response(_jsonify(error=exception._as_dict()), status)

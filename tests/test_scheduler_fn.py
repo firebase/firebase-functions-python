@@ -17,7 +17,7 @@ from unittest.mock import Mock
 from datetime import datetime
 from flask import Request, Flask
 from werkzeug.test import EnvironBuilder
-from firebase_functions import scheduler_fn
+from firebase_functions import scheduler_fn, core
 
 
 class TestScheduler(unittest.TestCase):
@@ -118,3 +118,21 @@ class TestScheduler(unittest.TestCase):
 
             self.assertEqual(response.status_code, 500)
             self.assertEqual(response.data, b"Test exception")
+
+    def test_calls_init(self):
+        hello = None
+
+        @core.init
+        def init():
+            nonlocal hello
+            hello = "world"
+
+        with Flask(__name__).test_request_context("/"):
+            environ = EnvironBuilder().get_environ()
+            mock_request = Request(environ)
+            example_func = Mock(__name__="example_func")
+            decorated_func = scheduler_fn.on_schedule(
+                schedule="* * * * *")(example_func)
+            decorated_func(mock_request)
+
+            self.assertEqual("world", hello)

@@ -205,6 +205,8 @@ def _firestore_endpoint_handler(
         params=params,
     )
 
+    func = _core._with_init(func)
+
     if event_type.endswith(".withAuthContext"):
         database_event_with_auth_context = AuthEvent(**vars(database_event),
                                                      auth_type=event_auth_type,

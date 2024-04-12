@@ -119,7 +119,7 @@ def _db_endpoint_handler(
         subject=event_attributes["subject"],
         params=params,
     )
-    func(database_event)
+    _core._with_init(func)(database_event)
 
 
 @_util.copy_func_kwargs(DatabaseOptions)

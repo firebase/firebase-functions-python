@@ -22,7 +22,7 @@ import typing as _typing
 import cloudevents.http as _ce
 
 import firebase_functions.private.util as _util
-from firebase_functions.core import CloudEvent
+from firebase_functions.core import CloudEvent, _with_init
 from firebase_functions.options import StorageOptions
 
 _event_type_archived = "google.cloud.storage.object.v1.archived"
@@ -255,7 +255,7 @@ def _message_handler(
         type=event_attributes["type"],
     )
 
-    func(event)
+    _with_init(func)(event)
 
 
 @_util.copy_func_kwargs(StorageOptions)
