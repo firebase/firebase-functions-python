@@ -59,6 +59,6 @@ class TestIdentity(unittest.TestCase):
                 ).get_environ()
                 request = Request(environ)
                 decorated_func = identity_fn.before_user_signed_in()(func)
-                print(decorated_func(request))
+                decorated_func(request)
 
         self.assertEqual("world", hello)

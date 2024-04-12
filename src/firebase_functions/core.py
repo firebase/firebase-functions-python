@@ -98,8 +98,6 @@ def init(callback: _typing.Callable[[], _typing.Any]) -> None:
     global _did_init
     global _init_callback
 
-    _init_callback = callback
-
     if _did_init:
         _logger.warn(
             "Setting init callback more than once. Only the most recent callback will be called"
