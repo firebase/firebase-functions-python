@@ -16,19 +16,24 @@
 # pylint: disable=protected-access
 import typing as _typing
 import functools as _functools
+import dataclasses as _dataclasses
+import json as _json
 
-from flask import Request, Response
+from flask import Request, Response, make_response as _make_response, jsonify as _jsonify
 
+import firebase_functions.core as _core
 import firebase_functions.options as _options
 import firebase_functions.private.util as _util
-from firebase_functions.https_fn import CallableRequest, _on_call_handler
+from firebase_functions.https_fn import CallableRequest, HttpsError, FunctionsErrorCode
+
+from functions_framework import logging as _logging
 
 _C = _typing.Callable[[CallableRequest[_typing.Any]], _typing.Any]
+_C1 = _typing.Callable[[Request], Response]
+_C2 = _typing.Callable[[CallableRequest[_typing.Any]], _typing.Any]
 
 def _on_call_handler(func: _C2,
-                     request: Request,
-                     enforce_app_check: bool,
-                     verify_token: bool = True) -> Response:
+                     request: Request) -> Response:
     try:
         if not _util.valid_on_call_request(request):
             _logging.error("Invalid request, unable to process.")
@@ -37,33 +42,6 @@ def _on_call_handler(func: _C2,
             raw_request=request,
             data=_json.loads(request.data)["data"],
         )
-
-        token_status = _util.on_call_check_tokens(request,
-                                                  verify_token=verify_token)
-
-        if token_status.auth == _util.OnCallTokenState.INVALID:
-            raise HttpsError(FunctionsErrorCode.UNAUTHENTICATED,
-                             "Unauthenticated")
-
-        if enforce_app_check and token_status.app in (
-                _util.OnCallTokenState.MISSING, _util.OnCallTokenState.INVALID):
-            raise HttpsError(FunctionsErrorCode.UNAUTHENTICATED,
-                             "Unauthenticated")
-        if token_status.app == _util.OnCallTokenState.VALID and token_status.app_token is not None:
-            context = _dataclasses.replace(
-                context,
-                app=AppCheckData(token_status.app_token["sub"],
-                                 token_status.app_token),
-            )
-
-        if token_status.auth_token is not None:
-            context = _dataclasses.replace(
-                context,
-                auth=AuthData(
-                    token_status.auth_token["uid"]
-                    if "uid" in token_status.auth_token else None,
-                    token_status.auth_token),
-            )
 
         instance_id = request.headers.get("Firebase-Instance-ID-Token")
         if instance_id is not None:
@@ -116,10 +94,7 @@ def on_task_dispatched(**kwargs) -> _typing.Callable[[_C], Response]:
 
         @_functools.wraps(func)
         def on_task_dispatched_wrapped(request: Request) -> Response:
-            return _on_call_handler(func,
-                                    request,
-                                    enforce_app_check=False,
-                                    verify_token=False)
+            return _on_call_handler(func, request)
 
         _util.set_func_endpoint_attr(
             on_task_dispatched_wrapped,
