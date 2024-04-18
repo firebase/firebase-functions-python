@@ -25,6 +25,69 @@ from firebase_functions.https_fn import CallableRequest, _on_call_handler
 
 _C = _typing.Callable[[CallableRequest[_typing.Any]], _typing.Any]
 
+def _on_call_handler(func: _C2,
+                     request: Request,
+                     enforce_app_check: bool,
+                     verify_token: bool = True) -> Response:
+    try:
+        if not _util.valid_on_call_request(request):
+            _logging.error("Invalid request, unable to process.")
+            raise HttpsError(FunctionsErrorCode.INVALID_ARGUMENT, "Bad Request")
+        context: CallableRequest = CallableRequest(
+            raw_request=request,
+            data=_json.loads(request.data)["data"],
+        )
+
+        token_status = _util.on_call_check_tokens(request,
+                                                  verify_token=verify_token)
+
+        if token_status.auth == _util.OnCallTokenState.INVALID:
+            raise HttpsError(FunctionsErrorCode.UNAUTHENTICATED,
+                             "Unauthenticated")
+
+        if enforce_app_check and token_status.app in (
+                _util.OnCallTokenState.MISSING, _util.OnCallTokenState.INVALID):
+            raise HttpsError(FunctionsErrorCode.UNAUTHENTICATED,
+                             "Unauthenticated")
+        if token_status.app == _util.OnCallTokenState.VALID and token_status.app_token is not None:
+            context = _dataclasses.replace(
+                context,
+                app=AppCheckData(token_status.app_token["sub"],
+                                 token_status.app_token),
+            )
+
+        if token_status.auth_token is not None:
+            context = _dataclasses.replace(
+                context,
+                auth=AuthData(
+                    token_status.auth_token["uid"]
+                    if "uid" in token_status.auth_token else None,
+                    token_status.auth_token),
+            )
+
+        instance_id = request.headers.get("Firebase-Instance-ID-Token")
+        if instance_id is not None:
+            # Validating the token requires an http request, so we don't do it.
+            # If the user wants to use it for something, it will be validated then.
+            # Currently, the only real use case for this token is for sending
+            # pushes with FCM. In that case, the FCM APIs will validate the token.
+            context = _dataclasses.replace(
+                context,
+                instance_id_token=request.headers.get(
+                    "Firebase-Instance-ID-Token"),
+            )
+        result = _core._with_init(func)(context)
+        return _jsonify(result=result)
+    # Disable broad exceptions lint since we want to handle all exceptions here
+    # and wrap as an HttpsError.
+    # pylint: disable=broad-except
+    except Exception as err:
+        if not isinstance(err, HttpsError):
+            _logging.error("Unhandled error: %s", err)
+            err = HttpsError(FunctionsErrorCode.INTERNAL, "INTERNAL")
+        status = err._http_error_code.status
+        return _make_response(_jsonify(error=err._as_dict()), status)
+
 
 @_util.copy_func_kwargs(_options.TaskQueueOptions)
 def on_task_dispatched(**kwargs) -> _typing.Callable[[_C], Response]:
