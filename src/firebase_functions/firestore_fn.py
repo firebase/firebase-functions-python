@@ -134,8 +134,6 @@ def _firestore_endpoint_handler(
     event_namespace = event_attributes["namespace"]
     event_document = event_attributes["document"]
     event_database = event_attributes["database"]
-    event_auth_type = event_attributes["authtype"]
-    event_auth_id = event_attributes["authid"]
 
     time = event_attributes["time"]
     event_time = _util.timestamp_conversion(time)
@@ -208,6 +206,8 @@ def _firestore_endpoint_handler(
     func = _core._with_init(func)
 
     if event_type.endswith(".withAuthContext"):
+        event_auth_type = event_attributes["authtype"]
+        event_auth_id = event_attributes["authid"]
         database_event_with_auth_context = AuthEvent(**vars(database_event),
                                                      auth_type=event_auth_type,
                                                      auth_id=event_auth_id)
@@ -270,7 +270,7 @@ def on_document_written_with_auth_context(**kwargs
                                          ) -> _typing.Callable[[_C1], _C1]:
     """
     Event handler that triggers when a document is created, updated, or deleted in Firestore.
-    This trigger will also provide the authentication context of the principal who triggered 
+    This trigger will also provide the authentication context of the principal who triggered
     the event.
 
     Example:
@@ -369,7 +369,7 @@ def on_document_updated_with_auth_context(**kwargs
                                          ) -> _typing.Callable[[_C1], _C1]:
     """
     Event handler that triggers when a document is updated in Firestore.
-    This trigger will also provide the authentication context of the principal who triggered 
+    This trigger will also provide the authentication context of the principal who triggered
     the event.
 
     Example:
@@ -468,7 +468,7 @@ def on_document_created_with_auth_context(**kwargs
                                          ) -> _typing.Callable[[_C2], _C2]:
     """
     Event handler that triggers when a document is created in Firestore.
-    This trigger will also provide the authentication context of the principal who triggered 
+    This trigger will also provide the authentication context of the principal who triggered
     the event.
 
     Example:
@@ -567,7 +567,7 @@ def on_document_deleted_with_auth_context(**kwargs
                                          ) -> _typing.Callable[[_C2], _C2]:
     """
     Event handler that triggers when a document is deleted in Firestore.
-    This trigger will also provide the authentication context of the principal who triggered 
+    This trigger will also provide the authentication context of the principal who triggered
     the event.
 
     Example:
