@@ -32,8 +32,8 @@ _C = _typing.Callable[[CallableRequest[_typing.Any]], _typing.Any]
 _C1 = _typing.Callable[[Request], Response]
 _C2 = _typing.Callable[[CallableRequest[_typing.Any]], _typing.Any]
 
-def _on_call_handler(func: _C2,
-                     request: Request) -> Response:
+
+def _on_call_handler(func: _C2, request: Request) -> Response:
     try:
         if not _util.valid_on_call_request(request):
             _logging.error("Invalid request, unable to process.")

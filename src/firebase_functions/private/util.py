@@ -211,7 +211,9 @@ class _OnCallTokenVerification:
         }
 
 
-def _on_call_check_auth_token(request: _Request) -> None | _typing.Literal[OnCallTokenState.INVALID] | dict[str, _typing.Any]:
+def _on_call_check_auth_token(
+    request: _Request
+) -> None | _typing.Literal[OnCallTokenState.INVALID] | dict[str, _typing.Any]:
     """
         Validates the auth token in a callable request.
         If verify_token is False, the token will be decoded without verification.
