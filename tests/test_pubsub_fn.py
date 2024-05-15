@@ -129,3 +129,27 @@ class TestPubSub(unittest.TestCase):
         _message_handler(func, raw_event)
 
         self.assertEqual("world", hello)
+
+    def test_datetime_without_mircroseconds_doesnt_throw(self):
+        time = "2023-03-11T13:25:37Z"
+        raw_event = _CloudEvent(
+            attributes={
+                "id": "test-message",
+                "source": "https://example.com/pubsub",
+                "specversion": "1.0",
+                "time": time,
+                "type": "com.example.pubsub.message",
+            },
+            data={
+                "message": {
+                    "attributes": {
+                        "key": "value"
+                    },
+                    "data": "eyJ0ZXN0IjogInZhbHVlIn0=",
+                    "message_id": "message-id-123",
+                    "publish_time": time,
+                },
+                "subscription": "my-subscription",
+            },
+        )
+        _message_handler(lambda _: None, raw_event)

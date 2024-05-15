@@ -105,6 +105,13 @@ def _message_handler(
     data = event_dict["data"]
     message_dict = data["message"]
 
+    # if no microseconds are present, we should set them to 0 to prevent parsing from failing
+    if "." not in event_dict["time"]:
+        event_dict["time"] = event_dict["time"].replace("Z", ".000000Z")
+    if "." not in message_dict["publish_time"]:
+        message_dict["publish_time"] = message_dict["publish_time"].replace(
+            "Z", ".000000Z")
+
     time = _dt.datetime.strptime(
         event_dict["time"],
         "%Y-%m-%dT%H:%M:%S.%f%z",
