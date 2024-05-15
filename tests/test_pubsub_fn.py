@@ -154,6 +154,7 @@ class TestPubSub(unittest.TestCase):
         )
         try:
             _message_handler(lambda _: None, raw_event)
+        # pylint: disable=broad-except
         except Exception:
             self.fail(
                 "Datetime without microseconds should not throw an exception")
