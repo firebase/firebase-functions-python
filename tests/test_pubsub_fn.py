@@ -152,4 +152,8 @@ class TestPubSub(unittest.TestCase):
                 "subscription": "my-subscription",
             },
         )
-        _message_handler(lambda _: None, raw_event)
+        try:
+            _message_handler(lambda _: None, raw_event)
+        except Exception:
+            self.fail(
+                "Datetime without microseconds should not throw an exception")
