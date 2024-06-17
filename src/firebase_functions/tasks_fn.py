@@ -16,14 +16,55 @@
 # pylint: disable=protected-access
 import typing as _typing
 import functools as _functools
+import dataclasses as _dataclasses
+import json as _json
 
-from flask import Request, Response
+from flask import Request, Response, make_response as _make_response, jsonify as _jsonify
 
+import firebase_functions.core as _core
 import firebase_functions.options as _options
 import firebase_functions.private.util as _util
-from firebase_functions.https_fn import CallableRequest, _on_call_handler
+from firebase_functions.https_fn import CallableRequest, HttpsError, FunctionsErrorCode
+
+from functions_framework import logging as _logging
 
 _C = _typing.Callable[[CallableRequest[_typing.Any]], _typing.Any]
+_C1 = _typing.Callable[[Request], Response]
+_C2 = _typing.Callable[[CallableRequest[_typing.Any]], _typing.Any]
+
+
+def _on_call_handler(func: _C2, request: Request) -> Response:
+    try:
+        if not _util.valid_on_call_request(request):
+            _logging.error("Invalid request, unable to process.")
+            raise HttpsError(FunctionsErrorCode.INVALID_ARGUMENT, "Bad Request")
+        context: CallableRequest = CallableRequest(
+            raw_request=request,
+            data=_json.loads(request.data)["data"],
+        )
+
+        instance_id = request.headers.get("Firebase-Instance-ID-Token")
+        if instance_id is not None:
+            # Validating the token requires an http request, so we don't do it.
+            # If the user wants to use it for something, it will be validated then.
+            # Currently, the only real use case for this token is for sending
+            # pushes with FCM. In that case, the FCM APIs will validate the token.
+            context = _dataclasses.replace(
+                context,
+                instance_id_token=request.headers.get(
+                    "Firebase-Instance-ID-Token"),
+            )
+        result = _core._with_init(func)(context)
+        return _jsonify(result=result)
+    # Disable broad exceptions lint since we want to handle all exceptions here
+    # and wrap as an HttpsError.
+    # pylint: disable=broad-except
+    except Exception as err:
+        if not isinstance(err, HttpsError):
+            _logging.error("Unhandled error: %s", err)
+            err = HttpsError(FunctionsErrorCode.INTERNAL, "INTERNAL")
+        status = err._http_error_code.status
+        return _make_response(_jsonify(error=err._as_dict()), status)
 
 
 @_util.copy_func_kwargs(_options.TaskQueueOptions)
@@ -53,10 +94,7 @@ def on_task_dispatched(**kwargs) -> _typing.Callable[[_C], Response]:
 
         @_functools.wraps(func)
         def on_task_dispatched_wrapped(request: Request) -> Response:
-            return _on_call_handler(func,
-                                    request,
-                                    enforce_app_check=False,
-                                    verify_token=False)
+            return _on_call_handler(func, request)
 
         _util.set_func_endpoint_attr(
             on_task_dispatched_wrapped,
