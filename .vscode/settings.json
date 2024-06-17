@@ -12,5 +12,10 @@
   "python.linting.lintOnSave": true,
   "python.linting.mypyEnabled": true,
   "mypy.dmypyExecutable": "${workspaceFolder}/venv/bin/dmypy",
-  "files.autoSave": "afterDelay"
+  "files.autoSave": "afterDelay",
+  "python.testing.pytestArgs": [
+    "tests"
+  ],
+  "python.testing.unittestEnabled": false,
+  "python.testing.pytestEnabled": true
 }
