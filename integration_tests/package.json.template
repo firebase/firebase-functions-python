@@ -1,0 +1,20 @@
+{
+  "name": "functions",
+  "description": "Integration test for the Firebase SDK for Google Cloud Functions",
+  "scripts": {
+    "build": "./node_modules/.bin/tsc"
+  },
+  "dependencies": {
+    "firebase-admin": "__FIREBASE_ADMIN__",
+    "firebase-functions": "__SDK_TARBALL__"
+  },
+  "main": "lib/index.js",
+  "devDependencies": {
+    "@types/node-fetch": "^2.6.1",
+    "typescript": "^5.3.3"
+  },
+  "engines": {
+    "node": "__NODE_VERSION__"
+  },
+  "private": true
+}

@@ -139,3 +139,4 @@ doc/dist
 .idea
 .vscode/*
 !.vscode/settings.json
+integration_tests/serviceAccount.json
