@@ -169,13 +169,18 @@ def _firestore_endpoint_handler(
             firestore_event_data.old_value.create_time,
             firestore_event_data.old_value.update_time,
         )
-    if event_type == _event_type_deleted:
+    print(f"Event type: {event_type}")
+    if event_type in (_event_type_deleted,
+                      _event_type_deleted_with_auth_context):
         firestore_event_data = _typing.cast(_firestore.DocumentEventData,
                                             old_value_snapshot)
-    if event_type == _event_type_created:
+    if event_type in (_event_type_created,
+                      _event_type_created_with_auth_context):
         firestore_event_data = _typing.cast(_firestore.DocumentEventData,
                                             value_snapshot)
-    if event_type in (_event_type_written, _event_type_updated):
+    if event_type in (_event_type_written, _event_type_updated,
+                      _event_type_written_with_auth_context,
+                      _event_type_updated_with_auth_context):
         firestore_event_data = _typing.cast(
             _firestore.DocumentEventData,
             Change(
