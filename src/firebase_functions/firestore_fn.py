@@ -143,7 +143,8 @@ def _firestore_endpoint_handler(
     app = get_app()
     firestore_client = _firestore_v1.Client(project=app.project_id,
                                             database=event_database)
-    firestore_ref: DocumentReference = firestore_client.document(event_document)
+    firestore_ref: DocumentReference = firestore_client.document(
+        event_document)
     value_snapshot: DocumentSnapshot | None = None
     old_value_snapshot: DocumentSnapshot | None = None
 
@@ -169,7 +170,7 @@ def _firestore_endpoint_handler(
             firestore_event_data.old_value.create_time,
             firestore_event_data.old_value.update_time,
         )
-    print(f"Event type: {event_type}")
+
     if event_type in (_event_type_deleted,
                       _event_type_deleted_with_auth_context):
         firestore_event_data = _typing.cast(_firestore.DocumentEventData,
@@ -272,7 +273,7 @@ def on_document_written(**kwargs) -> _typing.Callable[[_C1], _C1]:
 
 @_util.copy_func_kwargs(FirestoreOptions)
 def on_document_written_with_auth_context(**kwargs
-                                         ) -> _typing.Callable[[_C1], _C1]:
+                                          ) -> _typing.Callable[[_C1], _C1]:
     """
     Event handler that triggers when a document is created, updated, or deleted in Firestore.
     This trigger will also provide the authentication context of the principal who triggered
@@ -371,7 +372,7 @@ def on_document_updated(**kwargs) -> _typing.Callable[[_C1], _C1]:
 
 @_util.copy_func_kwargs(FirestoreOptions)
 def on_document_updated_with_auth_context(**kwargs
-                                         ) -> _typing.Callable[[_C1], _C1]:
+                                          ) -> _typing.Callable[[_C1], _C1]:
     """
     Event handler that triggers when a document is updated in Firestore.
     This trigger will also provide the authentication context of the principal who triggered
@@ -470,7 +471,7 @@ def on_document_created(**kwargs) -> _typing.Callable[[_C2], _C2]:
 
 @_util.copy_func_kwargs(FirestoreOptions)
 def on_document_created_with_auth_context(**kwargs
-                                         ) -> _typing.Callable[[_C2], _C2]:
+                                          ) -> _typing.Callable[[_C2], _C2]:
     """
     Event handler that triggers when a document is created in Firestore.
     This trigger will also provide the authentication context of the principal who triggered
@@ -569,7 +570,7 @@ def on_document_deleted(**kwargs) -> _typing.Callable[[_C2], _C2]:
 
 @_util.copy_func_kwargs(FirestoreOptions)
 def on_document_deleted_with_auth_context(**kwargs
-                                         ) -> _typing.Callable[[_C2], _C2]:
+                                          ) -> _typing.Callable[[_C2], _C2]:
     """
     Event handler that triggers when a document is deleted in Firestore.
     This trigger will also provide the authentication context of the principal who triggered
