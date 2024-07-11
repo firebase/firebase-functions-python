@@ -306,7 +306,7 @@ def on_document_written_with_auth_context(**kwargs
         _util.set_func_endpoint_attr(
             on_document_written_with_auth_context_wrapped,
             options._endpoint(
-                event_type=_event_type_written,
+                event_type=_event_type_written_with_auth_context,
                 func_name=func.__name__,
                 document_pattern=document_pattern,
             ),
