@@ -28,7 +28,6 @@ function loadEnv(): void {
 loadEnv();
 
 const {
-  NODE_VERSION = "18",
   FIREBASE_ADMIN = "^10.0.0",
   PROJECT_ID,
   DATABASE_URL,
@@ -55,7 +54,7 @@ if (
   process.exit(1);
 }
 
-setup(TEST_RUN_ID, NODE_VERSION, FIREBASE_ADMIN);
+setup(TEST_RUN_ID, FIREBASE_ADMIN);
 
 const config = {
   projectId: PROJECT_ID,
@@ -185,7 +184,7 @@ function cleanFiles(): void {
   try {
     const files = fs.readdirSync(".");
     files.forEach((file) => {
-      if (file.match(`firebase-functions-${TEST_RUN_ID}.tgz`)) {
+      if (file.match(`firebase_functions_${TEST_RUN_ID}.tar.gz`)) {
         fs.rmSync(file);
       }
       if (file.match("package.json")) {
@@ -199,8 +198,7 @@ function cleanFiles(): void {
       }
     });
 
-    fs.rmSync("lib", { recursive: true });
-    // fs.existsSync("node_modules") && fs.rmSync("node_modules", { recursive: true });
+    fs.rmSync("venv", { recursive: true });
   } catch (error) {
     console.error("Error occurred while cleaning files:", error);
   }

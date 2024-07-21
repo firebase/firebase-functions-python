@@ -7,61 +7,59 @@ const DIR = process.cwd();
 /**
  * Build SDK, and Functions
  */
-export default function setup(testRunId: string, nodeVersion: string, firebaseAdmin: string) {
+export default function setup(testRunId: string, firebaseAdmin: string) {
   buildSdk(testRunId);
-  createPackageJson(testRunId, nodeVersion, firebaseAdmin);
+  createRequirementsTxt(testRunId, firebaseAdmin);
   installDependencies();
-  buildFunctions();
 }
 
 function buildSdk(testRunId: string) {
   console.log("Building SDK...");
   process.chdir(path.join(DIR, "..")); // go up to root
 
-  // remove existing firebase-functions-*.tgz files
-  const files = fs.readdirSync(".");
-  files.forEach((file) => {
-    if (file.match(/^firebase-functions-.*\.tgz$/)) {
-      fs.rmSync(file);
-    }
-  });
+  // remove existing build
+  fs.rmdirSync("dist", { recursive: true });
+
   // build the package
-  execSync("npm run build:pack", { stdio: "inherit" });
+  execSync("python -m pip install --upgrade build", { stdio: "inherit" });
+  execSync("python -m build -s", { stdio: "inherit" });
 
   // move the generated tarball package to functions
   const generatedFile = fs
-    .readdirSync(".")
-    .find((file) => file.match(/^firebase-functions-.*\.tgz$/));
+    .readdirSync("dist")
+    .find((file) => file.match(/^firebase_functions-.*\.tar\.gz$/));
 
   if (generatedFile) {
     const targetPath = path.join(
-      "integration_test",
+      "integration_tests",
       "functions",
-      `firebase-functions-${testRunId}.tgz`
+      `firebase_functions_${testRunId}.tar.gz`
     );
-    fs.renameSync(generatedFile, targetPath);
+    fs.renameSync(path.join("dist", generatedFile), targetPath);
     console.log("SDK moved to", targetPath);
   }
 
   process.chdir(DIR); // go back to integration_test
 }
 
-function createPackageJson(testRunId: string, nodeVersion: string, firebaseAdmin: string) {
+function createRequirementsTxt(testRunId: string, firebaseAdmin: string) {
   console.log("Creating package.json...");
-  const packageJsonTemplatePath = `${DIR}/package.json.template`;
-  const packageJsonPath = `${DIR}/functions/package.json`;
+  const requirementsTemplatePath = `${DIR}/requirements.txt.template`;
+  const requirementsPath = `${DIR}/functions/requirements.txt`;
 
-  fs.copyFileSync(packageJsonTemplatePath, packageJsonPath);
+  fs.copyFileSync(requirementsTemplatePath, requirementsPath);
 
-  let packageJsonContent = fs.readFileSync(packageJsonPath, "utf8");
-  packageJsonContent = packageJsonContent.replace(
-    /__SDK_TARBALL__/g,
-    `firebase-functions-${testRunId}.tgz`
+  let requirementsContent = fs.readFileSync(requirementsPath, "utf8");
+  requirementsContent = requirementsContent.replace(
+    /__LOCAL_FIREBASE_FUNCTIONS__/g,
+    `firebase_functions_${testRunId}.tar.gz`
   );
-  packageJsonContent = packageJsonContent.replace(/__NODE_VERSION__/g, nodeVersion);
-  packageJsonContent = packageJsonContent.replace(/__FIREBASE_ADMIN__/g, firebaseAdmin);
+  requirementsContent = requirementsContent.replace(
+    /__FIREBASE_ADMIN__/g,
+    firebaseAdmin
+  );
 
-  fs.writeFileSync(packageJsonPath, packageJsonContent);
+  fs.writeFileSync(requirementsPath, requirementsContent);
 }
 
 function installDependencies() {
@@ -69,19 +67,13 @@ function installDependencies() {
   const functionsDir = "functions";
   process.chdir(functionsDir); // go to functions
 
-  const modulePath = path.join("node_modules", "firebase-functions");
-  if (fs.existsSync(modulePath)) {
-    execSync(`rm -rf ${modulePath}`, { stdio: "inherit" });
+  const venvPath = path.join("venv");
+  if (fs.existsSync(venvPath)) {
+    execSync(`rm -rf ${venvPath}`, { stdio: "inherit" });
   }
 
-  execSync("npm install", { stdio: "inherit" });
+  execSync("python3 -m venv venv", { stdio: "inherit" });
+  execSync("source venv/bin/activate", { stdio: "inherit" });
+  execSync("python3 -m pip install -r requirements.txt", { stdio: "inherit" });
   process.chdir("../"); // go back to integration_test
-}
-
-function buildFunctions() {
-  console.log("Building functions...");
-  process.chdir(path.join(DIR, "functions")); // go to functions
-
-  execSync("npm run build", { stdio: "inherit" });
-  process.chdir(DIR); // go back to integration_test
 }

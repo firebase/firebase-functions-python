@@ -1,0 +1,2 @@
+firebase_admin==__FIREBASE_ADMIN__
+__LOCAL_FIREBASE_FUNCTIONS__
