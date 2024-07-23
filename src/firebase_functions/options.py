@@ -321,8 +321,7 @@ class RuntimeOptions:
         merged_options: dict = {**global_options, **provider_options}
 
         if self.labels is not None and _GLOBAL_OPTIONS.labels is not None:
-            merged_options["labels"] = {
-                **_GLOBAL_OPTIONS.labels, **self.labels}
+            merged_options["labels"] = {**_GLOBAL_OPTIONS.labels, **self.labels}
         if "labels" not in merged_options:
             merged_options["labels"] = {}
         preserve_external_changes: bool = merged_options.get(
@@ -465,7 +464,7 @@ class TaskQueueOptions(RuntimeOptions):
                 _manifest.TaskQueueTrigger(
                     rateLimits=rate_limits,
                     retryConfig=retry_config,
-            ),
+                ),
         }
         return _manifest.ManifestEndpoint(
             **_typing.cast(_typing.Dict, kwargs_merged))
@@ -854,7 +853,7 @@ class ScheduleOptions(RuntimeOptions):
                     schedule=self.schedule,
                     timeZone=time_zone,
                     retryConfig=retry_config,
-            ),
+                ),
         }
         return _manifest.ManifestEndpoint(
             **_typing.cast(_typing.Dict, kwargs_merged))
