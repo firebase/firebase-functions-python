@@ -18,11 +18,21 @@ function buildSdk(testRunId: string) {
   process.chdir(path.join(DIR, "..")); // go up to root
 
   // remove existing build
-  fs.rmdirSync("dist", { recursive: true });
+  fs.rmSync("dist", { recursive: true, force: true });
+  // remove existing venv
+  fs.rmSync("venv", { recursive: true, force: true });
+
+  // make virtual environment for building
+  execSync("python3 -m venv venv", { stdio: "inherit" });
 
   // build the package
-  execSync("python -m pip install --upgrade build", { stdio: "inherit" });
-  execSync("python -m build -s", { stdio: "inherit" });
+  execSync(
+    "source venv/bin/activate && python -m pip install --upgrade build",
+    { stdio: "inherit" },
+  );
+  execSync("source venv/bin/activate && python -m build -s", {
+    stdio: "inherit",
+  });
 
   // move the generated tarball package to functions
   const generatedFile = fs
@@ -33,7 +43,7 @@ function buildSdk(testRunId: string) {
     const targetPath = path.join(
       "integration_tests",
       "functions",
-      `firebase_functions_${testRunId}.tar.gz`
+      `firebase_functions.tar.gz`,
     );
     fs.renameSync(path.join("dist", generatedFile), targetPath);
     console.log("SDK moved to", targetPath);
@@ -52,11 +62,11 @@ function createRequirementsTxt(testRunId: string, firebaseAdmin: string) {
   let requirementsContent = fs.readFileSync(requirementsPath, "utf8");
   requirementsContent = requirementsContent.replace(
     /__LOCAL_FIREBASE_FUNCTIONS__/g,
-    `firebase_functions_${testRunId}.tar.gz`
+    `firebase_functions.tar.gz`,
   );
   requirementsContent = requirementsContent.replace(
     /__FIREBASE_ADMIN__/g,
-    firebaseAdmin
+    firebaseAdmin,
   );
 
   fs.writeFileSync(requirementsPath, requirementsContent);
@@ -73,7 +83,6 @@ function installDependencies() {
   }
 
   execSync("python3 -m venv venv", { stdio: "inherit" });
-  execSync("source venv/bin/activate", { stdio: "inherit" });
-  execSync("python3 -m pip install -r requirements.txt", { stdio: "inherit" });
+  execSync("source venv/bin/activate && python3 -m pip install -r requirements.txt", { stdio: "inherit" });
   process.chdir("../"); // go back to integration_test
 }

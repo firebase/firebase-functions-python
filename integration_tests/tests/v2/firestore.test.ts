@@ -15,10 +15,26 @@ describe("Cloud Firestore (v2)", () => {
   });
 
   afterAll(async () => {
-    await admin.firestore().collection("firestoreOnDocumentCreatedTests").doc(testId).delete();
-    await admin.firestore().collection("firestoreOnDocumentDeletedTests").doc(testId).delete();
-    await admin.firestore().collection("firestoreOnDocumentUpdatedTests").doc(testId).delete();
-    await admin.firestore().collection("firestoreOnDocumentWrittenTests").doc(testId).delete();
+    await admin
+      .firestore()
+      .collection("firestoreOnDocumentCreatedTests")
+      .doc(testId)
+      .delete();
+    await admin
+      .firestore()
+      .collection("firestoreOnDocumentDeletedTests")
+      .doc(testId)
+      .delete();
+    await admin
+      .firestore()
+      .collection("firestoreOnDocumentUpdatedTests")
+      .doc(testId)
+      .delete();
+    await admin
+      .firestore()
+      .collection("firestoreOnDocumentWrittenTests")
+      .doc(testId)
+      .delete();
   });
 
   describe("Document created trigger", () => {
@@ -61,7 +77,9 @@ describe("Cloud Firestore (v2)", () => {
     });
 
     it("should have the correct type", () => {
-      expect(loggedContext?.type).toEqual("google.cloud.firestore.document.v1.created");
+      expect(loggedContext?.type).toEqual(
+        "google.cloud.firestore.document.v1.created"
+      );
     });
 
     it("should have an id", () => {
@@ -117,7 +135,9 @@ describe("Cloud Firestore (v2)", () => {
     });
 
     it("should have the correct type", () => {
-      expect(loggedContext?.type).toEqual("google.cloud.firestore.document.v1.deleted");
+      expect(loggedContext?.type).toEqual(
+        "google.cloud.firestore.document.v1.deleted"
+      );
     });
 
     it("should have an id", () => {
@@ -173,7 +193,9 @@ describe("Cloud Firestore (v2)", () => {
     });
 
     it("should have the correct type", () => {
-      expect(loggedContext?.type).toEqual("google.cloud.firestore.document.v1.updated");
+      expect(loggedContext?.type).toEqual(
+        "google.cloud.firestore.document.v1.updated"
+      );
     });
 
     it("should have an id", () => {
@@ -229,7 +251,9 @@ describe("Cloud Firestore (v2)", () => {
     });
 
     it("should have the correct type", () => {
-      expect(loggedContext?.type).toEqual("google.cloud.firestore.document.v1.written");
+      expect(loggedContext?.type).toEqual(
+        "google.cloud.firestore.document.v1.written"
+      );
     });
 
     it("should have an id", () => {

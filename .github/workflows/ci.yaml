@@ -7,6 +7,29 @@ on:
       - main
 
 jobs:
+  integration-tests:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.10", "3.12"]
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python ${{ matrix.python }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Setup Node 18
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+      - name: Install Node dependencies
+        run: |
+          cd integration_tests && npm install
+      - name: Run Integration Tests
+        run: |
+          cd integration_tests && npm start
+
   test:
     runs-on: ubuntu-latest
     strategy:

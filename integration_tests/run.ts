@@ -99,7 +99,12 @@ async function discoverAndModifyEndpoints() {
     const killServer = await delegate.serveAdmin(port.toString(), {}, env);
 
     console.log("Started on port", port);
-    const originalYaml = await detectFromPort(port, config.projectId, config.runtime, 10000);
+    const originalYaml = await detectFromPort(
+      port,
+      config.projectId,
+      config.runtime,
+      10000
+    );
 
     modifiedYaml = {
       ...originalYaml,
@@ -206,7 +211,11 @@ function cleanFiles(): void {
   process.chdir("../"); // go back to integration_test
 }
 
-const spawnAsync = (command: string, args: string[], options: any): Promise<string> => {
+const spawnAsync = (
+  command: string,
+  args: string[],
+  options: any
+): Promise<string> => {
   return new Promise((resolve, reject) => {
     const child = spawn(command, args, options);
 
@@ -231,19 +240,23 @@ const spawnAsync = (command: string, args: string[], options: any): Promise<stri
 
 async function runTests(): Promise<void> {
   try {
-    console.log("Starting Node.js Tests...");
+    console.log("Starting Python Tests...");
     const output = await spawnAsync("npm", ["test"], {
       env: {
         ...process.env,
-        GOOGLE_APPLICATION_CREDENTIALS: path.join(__dirname, "serviceAccount.json"),
+        GOOGLE_APPLICATION_CREDENTIALS: path.join(
+          __dirname,
+          "serviceAccount.json"
+        ),
         TEST_RUN_ID,
       },
       stdio: "inherit",
     });
     console.log(output);
-    console.log("Node.js Tests Completed.");
+    console.log("Python Tests Completed.");
   } catch (error) {
     console.error("Error during testing:", error);
+    throw error;
   }
 }
 
@@ -272,6 +285,7 @@ async function runIntegrationTests(): Promise<void> {
     await runTests();
   } catch (err) {
     console.error("Error occurred during integration tests", err);
+    throw new Error("Integration tests failed");
   } finally {
     await handleCleanUp();
   }
@@ -282,4 +296,7 @@ runIntegrationTests()
     console.log("Integration tests completed");
     process.exit(0);
   })
-  .catch((error) => console.error("An error occurred during integration tests", error));
+  .catch((error) => {
+    console.error("An error occurred during integration tests", error);
+    process.exit(1);
+  });

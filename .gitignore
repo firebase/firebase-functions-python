@@ -139,6 +139,3 @@ doc/dist
 .idea
 .vscode/*
 !.vscode/settings.json
-integration_tests/serviceAccount.json
-integration_tests/functions/firebase_functions_*.tar.gz
-integration_tests/functions/requirements.txt
