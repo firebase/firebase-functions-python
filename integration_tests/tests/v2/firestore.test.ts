@@ -2,7 +2,7 @@ import admin from "firebase-admin";
 import { timeout } from "../utils";
 import { initializeFirebase } from "../firebaseSetup";
 
-describe("Cloud Firestore (v2)", () => {
+describe("Cloud Firestore", () => {
   const projectId = process.env.PROJECT_ID;
   const testId = process.env.TEST_RUN_ID;
 
@@ -12,7 +12,8 @@ describe("Cloud Firestore (v2)", () => {
 
   beforeAll(async () => {
     await initializeFirebase();
-  });
+    await timeout(120_000)
+  }, 200_000);
 
   afterAll(async () => {
     await admin
@@ -35,6 +36,7 @@ describe("Cloud Firestore (v2)", () => {
       .collection("firestoreOnDocumentWrittenTests")
       .doc(testId)
       .delete();
+    await admin.firestore().collection("tests").doc(testId).delete();
   });
 
   describe("Document created trigger", () => {
@@ -47,19 +49,25 @@ describe("Cloud Firestore (v2)", () => {
       await docRef.set({ test: testId });
       dataSnapshot = await docRef.get();
 
-      await timeout(20000);
+      let retry = 0;
 
-      const logSnapshot = await admin
-        .firestore()
-        .collection("firestoreOnDocumentCreatedTests")
-        .doc(testId)
-        .get();
-      loggedContext = logSnapshot.data();
+      while (retry < 10) {
+        const logSnapshot = await admin
+          .firestore()
+          .collection("firestoreOnDocumentCreatedTests")
+          .doc(testId)
+          .get();
+        loggedContext = logSnapshot.data();
+
+        if (loggedContext) break;
+        await timeout(5000);
+        retry++;
+      }
 
       if (!loggedContext) {
         throw new Error("loggedContext is undefined");
       }
-    });
+    }, 60000);
 
     it("should not have event.app", () => {
       expect(loggedContext?.app).toBeUndefined();
@@ -72,13 +80,13 @@ describe("Cloud Firestore (v2)", () => {
 
     it("should have well-formed resource", () => {
       expect(loggedContext?.source).toMatch(
-        `//firestore.googleapis.com/projects/${projectId}/databases/(default)`
+        `//firestore.googleapis.com/projects/${projectId}/databases/(default)`,
       );
     });
 
     it("should have the correct type", () => {
       expect(loggedContext?.type).toEqual(
-        "google.cloud.firestore.document.v1.created"
+        "google.cloud.firestore.document.v1.created",
       );
     });
 
@@ -122,7 +130,7 @@ describe("Cloud Firestore (v2)", () => {
       if (!loggedContext) {
         throw new Error("loggedContext is undefined");
       }
-    });
+    }, 60000);
 
     it("should not have event.app", () => {
       expect(loggedContext?.app).toBeUndefined();
@@ -130,13 +138,13 @@ describe("Cloud Firestore (v2)", () => {
 
     it("should have well-formed source", () => {
       expect(loggedContext?.source).toMatch(
-        `//firestore.googleapis.com/projects/${projectId}/databases/(default)`
+        `//firestore.googleapis.com/projects/${projectId}/databases/(default)`,
       );
     });
 
     it("should have the correct type", () => {
       expect(loggedContext?.type).toEqual(
-        "google.cloud.firestore.document.v1.deleted"
+        "google.cloud.firestore.document.v1.deleted",
       );
     });
 
@@ -165,22 +173,28 @@ describe("Cloud Firestore (v2)", () => {
 
       await docRef.update({ test: testId });
 
-      await timeout(20000);
-
       // Refresh snapshot
       dataSnapshot = await docRef.get();
 
-      const logSnapshot = await admin
-        .firestore()
-        .collection("firestoreOnDocumentUpdatedTests")
-        .doc(testId)
-        .get();
-      loggedContext = logSnapshot.data();
+      let retry = 0;
+
+      while (retry < 10) {
+        const logSnapshot = await admin
+          .firestore()
+          .collection("firestoreOnDocumentUpdatedTests")
+          .doc(testId)
+          .get();
+        loggedContext = logSnapshot.data();
+
+        if (loggedContext) break;
+        await timeout(5000);
+        retry++;
+      }
 
       if (!loggedContext) {
         throw new Error("loggedContext is undefined");
       }
-    });
+    }, 60000);
 
     it("should not have event.app", () => {
       expect(loggedContext?.app).toBeUndefined();
@@ -188,13 +202,13 @@ describe("Cloud Firestore (v2)", () => {
 
     it("should have well-formed resource", () => {
       expect(loggedContext?.source).toMatch(
-        `//firestore.googleapis.com/projects/${projectId}/databases/(default)`
+        `//firestore.googleapis.com/projects/${projectId}/databases/(default)`,
       );
     });
 
     it("should have the correct type", () => {
       expect(loggedContext?.type).toEqual(
-        "google.cloud.firestore.document.v1.updated"
+        "google.cloud.firestore.document.v1.updated",
       );
     });
 
@@ -223,12 +237,20 @@ describe("Cloud Firestore (v2)", () => {
 
       await timeout(20000);
 
-      const logSnapshot = await admin
-        .firestore()
-        .collection("firestoreOnDocumentWrittenTests")
-        .doc(testId)
-        .get();
-      loggedContext = logSnapshot.data();
+      let retry = 0;
+
+      while (retry < 10) {
+        const logSnapshot = await admin
+          .firestore()
+          .collection("firestoreOnDocumentWrittenTests")
+          .doc(testId)
+          .get();
+        loggedContext = logSnapshot.data();
+
+        if (loggedContext) break;
+        await timeout(5000);
+        retry++;
+      }
 
       if (!loggedContext) {
         throw new Error("loggedContext is undefined");
@@ -246,13 +268,13 @@ describe("Cloud Firestore (v2)", () => {
 
     it("should have well-formed resource", () => {
       expect(loggedContext?.source).toMatch(
-        `//firestore.googleapis.com/projects/${projectId}/databases/(default)`
+        `//firestore.googleapis.com/projects/${projectId}/databases/(default)`,
       );
     });
 
     it("should have the correct type", () => {
       expect(loggedContext?.type).toEqual(
-        "google.cloud.firestore.document.v1.written"
+        "google.cloud.firestore.document.v1.written",
       );
     });
 

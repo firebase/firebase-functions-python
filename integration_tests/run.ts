@@ -81,7 +81,7 @@ function generateUniqueHash(originalName: string): string {
   const modifiedName = `${TEST_RUN_ID}-${originalName}`;
   if (modifiedName.length > 100) {
     throw new Error(
-      `Function name is too long. Original=${originalName}, Modified=${modifiedName}`
+      `Function name is too long. Original=${originalName}, Modified=${modifiedName}`,
     );
   }
   return modifiedName;
@@ -103,7 +103,7 @@ async function discoverAndModifyEndpoints() {
       port,
       config.projectId,
       config.runtime,
-      10000
+      10000,
     );
 
     modifiedYaml = {
@@ -115,7 +115,7 @@ async function discoverAndModifyEndpoints() {
           delete modifiedValue.project;
           delete modifiedValue.runtime;
           return [modifiedKey, modifiedValue];
-        })
+        }),
       ),
       specVersion: "v1alpha1",
     };
@@ -189,7 +189,7 @@ function cleanFiles(): void {
   try {
     const files = fs.readdirSync(".");
     files.forEach((file) => {
-      if (file.match(`firebase_functions_${TEST_RUN_ID}.tar.gz`)) {
+      if (file.match(`firebase_functions.tar.gz`)) {
         fs.rmSync(file);
       }
       if (file.match("package.json")) {
@@ -214,7 +214,7 @@ function cleanFiles(): void {
 const spawnAsync = (
   command: string,
   args: string[],
-  options: any
+  options: any,
 ): Promise<string> => {
   return new Promise((resolve, reject) => {
     const child = spawn(command, args, options);
@@ -246,7 +246,7 @@ async function runTests(): Promise<void> {
         ...process.env,
         GOOGLE_APPLICATION_CREDENTIALS: path.join(
           __dirname,
-          "serviceAccount.json"
+          "serviceAccount.json",
         ),
         TEST_RUN_ID,
       },

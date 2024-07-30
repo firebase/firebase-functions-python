@@ -68,3 +68,4 @@ node_modules/
 /serviceAccount.json
 /functions/requirements.txt
 /functions/firebase_functions.tar.gz
+/functions/functions.iml

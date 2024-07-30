@@ -10,13 +10,12 @@ def firestoreOnDocumentCreatedTests(
         event: firestore_fn.Event[firestore_fn.DocumentSnapshot]):
     documentId = event.params['documentId']
 
-    firestore.client().collection('firestoreOnDocumentCreatedTests').document(
-        documentId).set({
-            'time': event.time,
-            'id': event.id,
-            'type': event.type,
-            'source': event.source,
-        })
+    firestore.client().collection('firestoreOnDocumentCreatedTests').document(documentId).set({
+        'time': event.time,
+        'id': event.id,
+        'type': event.type,
+        'source': event.source,
+    })
 
 
 @firestore_fn.on_document_deleted(document='tests/{documentId}',
@@ -28,11 +27,11 @@ def firestoreOnDocumentDeletedTests(
 
     firestore.client().collection('firestoreOnDocumentDeletedTests').document(
         documentId).set({
-            'time': event.time,
-            'id': event.id,
-            'type': event.type,
-            'source': event.source,
-        })
+        'time': event.time,
+        'id': event.id,
+        'type': event.type,
+        'source': event.source,
+    })
 
 
 @firestore_fn.on_document_updated(document='tests/{documentId}',
@@ -44,11 +43,11 @@ def firestoreOnDocumentUpdatedTests(
 
     firestore.client().collection('firestoreOnDocumentUpdatedTests').document(
         documentId).set({
-            'time': event.time,
-            'id': event.id,
-            'type': event.type,
-            'source': event.source,
-        })
+        'time': event.time,
+        'id': event.id,
+        'type': event.type,
+        'source': event.source,
+    })
 
 
 @firestore_fn.on_document_written(document='tests/{documentId}',
@@ -60,8 +59,8 @@ def firestoreOnDocumentWrittenTests(
 
     firestore.client().collection('firestoreOnDocumentWrittenTests').document(
         documentId).set({
-            'time': event.time,
-            'id': event.id,
-            'type': event.type,
-            'source': event.source,
-        })
+        'time': event.time,
+        'id': event.id,
+        'type': event.type,
+        'source': event.source,
+    })
