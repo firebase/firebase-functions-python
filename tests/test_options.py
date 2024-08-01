@@ -44,14 +44,13 @@ def test_global_options_merged_with_provider_options():
     Testing a global option is used when no provider option is set.
     """
     options.set_global_options(max_instances=66)
-    pubsub_options = options.PubSubOptions(
-        topic="foo")  # pylint: disable=unexpected-keyword-arg
+    pubsub_options = options.PubSubOptions(topic="foo")  # pylint: disable=unexpected-keyword-arg
     pubsub_options_dict = pubsub_options._asdict_with_global_options()
     assert (pubsub_options_dict["topic"] == "foo"
-            ), "'topic' property missing from dict"
+           ), "'topic' property missing from dict"
     assert "options" not in pubsub_options_dict, "'options' key should not exist in dict"
     assert (pubsub_options_dict["max_instances"] == 66
-            ), "provider option did not update using the global option"
+           ), "provider option did not update using the global option"
 
 
 def test_https_options_removes_cors():
@@ -120,8 +119,7 @@ def test_merge_apis_empty_input():
     expected_output = []
     merged_apis = merge_required_apis(required_apis)
 
-    assert merged_apis == expected_output, f"Expected {
-        expected_output}, but got {merged_apis}"
+    assert merged_apis == expected_output, f"Expected {expected_output}, but got {merged_apis}"
 
 
 def test_merge_apis_no_duplicate_apis():
@@ -164,8 +162,7 @@ def test_merge_apis_no_duplicate_apis():
 
     merged_apis = merge_required_apis(required_apis)
 
-    assert merged_apis == expected_output, f"Expected {
-        expected_output}, but got {merged_apis}"
+    assert merged_apis == expected_output, f"Expected {expected_output}, but got {merged_apis}"
 
 
 def test_merge_apis_duplicate_apis():
@@ -173,7 +170,7 @@ def test_merge_apis_duplicate_apis():
     This test evaluates the merge_required_apis function when the
     input list contains duplicate APIs with different reasons.
     The desired outcome for this test is a list where the duplicate
-    APIs are merged properly and reasons are combined. 
+    APIs are merged properly and reasons are combined.
     This test ensures that the function correctly merges the duplicate
     APIs and combines the reasons associated with them.
     """
@@ -215,11 +212,11 @@ def test_merge_apis_duplicate_apis():
 
     for expected_item in expected_output:
         assert (expected_item in merged_apis
-                ), f"Expected item {expected_item} missing from the merged list"
+               ), f"Expected item {expected_item} missing from the merged list"
 
     for actual_item in merged_apis:
         assert (actual_item in expected_output
-                ), f"Unexpected item {actual_item} found in the merged list"
+               ), f"Unexpected item {actual_item} found in the merged list"
 
 
 def test_invoker_with_one_element_doesnt_throw():
