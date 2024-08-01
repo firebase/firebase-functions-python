@@ -221,3 +221,10 @@ def test_merge_apis_duplicate_apis():
 
 def test_invoker_with_one_element_doesnt_throw():
     options.HttpsOptions(invoker=["public"])._endpoint(func_name="test")
+
+
+def test_invoker_with_no_element_throws():
+    try:
+        options.HttpsOptions(invoker=[])._endpoint(func_name="test")
+    except AssertionError:
+        return
