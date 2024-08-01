@@ -17,6 +17,7 @@ Options unit tests.
 from firebase_functions import options, https_fn
 from firebase_functions import params
 from firebase_functions.private.serving import functions_as_yaml, merge_required_apis
+from pytest import raises
 # pylint: disable=protected-access
 
 
@@ -224,7 +225,5 @@ def test_invoker_with_one_element_doesnt_throw():
 
 
 def test_invoker_with_no_element_throws():
-    try:
+    with raises(AssertionError, match="HttpsOptions: Invalid option for invoker - must be a non-empty list."):
         options.HttpsOptions(invoker=[])._endpoint(func_name="test")
-    except AssertionError:
-        return
