@@ -1134,7 +1134,7 @@ class HttpsOptions(RuntimeOptions):
                     invoker = [invoker]
                 assert len(
                     invoker
-                ) > 1, "HttpsOptions: Invalid option for invoker - must be a non-empty list."
+                ) >= 1, "HttpsOptions: Invalid option for invoker - must be a non-empty list."
                 assert "" not in invoker, (
                     "HttpsOptions: Invalid option for invoker - must be a non-empty string."
                 )
