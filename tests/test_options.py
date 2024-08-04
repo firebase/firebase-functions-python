@@ -17,6 +17,7 @@ Options unit tests.
 from firebase_functions import options, https_fn
 from firebase_functions import params
 from firebase_functions.private.serving import functions_as_yaml, merge_required_apis
+from pytest import raises
 # pylint: disable=protected-access
 
 
@@ -44,7 +45,7 @@ def test_global_options_merged_with_provider_options():
     Testing a global option is used when no provider option is set.
     """
     options.set_global_options(max_instances=66)
-    pubsub_options = options.PubSubOptions(topic="foo")  #pylint: disable=unexpected-keyword-arg
+    pubsub_options = options.PubSubOptions(topic="foo")  # pylint: disable=unexpected-keyword-arg
     pubsub_options_dict = pubsub_options._asdict_with_global_options()
     assert (pubsub_options_dict["topic"] == "foo"
            ), "'topic' property missing from dict"
@@ -170,7 +171,7 @@ def test_merge_apis_duplicate_apis():
     This test evaluates the merge_required_apis function when the
     input list contains duplicate APIs with different reasons.
     The desired outcome for this test is a list where the duplicate
-    APIs are merged properly and reasons are combined. 
+    APIs are merged properly and reasons are combined.
     This test ensures that the function correctly merges the duplicate
     APIs and combines the reasons associated with them.
     """
@@ -217,3 +218,16 @@ def test_merge_apis_duplicate_apis():
     for actual_item in merged_apis:
         assert (actual_item in expected_output
                ), f"Unexpected item {actual_item} found in the merged list"
+
+
+def test_invoker_with_one_element_doesnt_throw():
+    options.HttpsOptions(invoker=["public"])._endpoint(func_name="test")
+
+
+def test_invoker_with_no_element_throws():
+    with raises(
+            AssertionError,
+            match=
+            "HttpsOptions: Invalid option for invoker - must be a non-empty list."
+    ):
+        options.HttpsOptions(invoker=[])._endpoint(func_name="test")
