@@ -225,5 +225,9 @@ def test_invoker_with_one_element_doesnt_throw():
 
 
 def test_invoker_with_no_element_throws():
-    with raises(AssertionError, match="HttpsOptions: Invalid option for invoker - must be a non-empty list."):
+    with raises(
+            AssertionError,
+            match=
+            "HttpsOptions: Invalid option for invoker - must be a non-empty list."
+    ):
         options.HttpsOptions(invoker=[])._endpoint(func_name="test")
