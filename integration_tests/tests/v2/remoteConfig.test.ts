@@ -1,5 +1,5 @@
 import admin from "firebase-admin";
-import { timeout } from "../utils";
+import { retry, timeout } from "../utils";
 import { initializeFirebase } from "../firebaseSetup";
 import fetch from "node-fetch";
 
@@ -13,17 +13,24 @@ describe("Firebase Remote Config (v2)", () => {
 
   beforeAll(async () => {
     await initializeFirebase();
-  });
+    await timeout(120_000);
+  }, 200_000);
 
   afterAll(async () => {
-    await admin.firestore().collection("remoteConfigOnConfigUpdatedTests").doc(testId).delete();
+    await admin
+      .firestore()
+      .collection("remoteConfigOnConfigUpdatedTests")
+      .doc(testId)
+      .delete();
   });
 
   describe("onUpdated trigger", () => {
     let loggedContext: admin.firestore.DocumentData | undefined;
 
     beforeAll(async () => {
-      const accessToken = await admin.credential.applicationDefault().getAccessToken();
+      const accessToken = await admin.credential
+        .applicationDefault()
+        .getAccessToken();
       const resp = await fetch(
         `https://firebaseremoteconfig.googleapis.com/v1/projects/${projectId}/remoteConfig`,
         {
@@ -35,26 +42,31 @@ describe("Firebase Remote Config (v2)", () => {
             "If-Match": "*",
           },
           body: JSON.stringify({ version: { description: testId } }),
-        }
+        },
       );
       if (!resp.ok) {
         throw new Error(resp.statusText);
       }
-      await timeout(20000);
-      const logSnapshot = await admin
-        .firestore()
-        .collection("remoteConfigOnConfigUpdatedTests")
-        .doc(testId)
-        .get();
-      loggedContext = logSnapshot.data();
+
+      loggedContext = retry(async () => {
+        const logSnapshot = await admin
+          .firestore()
+          .collection("remoteConfigOnConfigUpdatedTests")
+          .doc(testId)
+          .get();
+        return logSnapshot.data();
+      });
+
       if (!loggedContext) {
         throw new Error("loggedContext is undefined");
       }
-    });
+    }, 60000);
 
     it("should have the right event type", () => {
       // TODO: not sure if the nested remoteconfig.remoteconfig is expected?
-      expect(loggedContext?.type).toEqual("google.firebase.remoteconfig.remoteConfig.v1.updated");
+      expect(loggedContext?.type).toEqual(
+        "google.firebase.remoteconfig.remoteConfig.v1.updated",
+      );
     });
 
     it("should have event id", () => {

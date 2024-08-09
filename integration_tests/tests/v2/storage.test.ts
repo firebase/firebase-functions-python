@@ -1,5 +1,5 @@
 import * as admin from "firebase-admin";
-import { timeout } from "../utils";
+import { retry, timeout } from "../utils";
 import { initializeFirebase } from "../firebaseSetup";
 
 async function uploadBufferToFirebase(buffer: Buffer, fileName: string) {
@@ -22,12 +22,25 @@ describe("Firebase Storage (v2)", () => {
 
   beforeAll(async () => {
     await initializeFirebase();
-  });
+    await timeout(120_000);
+  }, 200_000);
 
   afterAll(async () => {
-    await admin.firestore().collection("storageOnObjectFinalizedTests").doc(testId).delete();
-    await admin.firestore().collection("storageOnObjectDeletedTests").doc(testId).delete();
-    await admin.firestore().collection("storageOnObjectMetadataUpdatedTests").doc(testId).delete();
+    await admin
+      .firestore()
+      .collection("storageOnObjectFinalizedTests")
+      .doc(testId)
+      .delete();
+    await admin
+      .firestore()
+      .collection("storageOnObjectDeletedTests")
+      .doc(testId)
+      .delete();
+    await admin
+      .firestore()
+      .collection("storageOnObjectMetadataUpdatedTests")
+      .doc(testId)
+      .delete();
   });
 
   describe("onObjectFinalized trigger", () => {
@@ -39,13 +52,15 @@ describe("Firebase Storage (v2)", () => {
 
       await uploadBufferToFirebase(buffer, testId + ".txt");
 
-      await timeout(20000);
-      const logSnapshot = await admin
-        .firestore()
-        .collection("storageOnObjectFinalizedTests")
-        .doc(testId)
-        .get();
-      loggedContext = logSnapshot.data();
+      loggedContext = retry(async () => {
+        const logSnapshot = await admin
+          .firestore()
+          .collection("storageOnObjectFinalizedTests")
+          .doc(testId)
+          .get();
+        return logSnapshot.data();
+      });
+
       if (!loggedContext) {
         throw new Error("loggedContext is undefined");
       }
@@ -64,7 +79,9 @@ describe("Firebase Storage (v2)", () => {
     });
 
     it("should have the right event type", () => {
-      expect(loggedContext?.type).toEqual("google.cloud.storage.object.v1.finalized");
+      expect(loggedContext?.type).toEqual(
+        "google.cloud.storage.object.v1.finalized",
+      );
     });
 
     it("should have event id", () => {
@@ -107,7 +124,9 @@ describe("Firebase Storage (v2)", () => {
     });
 
     it("should have the right event type", () => {
-      expect(loggedContext?.type).toEqual("google.cloud.storage.object.v1.deleted");
+      expect(loggedContext?.type).toEqual(
+        "google.cloud.storage.object.v1.deleted",
+      );
     });
 
     it("should have event id", () => {
@@ -161,7 +180,9 @@ describe("Firebase Storage (v2)", () => {
     });
 
     it("should have the right event type", () => {
-      expect(loggedContext?.type).toEqual("google.cloud.storage.object.v1.metadataUpdated");
+      expect(loggedContext?.type).toEqual(
+        "google.cloud.storage.object.v1.metadataUpdated",
+      );
     });
 
     it("should have event id", () => {

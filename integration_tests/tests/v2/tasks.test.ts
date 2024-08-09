@@ -1,6 +1,6 @@
 import * as admin from "firebase-admin";
 import { initializeFirebase } from "../firebaseSetup";
-import { createTask, timeout } from "../utils";
+import { createTask, retry, timeout } from "../utils";
 
 describe("Cloud Tasks (v2)", () => {
   const region = process.env.REGION;
@@ -14,10 +14,15 @@ describe("Cloud Tasks (v2)", () => {
 
   beforeAll(async () => {
     await initializeFirebase();
-  });
+    await timeout(120_000);
+  }, 200_000);
 
   afterAll(async () => {
-    await admin.firestore().collection("tasksOnTaskDispatchedTests").doc(testId).delete();
+    await admin
+      .firestore()
+      .collection("tasksOnTaskDispatchedTests")
+      .doc(testId)
+      .delete();
   });
 
   describe("onDispatch trigger", () => {
@@ -26,13 +31,16 @@ describe("Cloud Tasks (v2)", () => {
     beforeAll(async () => {
       const url = `https://${region}-${projectId}.cloudfunctions.net/${testId}-v2-tasksOnTaskDispatchedTests`;
       await createTask(projectId, queueName, region, url, { data: { testId } });
-      await timeout(20000);
-      const logSnapshot = await admin
-        .firestore()
-        .collection("tasksOnTaskDispatchedTests")
-        .doc(testId)
-        .get();
-      loggedContext = logSnapshot.data();
+
+      loggedContext = await retry(async () => {
+        const logSnapshot = await admin
+          .firestore()
+          .collection("tasksOnTaskDispatchedTests")
+          .doc(testId)
+          .get();
+        return logSnapshot.data();
+      });
+
       if (!loggedContext) {
         throw new Error("loggedContext is undefined");
       }

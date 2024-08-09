@@ -1,7 +1,7 @@
 import admin from "firebase-admin";
 import { initializeFirebase } from "../firebaseSetup";
 import { CloudEvent, getEventarc } from "firebase-admin/eventarc";
-import { timeout } from "../utils";
+import { retry, timeout } from "../utils";
 
 describe("Eventarc (v2)", () => {
   const projectId = process.env.PROJECT_ID;
@@ -14,10 +14,15 @@ describe("Eventarc (v2)", () => {
 
   beforeAll(async () => {
     await initializeFirebase();
-  });
+    await timeout(120_000);
+  }, 200_000);
 
   afterAll(async () => {
-    await admin.firestore().collection("eventarcOnCustomEventPublishedTests").doc(testId).delete();
+    await admin
+      .firestore()
+      .collection("eventarcOnCustomEventPublishedTests")
+      .doc(testId)
+      .delete();
   });
 
   describe("onCustomEventPublished trigger", () => {
@@ -29,25 +34,28 @@ describe("Eventarc (v2)", () => {
         source: testId,
         subject: "Welcome to the top 10",
         data: {
-          message: "You have achieved the nth position in our leaderboard!  To see...",
+          message:
+            "You have achieved the nth position in our leaderboard!  To see...",
           testId,
         },
       };
-      await getEventarc().channel(`locations/${region}/channels/firebase`).publish(cloudEvent);
+      await getEventarc()
+        .channel(`locations/${region}/channels/firebase`)
+        .publish(cloudEvent);
 
-      await timeout(20000);
-
-      const logSnapshot = await admin
-        .firestore()
-        .collection("eventarcOnCustomEventPublishedTests")
-        .doc(testId)
-        .get();
-      loggedContext = logSnapshot.data();
+      loggedContext = retry(async () => {
+        const logSnapshot = await admin
+          .firestore()
+          .collection("eventarcOnCustomEventPublishedTests")
+          .doc(testId)
+          .get();
+        return logSnapshot.data();
+      });
 
       if (!loggedContext) {
         throw new Error("loggedContext is undefined");
       }
-    });
+    }, 60000);
 
     it("should have well-formed source", () => {
       expect(loggedContext?.source).toMatch(testId);

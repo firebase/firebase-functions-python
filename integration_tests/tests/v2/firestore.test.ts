@@ -1,5 +1,5 @@
 import admin from "firebase-admin";
-import { timeout } from "../utils";
+import { retry, timeout } from "../utils";
 import { initializeFirebase } from "../firebaseSetup";
 
 describe("Cloud Firestore", () => {
@@ -12,7 +12,7 @@ describe("Cloud Firestore", () => {
 
   beforeAll(async () => {
     await initializeFirebase();
-    await timeout(120_000)
+    await timeout(120_000);
   }, 200_000);
 
   afterAll(async () => {
@@ -49,20 +49,14 @@ describe("Cloud Firestore", () => {
       await docRef.set({ test: testId });
       dataSnapshot = await docRef.get();
 
-      let retry = 0;
-
-      while (retry < 10) {
+      loggedContext = await retry(async () => {
         const logSnapshot = await admin
           .firestore()
           .collection("firestoreOnDocumentCreatedTests")
           .doc(testId)
           .get();
-        loggedContext = logSnapshot.data();
-
-        if (loggedContext) break;
-        await timeout(5000);
-        retry++;
-      }
+        return logSnapshot.data();
+      });
 
       if (!loggedContext) {
         throw new Error("loggedContext is undefined");
@@ -115,17 +109,17 @@ describe("Cloud Firestore", () => {
 
       await docRef.delete();
 
-      await timeout(20000);
-
       // Refresh snapshot
       dataSnapshot = await docRef.get();
 
-      const logSnapshot = await admin
-        .firestore()
-        .collection("firestoreOnDocumentDeletedTests")
-        .doc(testId)
-        .get();
-      loggedContext = logSnapshot.data();
+      loggedContext = retry(async () => {
+        const logSnapshot = await admin
+          .firestore()
+          .collection("firestoreOnDocumentDeletedTests")
+          .doc(testId)
+          .get();
+        return logSnapshot.data();
+      });
 
       if (!loggedContext) {
         throw new Error("loggedContext is undefined");
@@ -176,20 +170,14 @@ describe("Cloud Firestore", () => {
       // Refresh snapshot
       dataSnapshot = await docRef.get();
 
-      let retry = 0;
-
-      while (retry < 10) {
+      loggedContext = retry(async () => {
         const logSnapshot = await admin
           .firestore()
           .collection("firestoreOnDocumentUpdatedTests")
           .doc(testId)
           .get();
-        loggedContext = logSnapshot.data();
-
-        if (loggedContext) break;
-        await timeout(5000);
-        retry++;
-      }
+        return logSnapshot.data();
+      });
 
       if (!loggedContext) {
         throw new Error("loggedContext is undefined");
@@ -235,27 +223,19 @@ describe("Cloud Firestore", () => {
       await docRef.set({ test: testId });
       dataSnapshot = await docRef.get();
 
-      await timeout(20000);
-
-      let retry = 0;
-
-      while (retry < 10) {
+      loggedContext = await retry(async () => {
         const logSnapshot = await admin
           .firestore()
           .collection("firestoreOnDocumentWrittenTests")
           .doc(testId)
           .get();
-        loggedContext = logSnapshot.data();
-
-        if (loggedContext) break;
-        await timeout(5000);
-        retry++;
-      }
+        return logSnapshot.data();
+      });
 
       if (!loggedContext) {
         throw new Error("loggedContext is undefined");
       }
-    });
+    }, 60000);
 
     it("should not have event.app", () => {
       expect(loggedContext?.app).toBeUndefined();

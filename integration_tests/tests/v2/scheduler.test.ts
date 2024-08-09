@@ -1,5 +1,5 @@
 import admin from "firebase-admin";
-import { timeout } from "../utils";
+import { retry, timeout } from "../utils";
 import { initializeFirebase } from "../firebaseSetup";
 
 describe("Scheduler", () => {
@@ -13,17 +13,24 @@ describe("Scheduler", () => {
 
   beforeAll(async () => {
     await initializeFirebase();
-  });
+    await timeout(120_000);
+  }, 200_000);
 
   afterAll(async () => {
-    await admin.firestore().collection("schedulerOnScheduleV2Tests").doc(testId).delete();
+    await admin
+      .firestore()
+      .collection("schedulerOnScheduleV2Tests")
+      .doc(testId)
+      .delete();
   });
 
   describe("onSchedule trigger", () => {
     let loggedContext: admin.firestore.DocumentData | undefined;
 
     beforeAll(async () => {
-      const accessToken = await admin.credential.applicationDefault().getAccessToken();
+      const accessToken = await admin.credential
+        .applicationDefault()
+        .getAccessToken();
       const jobName = `firebase-schedule-${testId}-v2-schedule-${region}`;
       const response = await fetch(
         `https://cloudscheduler.googleapis.com/v1/projects/${projectId}/locations/us-central1/jobs/firebase-schedule-${testId}-v2-schedule-${region}:run`,
@@ -33,20 +40,20 @@ describe("Scheduler", () => {
             "Content-Type": "application/json",
             Authorization: `Bearer ${accessToken.access_token}`,
           },
-        }
+        },
       );
       if (!response.ok) {
         throw new Error(`Failed request with status ${response.status}!`);
       }
 
-      await timeout(15000);
-
-      const logSnapshot = await admin
-        .firestore()
-        .collection("schedulerOnScheduleV2Tests")
-        .doc(jobName)
-        .get();
-      loggedContext = logSnapshot.data();
+      loggedContext = retry(async () => {
+        const logSnapshot = await admin
+          .firestore()
+          .collection("schedulerOnScheduleV2Tests")
+          .doc(jobName)
+          .get();
+        return logSnapshot.data();
+      });
 
       if (!loggedContext) {
         throw new Error("loggedContext is undefined");

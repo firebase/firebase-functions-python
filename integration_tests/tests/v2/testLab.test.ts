@@ -1,5 +1,5 @@
 import admin from "firebase-admin";
-import { startTestRun, timeout } from "../utils";
+import { retry, startTestRun, timeout } from "../utils";
 import { initializeFirebase } from "../firebaseSetup";
 
 describe("TestLab (v2)", () => {
@@ -12,25 +12,35 @@ describe("TestLab (v2)", () => {
 
   beforeAll(async () => {
     await initializeFirebase();
-  });
+    await timeout(120_000);
+  }, 200_000);
 
   afterAll(async () => {
-    await admin.firestore().collection("testLabOnTestMatrixCompletedTests").doc(testId).delete();
+    await admin
+      .firestore()
+      .collection("testLabOnTestMatrixCompletedTests")
+      .doc(testId)
+      .delete();
   });
 
   describe("test matrix onComplete trigger", () => {
     let loggedContext: admin.firestore.DocumentData | undefined;
 
     beforeAll(async () => {
-      const accessToken = await admin.credential.applicationDefault().getAccessToken();
+      const accessToken = await admin.credential
+        .applicationDefault()
+        .getAccessToken();
       await startTestRun(projectId, testId, accessToken.access_token);
-      await timeout(20000);
-      const logSnapshot = await admin
-        .firestore()
-        .collection("testLabOnTestMatrixCompletedTests")
-        .doc(testId)
-        .get();
-      loggedContext = logSnapshot.data();
+
+      loggedContext = await retry(async () => {
+        const logSnapshot = await admin
+          .firestore()
+          .collection("testLabOnTestMatrixCompletedTests")
+          .doc(testId)
+          .get();
+        return logSnapshot.data();
+      });
+
       if (!loggedContext) {
         throw new Error("loggedContext is undefined");
       }
@@ -41,7 +51,9 @@ describe("TestLab (v2)", () => {
     });
 
     it("should have right event type", () => {
-      expect(loggedContext?.type).toEqual("google.firebase.testlab.testMatrix.v1.completed");
+      expect(loggedContext?.type).toEqual(
+        "google.firebase.testlab.testMatrix.v1.completed",
+      );
     });
 
     it("should be in state 'INVALID'", () => {

@@ -11,7 +11,11 @@ interface AndroidDevice {
 
 const TESTING_API_SERVICE_NAME = "testing.googleapis.com";
 
-export async function startTestRun(projectId: string, testId: string, accessToken: string) {
+export async function startTestRun(
+  projectId: string,
+  testId: string,
+  accessToken: string,
+) {
   const device = await fetchDefaultDevice(accessToken);
   return await createTestMatrix(accessToken, projectId, testId, device);
 }
@@ -24,7 +28,7 @@ async function fetchDefaultDevice(accessToken: string) {
         Authorization: `Bearer ${accessToken}`,
         "Content-Type": "application/json",
       },
-    }
+    },
   );
   if (!resp.ok) {
     throw new Error(resp.statusText);
@@ -36,7 +40,7 @@ async function fetchDefaultDevice(accessToken: string) {
       m.tags !== undefined &&
       m.tags.indexOf("default") > -1 &&
       m.supportedVersionIds !== undefined &&
-      m.supportedVersionIds.length > 0
+      m.supportedVersionIds.length > 0,
   );
 
   if (defaultModels.length === 0) {
@@ -58,7 +62,7 @@ async function createTestMatrix(
   accessToken: string,
   projectId: string,
   testId: string,
-  device: AndroidDevice
+  device: AndroidDevice,
 ): Promise<void> {
   const body = {
     projectId,
@@ -96,7 +100,7 @@ async function createTestMatrix(
         "Content-Type": "application/json",
       },
       body: JSON.stringify(body),
-    }
+    },
   );
   if (!resp.ok) {
     throw new Error(resp.statusText);
@@ -104,14 +108,15 @@ async function createTestMatrix(
   return;
 }
 
-export const timeout = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+export const timeout = (ms: number) =>
+  new Promise((resolve) => setTimeout(resolve, ms));
 
 export async function createTask(
   project: string,
   queue: string,
   location: string,
   url: string,
-  payload: Record<string, any>
+  payload: Record<string, any>,
 ) {
   const client = new CloudTasksClient();
   const queuePath = client.queuePath(project, location, queue);
@@ -154,4 +159,34 @@ export async function createTask(
   if (!response) {
     throw new Error("Unable to create task");
   }
+}
+
+export interface UtilRetryOptions {
+  /**
+   * Defaults to 10
+   */
+  maxRetryCount?: number;
+  /**
+   * Time to wait between retries in milliseconds
+   * Defaults to 5 seconds
+   */
+  wait?: number;
+}
+
+export async function retry<T>(
+  retryFn: () => Promise<T>,
+  options?: UtilRetryOptions,
+) {
+  let result: T | undefined;
+  let retry = 0;
+  const { maxRetryCount = 10, wait = 5000 } = options || {};
+
+  while (retry < maxRetryCount) {
+    result = await retryFn();
+    if (result) break;
+    await timeout(wait);
+    retry++;
+  }
+
+  return result;
 }

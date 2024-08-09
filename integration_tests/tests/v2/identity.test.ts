@@ -1,8 +1,12 @@
 import admin from "firebase-admin";
-import { timeout } from "../utils";
+import { retry, timeout } from "../utils";
 import { initializeApp } from "firebase/app";
 import { initializeFirebase } from "../firebaseSetup";
-import { getAuth, createUserWithEmailAndPassword, UserCredential } from "firebase/auth";
+import {
+  getAuth,
+  createUserWithEmailAndPassword,
+  UserCredential,
+} from "firebase/auth";
 
 describe("Firebase Identity (v2)", () => {
   const userIds: string[] = [];
@@ -25,15 +29,32 @@ describe("Firebase Identity (v2)", () => {
 
   beforeAll(async () => {
     await initializeFirebase();
-  });
+    await timeout(120_000);
+  }, 200_000);
 
   afterAll(async () => {
     for (const userId in userIds) {
       await admin.firestore().collection("userProfiles").doc(userId).delete();
-      await admin.firestore().collection("authUserOnCreateTests").doc(userId).delete();
-      await admin.firestore().collection("authUserOnDeleteTests").doc(userId).delete();
-      await admin.firestore().collection("authBeforeCreateTests").doc(userId).delete();
-      await admin.firestore().collection("authBeforeSignInTests").doc(userId).delete();
+      await admin
+        .firestore()
+        .collection("authUserOnCreateTests")
+        .doc(userId)
+        .delete();
+      await admin
+        .firestore()
+        .collection("authUserOnDeleteTests")
+        .doc(userId)
+        .delete();
+      await admin
+        .firestore()
+        .collection("authBeforeCreateTests")
+        .doc(userId)
+        .delete();
+      await admin
+        .firestore()
+        .collection("authBeforeSignInTests")
+        .doc(userId)
+        .delete();
     }
   });
   describe("beforeUserCreated trigger", () => {
@@ -44,25 +65,24 @@ describe("Firebase Identity (v2)", () => {
       userRecord = await createUserWithEmailAndPassword(
         getAuth(app),
         `${testId}@fake-create.com`,
-        "secret"
+        "secret",
       );
 
       userIds.push(userRecord.user.uid);
 
-      await timeout(20000);
-
-      const logSnapshot = await admin
-        .firestore()
-        .collection("identityBeforeUserCreatedTests")
-        .doc(userRecord.user.uid)
-        .get();
-
-      loggedContext = logSnapshot.data();
+      loggedContext = retry(async () => {
+        const logSnapshot = await admin
+          .firestore()
+          .collection("identityBeforeUserCreatedTests")
+          .doc(userRecord.user.uid)
+          .get();
+        return logSnapshot.data();
+      });
 
       if (!loggedContext) {
         throw new Error("loggedContext is undefined");
       }
-    });
+    }, 60000);
 
     afterAll(async () => {
       await admin.auth().deleteUser(userRecord.user.uid);
@@ -74,7 +94,7 @@ describe("Firebase Identity (v2)", () => {
 
     it("should have the correct eventType", () => {
       expect(loggedContext?.eventType).toEqual(
-        "providers/cloud.auth/eventTypes/user.beforeCreate:password"
+        "providers/cloud.auth/eventTypes/user.beforeCreate:password",
       );
     });
 
@@ -95,25 +115,24 @@ describe("Firebase Identity (v2)", () => {
       userRecord = await createUserWithEmailAndPassword(
         getAuth(app),
         `${testId}@fake-before-signin.com`,
-        "secret"
+        "secret",
       );
 
       userIds.push(userRecord.user.uid);
 
-      await timeout(20000);
-
-      const logSnapshot = await admin
-        .firestore()
-        .collection("identityBeforeUserSignedInTests")
-        .doc(userRecord.user.uid)
-        .get();
-
-      loggedContext = logSnapshot.data();
+      loggedContext = retry(async () => {
+        const logSnapshot = await admin
+          .firestore()
+          .collection("identityBeforeUserSignedInTests")
+          .doc(userRecord.user.uid)
+          .get();
+        return logSnapshot.data();
+      });
 
       if (!loggedContext) {
         throw new Error("loggedContext is undefined");
       }
-    });
+    }, 60000);
 
     afterAll(async () => {
       await admin.auth().deleteUser(userRecord.user.uid);
@@ -125,7 +144,7 @@ describe("Firebase Identity (v2)", () => {
 
     it("should have the correct eventType", () => {
       expect(loggedContext?.eventType).toEqual(
-        "providers/cloud.auth/eventTypes/user.beforeSignIn:password"
+        "providers/cloud.auth/eventTypes/user.beforeSignIn:password",
       );
     });
 

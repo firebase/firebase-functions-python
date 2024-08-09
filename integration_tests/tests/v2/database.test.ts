@@ -1,5 +1,5 @@
 import admin from "firebase-admin";
-import { timeout } from "../utils";
+import { retry, timeout } from "../utils";
 import { initializeFirebase } from "../firebaseSetup";
 import { Reference } from "@firebase/database-types";
 
@@ -13,13 +13,30 @@ describe("Firebase Database (v2)", () => {
 
   beforeAll(async () => {
     await initializeFirebase();
-  });
+    await timeout(120_000);
+  }, 200_000);
 
   afterAll(async () => {
-    await admin.firestore().collection("databaseCreatedTests").doc(testId).delete();
-    await admin.firestore().collection("databaseDeletedTests").doc(testId).delete();
-    await admin.firestore().collection("databaseUpdatesTests").doc(testId).delete();
-    await admin.firestore().collection("databaseWrittenTests").doc(testId).delete();
+    await admin
+      .firestore()
+      .collection("databaseCreatedTests")
+      .doc(testId)
+      .delete();
+    await admin
+      .firestore()
+      .collection("databaseDeletedTests")
+      .doc(testId)
+      .delete();
+    await admin
+      .firestore()
+      .collection("databaseUpdatesTests")
+      .doc(testId)
+      .delete();
+    await admin
+      .firestore()
+      .collection("databaseWrittenTests")
+      .doc(testId)
+      .delete();
   });
 
   async function setupRef(refPath: string) {
@@ -53,12 +70,15 @@ describe("Firebase Database (v2)", () => {
 
     beforeAll(async () => {
       ref = await setupRef(`databaseCreatedTests/${testId}/start`);
-      await timeout(20000);
-      loggedContext = await getLoggedContext("databaseCreatedTests", testId);
+
+      loggedContext = retry(
+        async () => await getLoggedContext("databaseCreatedTests", testId),
+      );
+
       if (!loggedContext) {
         throw new Error("loggedContext is undefined");
       }
-    });
+    }, 60000);
 
     afterAll(async () => {
       await teardownRef(ref);
@@ -67,18 +87,24 @@ describe("Firebase Database (v2)", () => {
     it("should give refs access to admin data", async () => {
       await ref.parent?.child("adminOnly").update({ allowed: 1 });
 
-      const adminDataSnapshot = await ref.parent?.child("adminOnly").once("value");
+      const adminDataSnapshot = await ref.parent
+        ?.child("adminOnly")
+        .once("value");
       const adminData = adminDataSnapshot?.val();
 
       expect(adminData).toEqual({ allowed: 1 });
     });
 
     it("should have a correct ref url", () => {
-      expect(loggedContext?.url).toMatch(`databaseCreatedTests/${testId}/start`);
+      expect(loggedContext?.url).toMatch(
+        `databaseCreatedTests/${testId}/start`,
+      );
     });
 
     it("should have the right event type", () => {
-      expect(loggedContext?.type).toEqual("google.firebase.database.ref.v1.created");
+      expect(loggedContext?.type).toEqual(
+        "google.firebase.database.ref.v1.created",
+      );
     });
 
     it("should have event id", () => {
@@ -97,19 +123,25 @@ describe("Firebase Database (v2)", () => {
     beforeAll(async () => {
       ref = await setupRef(`databaseDeletedTests/${testId}/start`);
       await teardownRef(ref);
-      await timeout(20000);
-      loggedContext = await getLoggedContext("databaseDeletedTests", testId);
+
+      loggedContext = await retry(
+        async () => await getLoggedContext("databaseDeletedTests", testId),
+      );
       if (!loggedContext) {
         throw new Error("loggedContext is undefined");
       }
-    });
+    }, 60000);
 
     it("should have a correct ref url", () => {
-      expect(loggedContext?.url).toMatch(`databaseDeletedTests/${testId}/start`);
+      expect(loggedContext?.url).toMatch(
+        `databaseDeletedTests/${testId}/start`,
+      );
     });
 
     it("should have the right event type", () => {
-      expect(loggedContext?.type).toEqual("google.firebase.database.ref.v1.deleted");
+      expect(loggedContext?.type).toEqual(
+        "google.firebase.database.ref.v1.deleted",
+      );
     });
 
     it("should have event id", () => {
@@ -129,11 +161,13 @@ describe("Firebase Database (v2)", () => {
       ref = await setupRef(`databaseUpdatedTests/${testId}/start`);
       await ref.update({ updated: true });
       await timeout(20000);
-      loggedContext = await getLoggedContext("databaseUpdatedTests", testId);
+      loggedContext = retry(
+        async () => await getLoggedContext("databaseUpdatedTests", testId),
+      );
       if (!loggedContext) {
         throw new Error("loggedContext is undefined");
       }
-    });
+    }, 60000);
 
     afterAll(async () => {
       await teardownRef(ref);
@@ -142,18 +176,24 @@ describe("Firebase Database (v2)", () => {
     it("should give refs access to admin data", async () => {
       await ref.parent?.child("adminOnly").update({ allowed: 1 });
 
-      const adminDataSnapshot = await ref.parent?.child("adminOnly").once("value");
+      const adminDataSnapshot = await ref.parent
+        ?.child("adminOnly")
+        .once("value");
       const adminData = adminDataSnapshot?.val();
 
       expect(adminData).toEqual({ allowed: 1 });
     });
 
     it("should have a correct ref url", () => {
-      expect(loggedContext?.url).toMatch(`databaseUpdatedTests/${testId}/start`);
+      expect(loggedContext?.url).toMatch(
+        `databaseUpdatedTests/${testId}/start`,
+      );
     });
 
     it("should have the right event type", () => {
-      expect(loggedContext?.type).toEqual("google.firebase.database.ref.v1.updated");
+      expect(loggedContext?.type).toEqual(
+        "google.firebase.database.ref.v1.updated",
+      );
     });
 
     it("should have event id", () => {
@@ -177,11 +217,11 @@ describe("Firebase Database (v2)", () => {
     beforeAll(async () => {
       ref = await setupRef(`databaseWrittenTests/${testId}/start`);
       await timeout(20000);
-      loggedContext = await getLoggedContext("databaseWrittenTests", testId);
+      loggedContext = await retry(async () => await getLoggedContext("databaseWrittenTests", testId));
       if (!loggedContext) {
         throw new Error("loggedContext is undefined");
       }
-    });
+    }, 60000);
 
     afterAll(async () => {
       await teardownRef(ref);
@@ -190,18 +230,24 @@ describe("Firebase Database (v2)", () => {
     it("should give refs access to admin data", async () => {
       await ref.parent?.child("adminOnly").update({ allowed: 1 });
 
-      const adminDataSnapshot = await ref.parent?.child("adminOnly").once("value");
+      const adminDataSnapshot = await ref.parent
+        ?.child("adminOnly")
+        .once("value");
       const adminData = adminDataSnapshot?.val();
 
       expect(adminData).toEqual({ allowed: 1 });
     });
 
     it("should have a correct ref url", () => {
-      expect(loggedContext?.url).toMatch(`databaseWrittenTests/${testId}/start`);
+      expect(loggedContext?.url).toMatch(
+        `databaseWrittenTests/${testId}/start`,
+      );
     });
 
     it("should have the right event type", () => {
-      expect(loggedContext?.type).toEqual("google.firebase.database.ref.v1.written");
+      expect(loggedContext?.type).toEqual(
+        "google.firebase.database.ref.v1.written",
+      );
     });
 
     it("should have event id", () => {

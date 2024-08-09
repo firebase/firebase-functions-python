@@ -14,7 +14,7 @@
   "scripts": {
     "copyfiles": "cp ./serviceAccount.json ./dist/serviceAccount.json",
     "build": "tsc && npm run copyfiles",
-    "test": "jest --detectOpenHandles tests/v2/firestore.test.ts",
+    "test": "jest --detectOpenHandles",
     "start": "npm run build && node dist/run.js"
   },
   "devDependencies": {

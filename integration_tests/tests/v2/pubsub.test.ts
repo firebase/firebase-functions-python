@@ -1,5 +1,5 @@
 import admin from "firebase-admin";
-import { timeout } from "../utils";
+import { retry, timeout } from "../utils";
 import { PubSub } from "@google-cloud/pubsub";
 import { initializeFirebase } from "../firebaseSetup";
 
@@ -15,10 +15,15 @@ describe("Pub/Sub (v2)", () => {
 
   beforeAll(async () => {
     await initializeFirebase();
-  });
+    await timeout(120_000);
+  }, 200_000);
 
   afterAll(async () => {
-    await admin.firestore().collection("pubsubOnMessagePublishedTests").doc(testId).delete();
+    await admin
+      .firestore()
+      .collection("pubsubOnMessagePublishedTests")
+      .doc(testId)
+      .delete();
   });
 
   describe("onMessagePublished trigger", () => {
@@ -33,27 +38,29 @@ describe("Pub/Sub (v2)", () => {
 
       await topic.publish(Buffer.from(JSON.stringify({ testId })));
 
-      await timeout(20000);
-
-      const logSnapshot = await admin
-        .firestore()
-        .collection("pubsubOnMessagePublishedTests")
-        .doc(testId)
-        .get();
-      loggedContext = logSnapshot.data();
+      loggedContext = retry(async () => {
+        const logSnapshot = await admin
+          .firestore()
+          .collection("pubsubOnMessagePublishedTests")
+          .doc(testId)
+          .get();
+        return logSnapshot.data();
+      });
       if (!loggedContext) {
         throw new Error("loggedContext is undefined");
       }
-    });
+    }, 60000);
 
     it("should have a topic as source", () => {
       expect(loggedContext?.source).toEqual(
-        `//pubsub.googleapis.com/projects/${projectId}/topics/custom_message_tests`
+        `//pubsub.googleapis.com/projects/${projectId}/topics/custom_message_tests`,
       );
     });
 
     it("should have the correct event type", () => {
-      expect(loggedContext?.type).toEqual("google.cloud.pubsub.topic.v1.messagePublished");
+      expect(loggedContext?.type).toEqual(
+        "google.cloud.pubsub.topic.v1.messagePublished",
+      );
     });
 
     it("should have an event id", () => {
