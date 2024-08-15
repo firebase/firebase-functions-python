@@ -11,7 +11,7 @@ import setup from "./setup.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-function loadEnv(): void {
+export function loadEnv(): void {
   try {
     const envPath = path.resolve(process.cwd(), ".env");
     console.log("Loading .env file from", envPath);
@@ -28,7 +28,7 @@ function loadEnv(): void {
 loadEnv();
 
 const {
-  FIREBASE_ADMIN = "^10.0.0",
+  FIREBASE_ADMIN = "6.5.0",
   PROJECT_ID,
   DATABASE_URL,
   STORAGE_BUCKET,
@@ -54,7 +54,7 @@ if (
   process.exit(1);
 }
 
-setup(TEST_RUN_ID, FIREBASE_ADMIN);
+setup(FIREBASE_ADMIN);
 
 const config = {
   projectId: PROJECT_ID,
@@ -68,7 +68,7 @@ const firebaseConfig = {
   projectId: PROJECT_ID,
   storageBucket: STORAGE_BUCKET,
 };
-const env = {
+export const env = {
   FIRESTORE_PREFER_REST: "true",
   GCLOUD_PROJECT: config.projectId,
   FIREBASE_CONFIG: JSON.stringify(firebaseConfig),
@@ -96,7 +96,7 @@ async function discoverAndModifyEndpoints() {
   try {
     const port = await portfinder.getPortPromise({ port: 9000 });
     const delegate = await getRuntimeDelegate(config);
-    const killServer = await delegate.serveAdmin(port.toString(), {}, env);
+    const killServer = await delegate.serveAdmin(port.toString(), env);
 
     console.log("Started on port", port);
     const originalYaml = await detectFromPort(

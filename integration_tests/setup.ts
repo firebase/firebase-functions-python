@@ -7,13 +7,13 @@ const DIR = process.cwd();
 /**
  * Build SDK, and Functions
  */
-export default function setup(testRunId: string, firebaseAdmin: string) {
-  buildSdk(testRunId);
-  createRequirementsTxt(testRunId, firebaseAdmin);
+export default function setup(firebaseAdmin: string) {
+  buildSdk();
+  createRequirementsTxt(firebaseAdmin);
   installDependencies();
 }
 
-function buildSdk(testRunId: string) {
+function buildSdk() {
   console.log("Building SDK...");
   process.chdir(path.join(DIR, "..")); // go up to root
 
@@ -52,8 +52,8 @@ function buildSdk(testRunId: string) {
   process.chdir(DIR); // go back to integration_test
 }
 
-function createRequirementsTxt(testRunId: string, firebaseAdmin: string) {
-  console.log("Creating package.json...");
+function createRequirementsTxt(firebaseAdmin: string) {
+  console.log("Creating requirements.txt...");
   const requirementsTemplatePath = `${DIR}/requirements.txt.template`;
   const requirementsPath = `${DIR}/functions/requirements.txt`;
 
