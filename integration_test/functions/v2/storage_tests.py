@@ -8,20 +8,21 @@ from firebase_functions.storage_fn import (on_object_deleted,
 from region import REGION
 
 
-@on_object_deleted(region=REGION)
-def storageOnDeleteTests(event: CloudEvent[StorageObjectData]) -> None:
-    test_id = event.data.name.split(".")[0]
-    if test_id is None:
-        logger.error("TestId not found for storage onObjectDeleted")
-        return
-
-    firestore.client().collection("storageOnObjectDeletedTests").document(
-        test_id).set({
-            "id": event.id,
-            "time": event.time,
-            "type": event.type,
-            "source": event.source,
-        })
+# TODO: (b/372315689) Re-enable function once bug is fixed
+# @on_object_deleted(region=REGION)
+# def storageOnDeleteTests(event: CloudEvent[StorageObjectData]) -> None:
+#     test_id = event.data.name.split(".")[0]
+#     if test_id is None:
+#         logger.error("TestId not found for storage onObjectDeleted")
+#         return
+#
+#     firestore.client().collection("storageOnObjectDeletedTests").document(
+#         test_id).set({
+#             "id": event.id,
+#             "time": event.time,
+#             "type": event.type,
+#             "source": event.source,
+#         })
 
 
 @on_object_finalized(region=REGION)
