@@ -1,4 +1,10 @@
 steps:
+  - name: "gcr.io/cloud-builders/git"
+    id: "Checkout tests"
+    dir: "integration_test"
+    entrypoint: "bash"
+    args:
+      - "./checkout.sh"
   - name: "node:18"
     entrypoint: "npm"
     dir: "integration_test"
