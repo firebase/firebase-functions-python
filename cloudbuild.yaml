@@ -13,7 +13,7 @@ steps:
     entrypoint: "npx"
     dir: "integration_test"
     args: ["firebase", "use", "cf3-integration-tests-d7be6"]
-  - name: "node:18"
+  - name: "gcr.io/cf3-integration-tests-d7be6/node_python:0.0.2"
     entrypoint: "npm"
     dir: "integration_test"
     args: ["start"]
