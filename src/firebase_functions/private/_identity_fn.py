@@ -167,6 +167,8 @@ def _additional_user_info_from_token_data(token_data: dict[str, _typing.Any]):
         username=username,
         is_new_user=is_new_user,
         recaptcha_score=token_data.get("recaptcha_score"),
+        email=token_data.get("email"),
+        phone_number=token_data.get("phone_number"),
     )
 
 
@@ -200,10 +202,15 @@ def _credential_from_token_data(token_data: dict[str, _typing.Any],
     )
 
 
-def _auth_blocking_event_from_token_data(token_data: dict[str, _typing.Any]):
-    from firebase_functions.identity_fn import AuthBlockingEvent
+def _auth_blocking_event_from_token_data(token_data: dict[str, _typing.Any], event_type: str):
+    from firebase_functions.identity_fn import AuthBlockingEvent, AuthUserRecord
+
+    data: AuthUserRecord | None = None
+    if event_type == event_type_before_create or event_type == event_type_before_sign_in:
+        data = _auth_user_record_from_token_data(token_data["user_record"])
+
     return AuthBlockingEvent(
-        data=_auth_user_record_from_token_data(token_data["user_record"]),
+        data=data,
         locale=token_data.get("locale"),
         event_id=token_data["event_id"],
         ip_address=token_data["ip_address"],
@@ -211,11 +218,15 @@ def _auth_blocking_event_from_token_data(token_data: dict[str, _typing.Any]):
         timestamp=_dt.datetime.fromtimestamp(token_data["iat"]),
         additional_user_info=_additional_user_info_from_token_data(token_data),
         credential=_credential_from_token_data(token_data, _time.time()),
+        email_type=token_data.get("email_type"),
+        sms_type=token_data.get("sms_type"),
     )
 
 
 event_type_before_create = "providers/cloud.auth/eventTypes/user.beforeCreate"
 event_type_before_sign_in = "providers/cloud.auth/eventTypes/user.beforeSignIn"
+event_type_before_email_sent = "providers/cloud.auth/eventTypes/user.beforeSendEmail"
+event_type_before_sms_sent = "providers/cloud.auth/eventTypes/user.beforeSendSms"
 
 
 def _validate_auth_response(
@@ -338,7 +349,7 @@ def before_operation_handler(
     event_type: str,
     request: _Request,
 ) -> _Response:
-    from firebase_functions.identity_fn import BeforeCreateResponse, BeforeSignInResponse
+    from firebase_functions.identity_fn import BeforeCreateResponse, BeforeSignInResponse, BeforeEmailSentResponse, BeforeSmsSentResponse
     try:
         if not _util.valid_on_call_request(request):
             _logging.error("Invalid request, unable to process.")
@@ -351,8 +362,8 @@ def before_operation_handler(
             raise HttpsError(FunctionsErrorCode.INVALID_ARGUMENT, "Bad Request")
         jwt_token = request.json["data"]["jwt"]
         decoded_token = _token_verifier.verify_auth_blocking_token(jwt_token)
-        event = _auth_blocking_event_from_token_data(decoded_token)
-        auth_response: BeforeCreateResponse | BeforeSignInResponse | None = _with_init(
+        event = _auth_blocking_event_from_token_data(decoded_token, event_type)
+        auth_response: BeforeCreateResponse | BeforeSignInResponse | BeforeEmailSentResponse | BeforeSmsSentResponse | None = _with_init(
             func)(event)
         if not auth_response:
             return _jsonify({})
