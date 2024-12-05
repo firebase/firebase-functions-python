@@ -42,6 +42,7 @@ def beforeusersignedin(
 
 
 @identity_fn.before_email_sent()
+# pylint: disable=useless-return
 def beforeemailsent(
     event: identity_fn.AuthBlockingEvent
 ) -> identity_fn.BeforeEmailSentResponse | None:
@@ -50,6 +51,7 @@ def beforeemailsent(
 
 
 @identity_fn.before_sms_sent()
+# pylint: disable=useless-return
 def beforesmssent(event: identity_fn.AuthBlockingEvent) -> identity_fn.BeforeSmsSentResponse | None:
     print(event)
     return None

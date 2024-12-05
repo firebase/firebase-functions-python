@@ -987,12 +987,14 @@ class BaseBlockingOptions(RuntimeOptions):
 
         if kwargs["event_type"] == event_type_before_create or kwargs[
                 "event_type"] == event_type_before_sign_in:
+            options = _typing.cast(BlockingOptions, self)
             blocking_trigger_options = _manifest.BlockingTriggerOptions(
-                idToken=self.id_token if self.id_token is not None else False,
-                accessToken=self.access_token
-                if self.access_token is not None else False,
-                refreshToken=self.refresh_token
-                if self.refresh_token is not None else False,
+                idToken=options.id_token
+                if options.id_token is not None else False,
+                accessToken=options.access_token
+                if options.access_token is not None else False,
+                refreshToken=options.refresh_token
+                if options.refresh_token is not None else False,
             )
         else:
             blocking_trigger_options = _manifest.BlockingTriggerOptions()
