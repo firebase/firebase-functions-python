@@ -489,7 +489,7 @@ def before_user_created(
     return before_user_created_decorator
 
 
-@_util.copy_func_kwargs(_options.BlockingOptions)
+@_util.copy_func_kwargs(_options.BaseBlockingOptions)
 def before_email_sent(
     **kwargs,
 ) -> _typing.Callable[[BeforeEmailSentCallable], BeforeEmailSentCallable]:
@@ -509,14 +509,14 @@ def before_email_sent(
           pass
 
     :param \\*\\*kwargs: Options.
-    :type \\*\\*kwargs: as :exc:`firebase_functions.options.BlockingOptions`
+    :type \\*\\*kwargs: as :exc:`firebase_functions.options.BaseBlockingOptions`
     :rtype: :exc:`typing.Callable`
             \\[ \\[ :exc:`firebase_functions.identity_fn.AuthBlockingEvent` \\],
             :exc:`firebase_functions.identity_fn.BeforeEmailSentResponse` \\| `None` \\]
             A function that takes a AuthBlockingEvent and optionally returns 
             BeforeEmailSentResponse.
     """
-    options = _options.BlockingOptions(**kwargs)
+    options = _options.BaseBlockingOptions(**kwargs)
 
     def before_email_sent_decorator(func: BeforeEmailSentCallable):
         from firebase_functions.private._identity_fn_event_types import event_type_before_email_sent
@@ -546,7 +546,7 @@ def before_email_sent(
     return before_email_sent_decorator
 
 
-@_util.copy_func_kwargs(_options.BlockingOptions)
+@_util.copy_func_kwargs(_options.BaseBlockingOptions)
 def before_sms_sent(
     **kwargs,
 ) -> _typing.Callable[[BeforeSmsSentCallable], BeforeSmsSentCallable]:
@@ -564,13 +564,13 @@ def before_sms_sent(
           pass
 
     :param \\*\\*kwargs: Options.
-    :type \\*\\*kwargs: as :exc:`firebase_functions.options.BlockingOptions`
+    :type \\*\\*kwargs: as :exc:`firebase_functions.options.BaseBlockingOptions`
     :rtype: :exc:`typing.Callable`
             \\[ \\[ :exc:`firebase_functions.identity_fn.AuthBlockingEvent` \\],
             :exc:`firebase_functions.identity_fn.BeforeSmsSentResponse` \\| `None` \\]
             A function that takes a AuthBlockingEvent and optionally returns BeforeSmsSentResponse.
     """
-    options = _options.BlockingOptions(**kwargs)
+    options = _options.BaseBlockingOptions(**kwargs)
 
     def before_sms_sent_decorator(func: BeforeSmsSentCallable):
         from firebase_functions.private._identity_fn_event_types import event_type_before_sms_sent

@@ -39,3 +39,17 @@ def beforeusersignedin(
         return identity_fn.BeforeSignInResponse(session_claims={"emoji": "🐕"})
 
     return None
+
+
+@identity_fn.before_email_sent()
+def beforeemailsent(
+    event: identity_fn.AuthBlockingEvent
+) -> identity_fn.BeforeEmailSentResponse | None:
+    print(event)
+    return None
+
+
+@identity_fn.before_sms_sent()
+def beforesmssent(event: identity_fn.AuthBlockingEvent) -> identity_fn.BeforeSmsSentResponse | None:
+    print(event)
+    return None

@@ -969,25 +969,10 @@ class DatabaseOptions(RuntimeOptions):
 
 
 @_dataclasses.dataclass(frozen=True, kw_only=True)
-class BlockingOptions(RuntimeOptions):
+class BaseBlockingOptions(RuntimeOptions):
     """
-    Options that can be set on an Auth Blocking trigger.
+    Base class for options that can be set on an Auth Blocking trigger.
     Internal use only.
-    """
-
-    id_token: bool | None = None
-    """
-    Pass the ID Token credential to the function.
-    """
-
-    access_token: bool | None = None
-    """
-    Pass the access token credential to the function.
-    """
-
-    refresh_token: bool | None = None
-    """
-    Pass the refresh token credential to the function.
     """
 
     def _endpoint(
@@ -1032,6 +1017,29 @@ class BlockingOptions(RuntimeOptions):
                 reason="Needed for auth blocking functions",
             )
         ]
+
+
+@_dataclasses.dataclass(frozen=True, kw_only=True)
+class BlockingOptions(BaseBlockingOptions):
+    """
+    Options that can be set on an Auth Blocking trigger.
+    Internal use only.
+    """
+
+    id_token: bool | None = None
+    """
+    Pass the ID Token credential to the function.
+    """
+
+    access_token: bool | None = None
+    """
+    Pass the access token credential to the function.
+    """
+
+    refresh_token: bool | None = None
+    """
+    Pass the refresh token credential to the function.
+    """
 
 
 @_dataclasses.dataclass(frozen=True, kw_only=True)
