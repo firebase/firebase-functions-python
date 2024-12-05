@@ -994,17 +994,20 @@ class BlockingOptions(RuntimeOptions):
         self,
         **kwargs,
     ) -> _manifest.ManifestEndpoint:
-        from firebase_functions.private._identity_fn import event_type_before_create, event_type_before_sign_in
+        from firebase_functions.private._identity_fn_event_types import event_type_before_create, event_type_before_sign_in
 
         assert kwargs["event_type"] is not None
 
         blocking_trigger_options: _manifest.BlockingTriggerOptions
-        
-        if kwargs["event_type"] == event_type_before_create or kwargs["event_type"] == event_type_before_sign_in:
+
+        if kwargs["event_type"] == event_type_before_create or kwargs[
+                "event_type"] == event_type_before_sign_in:
             blocking_trigger_options = _manifest.BlockingTriggerOptions(
                 idToken=self.id_token if self.id_token is not None else False,
-                accessToken=self.access_token if self.access_token is not None else False,
-                refreshToken=self.refresh_token if self.refresh_token is not None else False,
+                accessToken=self.access_token
+                if self.access_token is not None else False,
+                refreshToken=self.refresh_token
+                if self.refresh_token is not None else False,
             )
         else:
             blocking_trigger_options = _manifest.BlockingTriggerOptions()

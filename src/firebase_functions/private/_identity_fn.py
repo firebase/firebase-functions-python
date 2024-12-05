@@ -20,6 +20,7 @@ import json as _json
 
 from firebase_functions.core import _with_init
 from firebase_functions.https_fn import HttpsError, FunctionsErrorCode
+from firebase_functions.private._identity_fn_event_types import event_type_before_create, event_type_before_sign_in
 
 import firebase_functions.private.util as _util
 import firebase_functions.private.token_verifier as _token_verifier
@@ -202,11 +203,12 @@ def _credential_from_token_data(token_data: dict[str, _typing.Any],
     )
 
 
-def _auth_blocking_event_from_token_data(token_data: dict[str, _typing.Any], event_type: str):
+def _auth_blocking_event_from_token_data(token_data: dict[str, _typing.Any],
+                                         event_type: str):
     from firebase_functions.identity_fn import AuthBlockingEvent, AuthUserRecord
 
     data: AuthUserRecord | None = None
-    if event_type == event_type_before_create or event_type == event_type_before_sign_in:
+    if event_type in (event_type_before_create, event_type_before_sign_in):
         data = _auth_user_record_from_token_data(token_data["user_record"])
 
     return AuthBlockingEvent(
@@ -221,12 +223,6 @@ def _auth_blocking_event_from_token_data(token_data: dict[str, _typing.Any], eve
         email_type=token_data.get("email_type"),
         sms_type=token_data.get("sms_type"),
     )
-
-
-event_type_before_create = "providers/cloud.auth/eventTypes/user.beforeCreate"
-event_type_before_sign_in = "providers/cloud.auth/eventTypes/user.beforeSignIn"
-event_type_before_email_sent = "providers/cloud.auth/eventTypes/user.beforeSendEmail"
-event_type_before_sms_sent = "providers/cloud.auth/eventTypes/user.beforeSendSms"
 
 
 def _validate_auth_response(
@@ -363,8 +359,8 @@ def before_operation_handler(
         jwt_token = request.json["data"]["jwt"]
         decoded_token = _token_verifier.verify_auth_blocking_token(jwt_token)
         event = _auth_blocking_event_from_token_data(decoded_token, event_type)
-        auth_response: BeforeCreateResponse | BeforeSignInResponse | BeforeEmailSentResponse | BeforeSmsSentResponse | None = _with_init(
-            func)(event)
+        auth_response: BeforeCreateResponse | BeforeSignInResponse | BeforeEmailSentResponse | \
+            BeforeSmsSentResponse | None = _with_init(func)(event)
         if not auth_response:
             return _jsonify({})
         auth_response_dict = _validate_auth_response(event_type, auth_response)
