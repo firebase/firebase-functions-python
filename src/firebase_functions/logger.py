@@ -8,6 +8,12 @@ import sys as _sys
 import typing as _typing
 import typing_extensions as _typing_extensions
 
+# If encoding is not 'utf-8', change it to 'utf-8'.
+if _sys.stdout.encoding != "utf-8":
+    _sys.stdout.reconfigure(encoding="utf-8")  # type: ignore
+if _sys.stderr.encoding != "utf-8":
+    _sys.stderr.reconfigure(encoding="utf-8")  # type: ignore
+
 
 class LogSeverity(str, _enum.Enum):
     """
