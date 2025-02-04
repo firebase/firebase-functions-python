@@ -21,8 +21,10 @@ import typing as _typing
 import typing_extensions as _typing_extensions
 import enum as _enum
 import json as _json
+import inspect as _inspect
 import firebase_functions.private.util as _util
 import firebase_functions.core as _core
+import contextlib as _contextlib
 from functions_framework import logging as _logging
 
 from firebase_functions.options import HttpsOptions, _GLOBAL_OPTIONS
@@ -351,6 +353,12 @@ class CallableRequest(_typing.Generic[_core.T]):
 _C1 = _typing.Callable[[Request], Response]
 _C2 = _typing.Callable[[CallableRequest[_typing.Any]], _typing.Any]
 
+class _IterWithReturn:
+    def __init__(self, iterable):
+        self.iterable = iterable
+    
+    def __iter__(self):
+        self.value = yield from self.iterable
 
 def _on_call_handler(func: _C2, request: Request,
                      enforce_app_check: bool) -> Response:
@@ -401,7 +409,19 @@ def _on_call_handler(func: _C2, request: Request,
                     "Firebase-Instance-ID-Token"),
             )
         result = _core._with_init(func)(context)
-        return _jsonify(result=result)
+        if not _inspect.isgenerator(result):
+            return _jsonify(result=result)
+        
+        if request.headers.get("Accept") != "text/event-stream":
+            vals = _IterWithReturn(result)
+            for _ in vals:
+                next
+            return _jsonify(result=vals.value)
+
+        else:
+            return Response(_sse_encode_generator(result), content_type="text/plain")
+
+
     # Disable broad exceptions lint since we want to handle all exceptions here
     # and wrap as an HttpsError.
     # pylint: disable=broad-except
@@ -412,6 +432,19 @@ def _on_call_handler(func: _C2, request: Request,
         status = err._http_error_code.status
         return _make_response(_jsonify(error=err._as_dict()), status)
 
+
+def _sse_encode_generator(gen: _typing.Generator):
+    iter = _IterWithReturn(gen)
+    try:
+        for chunk in iter:
+            yield f"data: %s\n\n" % _json.dumps(obj={"message": chunk})
+        yield f"data: %s\n\n" % _json.dumps(obj={"result": iter.value})
+    except Exception as err:
+        if not isinstance(err, HttpsError):
+            _logging.error("Unhandled error: %s", err)
+            err = HttpsError(FunctionsErrorCode.INTERNAL, "INTERNAL")
+        yield f"error: %s\n\n" % _json.dumps(obj={"error": err._as_dict()})
+    yield "END"
 
 @_util.copy_func_kwargs(HttpsOptions)
 def on_request(**kwargs) -> _typing.Callable[[_C1], _C1]:

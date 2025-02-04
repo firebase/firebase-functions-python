@@ -3,8 +3,7 @@ Tests for the https module.
 """
 
 import unittest
-from unittest.mock import Mock
-from flask import Flask, Request
+from flask import Flask, Request, jsonify as _jsonify
 from werkzeug.test import EnvironBuilder
 
 from firebase_functions import core, https_fn
@@ -25,7 +24,9 @@ class TestHttps(unittest.TestCase):
             nonlocal hello
             hello = "world"
 
-        func = Mock(__name__="example_func")
+        @https_fn.on_request()
+        def func(_):
+            pass
 
         with app.test_request_context("/"):
             environ = EnvironBuilder(
@@ -37,9 +38,8 @@ class TestHttps(unittest.TestCase):
                 },
             ).get_environ()
             request = Request(environ)
-            decorated_func = https_fn.on_request()(func)
 
-            decorated_func(request)
+            func(request)
 
         self.assertEqual(hello, "world")
 
@@ -53,7 +53,9 @@ class TestHttps(unittest.TestCase):
             nonlocal hello
             hello = "world"
 
-        func = Mock(__name__="example_func")
+        @https_fn.on_call()
+        def func(_):
+            pass
 
         with app.test_request_context("/"):
             environ = EnvironBuilder(
@@ -65,8 +67,145 @@ class TestHttps(unittest.TestCase):
                 },
             ).get_environ()
             request = Request(environ)
-            decorated_func = https_fn.on_call()(func)
-
-            decorated_func(request)
+            func(request)
 
         self.assertEqual("world", hello)
+
+    def test_callable_encoding(self):
+        app = Flask(__name__)
+
+        @https_fn.on_call()
+        def add(req: https_fn.CallableRequest[int]):
+            return req.data + 1
+        
+        with app.test_request_context("/"):
+            environ = EnvironBuilder(
+                method="POST",
+                json={
+                    "data": 1
+                }
+            ).get_environ()
+            request = Request(environ)
+
+            response = add(request)
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.get_json(), { "result": 2 })
+    
+    def test_callable_errors(self):
+        app = Flask(__name__)
+
+        @https_fn.on_call()
+        def throw_generic_error(req):
+            raise Exception("Invalid type")
+
+        @https_fn.on_call()
+        def throw_access_denied(req):
+            raise https_fn.HttpsError(https_fn.FunctionsErrorCode.PERMISSION_DENIED, "Permission is denied")
+        
+        with app.test_request_context("/"):
+            environ = EnvironBuilder(
+                method="POST",
+                json={
+                    "data": None
+                }
+            ).get_environ()
+            request = Request(environ)
+
+            response = throw_generic_error(request)
+            self.assertEqual(response.status_code, 500)
+            self.assertEqual(response.get_json(), { "error": { "message": "INTERNAL", "status": "INTERNAL" } })
+
+            response = throw_access_denied(request)
+            self.assertEqual(response.status_code, 403)
+            self.assertEqual(response.get_json(), { "error": { "message": "Permission is denied", "status": "PERMISSION_DENIED" }})
+
+    def test_yielding_without_streaming(self):
+        app = Flask(__name__)
+
+        @https_fn.on_call()
+        def yielder(req: https_fn.CallableRequest[int]):
+            yield from range(req.data)
+            return "OK"
+
+        @https_fn.on_call()
+        def yield_thrower(req: https_fn.CallableRequest[int]):
+            yield from range(req.data)
+            raise https_fn.HttpsError(https_fn.FunctionsErrorCode.PERMISSION_DENIED, "Can't read anymore")
+
+        with app.test_request_context("/"):
+            environ = EnvironBuilder(
+                method="POST",
+                json={
+                    "data": 5
+                }
+            ).get_environ()
+
+            request = Request(environ)
+            response = yielder(request)
+
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.get_json(), { "result": "OK" })
+
+        with app.test_request_context("/"):
+            environ = EnvironBuilder(
+                method="POST",
+                json={
+                    "data": 3
+                }
+            ).get_environ()
+
+            request = Request(environ)
+            response = yield_thrower(request)
+
+            self.assertEqual(response.status_code, 403)
+            self.assertEqual(response.get_json(), { "error": { "message": "Can't read anymore", "status": "PERMISSION_DENIED" }})
+
+
+    def test_yielding_with_streaming(self):
+        app = Flask(__name__)
+
+        @https_fn.on_call()
+        def yielder(req: https_fn.CallableRequest[int]):
+            yield from range(req.data)
+            return "OK"
+
+        @https_fn.on_call()
+        def yield_thrower(req: https_fn.CallableRequest[int]):
+            yield from range(req.data)
+            raise https_fn.HttpsError(https_fn.FunctionsErrorCode.INTERNAL, "Throwing")
+
+        with app.test_request_context("/"):
+            environ = EnvironBuilder(
+                method="POST",
+                json={
+                    "data": 2
+                },
+                headers={
+                    "accept": "text/event-stream"
+                }
+            ).get_environ()
+
+            request = Request(environ)
+            response = yielder(request)
+
+            self.assertEqual(response.status_code, 200)
+            chunks = list(response.response)
+            self.assertEqual(chunks, ['data: {"message": 0}\n\n', 'data: {"message": 1}\n\n', 'data: {"result": "OK"}\n\n', "END"])
+
+        with app.test_request_context("/"):
+            environ = EnvironBuilder(
+                method="POST",
+                json={
+                    "data": 2
+                },
+                headers={
+                    "accept": "text/event-stream"
+                }
+            ).get_environ()
+
+            request = Request(environ)
+            response = yield_thrower(request)
+
+            self.assertEqual(response.status_code, 200)
+            chunks = list(response.response)
+            self.assertEqual(chunks, ['data: {"message": 0}\n\n', 'data: {"message": 1}\n\n', 'error: {"error": {"status": "INTERNAL", "message": "Throwing"}}\n\n', "END"])
