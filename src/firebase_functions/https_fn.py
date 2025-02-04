@@ -355,7 +355,7 @@ _C2 = _typing.Callable[[CallableRequest[_typing.Any]], _typing.Any]
 class _IterWithReturn:
     def __init__(self, iterable):
         self.iterable = iterable
-    
+
     def __iter__(self):
         self.value = yield from self.iterable
 
@@ -410,11 +410,11 @@ def _on_call_handler(func: _C2, request: Request,
         result = _core._with_init(func)(context)
         if not _inspect.isgenerator(result):
             return _jsonify(result=result)
-        
+
         if request.headers.get("Accept") != "text/event-stream":
             vals = _IterWithReturn(result)
-            for _ in vals:
-                next
+            # Consume and drop yielded results
+            list(vals)
             return _jsonify(result=vals.value)
 
         else:
@@ -433,16 +433,20 @@ def _on_call_handler(func: _C2, request: Request,
 
 
 def _sse_encode_generator(gen: _typing.Generator):
-    iter = _IterWithReturn(gen)
+    with_return = _IterWithReturn(gen)
     try:
-        for chunk in iter:
-            yield f"data: %s\n\n" % _json.dumps(obj={"message": chunk})
-        yield f"data: %s\n\n" % _json.dumps(obj={"result": iter.value})
+        for chunk in with_return:
+            data = _json.dumps(obj={"message": chunk})
+            yield f"data: {data}\n\n"
+        result = _json.dumps({"result": with_return.value})
+        yield f"data: {result}\n\n"
+    # pylint: disable=broad-except
     except Exception as err:
         if not isinstance(err, HttpsError):
             _logging.error("Unhandled error: %s", err)
             err = HttpsError(FunctionsErrorCode.INTERNAL, "INTERNAL")
-        yield f"error: %s\n\n" % _json.dumps(obj={"error": err._as_dict()})
+        json = _json.dumps(obj={"error": err._as_dict()})
+        yield f"error: {json}\n\n"
     yield "END"
 
 @_util.copy_func_kwargs(HttpsOptions)
