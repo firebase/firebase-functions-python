@@ -418,7 +418,7 @@ def _on_call_handler(func: _C2, request: Request,
             return _jsonify(result=vals.value)
 
         else:
-            return Response(_sse_encode_generator(result), content_type="text/plain")
+            return Response(_sse_encode_generator(result), content_type="text/event-stream")
 
 
     # Disable broad exceptions lint since we want to handle all exceptions here
