@@ -148,6 +148,15 @@ class TestHttps(unittest.TestCase):
                 "Can't read anymore"
             )
 
+        @https_fn.on_call()
+        def legacy_yielder(req: https_fn.CallableRequest[int]):
+            yield from range(req.data)
+            # Prior to Python 3.3, this was the way "return" was handled
+            # Python 3.5 made this messy however because it converts
+            # raised StopIteration into a RuntimeError
+            # pylint: disable=stop-iteration-return
+            raise StopIteration("OK")
+
         with app.test_request_context("/"):
             environ = EnvironBuilder(
                 method="POST",
@@ -158,6 +167,20 @@ class TestHttps(unittest.TestCase):
 
             request = Request(environ)
             response = yielder(request)
+
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.get_json(), { "result": "OK" })
+
+        with app.test_request_context("/"):
+            environ = EnvironBuilder(
+                method="POST",
+                json={
+                    "data": 5
+                }
+            ).get_environ()
+
+            request = Request(environ)
+            response = legacy_yielder(request)
 
             self.assertEqual(response.status_code, 200)
             self.assertEqual(response.get_json(), { "result": "OK" })

@@ -353,11 +353,18 @@ _C1 = _typing.Callable[[Request], Response]
 _C2 = _typing.Callable[[CallableRequest[_typing.Any]], _typing.Any]
 
 class _IterWithReturn:
+    """ Utility class to capture return statements from a generator """
     def __init__(self, iterable):
         self.iterable = iterable
 
     def __iter__(self):
-        self.value = yield from self.iterable
+        try:
+            self.value = yield from self.iterable
+        except RuntimeError as e:
+            if isinstance(e.__cause__, StopIteration):
+                self.value = e.__cause__.value
+            else:
+                raise
 
 def _on_call_handler(func: _C2, request: Request,
                      enforce_app_check: bool) -> Response:
