@@ -24,7 +24,6 @@ import json as _json
 import inspect as _inspect
 import firebase_functions.private.util as _util
 import firebase_functions.core as _core
-import contextlib as _contextlib
 from functions_framework import logging as _logging
 
 from firebase_functions.options import HttpsOptions, _GLOBAL_OPTIONS
