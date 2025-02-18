@@ -24,9 +24,11 @@ def world():
 def httpsflaskexample(request):
     return entrypoint(app, request)
 
+
 @https_fn.on_call()
 def callableexample(request: https_fn.CallableRequest):
     return request.data
+
 
 @https_fn.on_call()
 def streamingcallable(request: https_fn.CallableRequest):

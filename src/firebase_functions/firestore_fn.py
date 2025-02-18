@@ -219,7 +219,7 @@ def _firestore_endpoint_handler(
         func(database_event_with_auth_context)
     else:
         # mypy cannot infer that the event type is correct, hence the cast
-        _typing.cast(_C1 | _C2, func)(database_event) # type: ignore
+        _typing.cast(_C1 | _C2, func)(database_event)  # type: ignore
 
 
 @_util.copy_func_kwargs(FirestoreOptions)

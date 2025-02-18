@@ -352,8 +352,10 @@ class CallableRequest(_typing.Generic[_core.T]):
 _C1 = _typing.Callable[[Request], Response]
 _C2 = _typing.Callable[[CallableRequest[_typing.Any]], _typing.Any]
 
+
 class _IterWithReturn:
     """ Utility class to capture return statements from a generator """
+
     def __init__(self, iterable):
         self.iterable = iterable
 
@@ -365,6 +367,7 @@ class _IterWithReturn:
                 self.value = e.__cause__.value
             else:
                 raise
+
 
 def _on_call_handler(func: _C2, request: Request,
                      enforce_app_check: bool) -> Response:
@@ -425,8 +428,8 @@ def _on_call_handler(func: _C2, request: Request,
             return _jsonify(result=vals.value)
 
         else:
-            return Response(_sse_encode_generator(result), content_type="text/event-stream")
-
+            return Response(_sse_encode_generator(result),
+                            content_type="text/event-stream")
 
     # Disable broad exceptions lint since we want to handle all exceptions here
     # and wrap as an HttpsError.
@@ -455,6 +458,7 @@ def _sse_encode_generator(gen: _typing.Generator):
         json = _json.dumps(obj={"error": err._as_dict()})
         yield f"error: {json}\n\n"
     yield "END"
+
 
 @_util.copy_func_kwargs(HttpsOptions)
 def on_request(**kwargs) -> _typing.Callable[[_C1], _C1]:
