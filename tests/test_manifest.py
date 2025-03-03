@@ -65,7 +65,7 @@ full_stack = _manifest.ManifestStack(
     params=[
         _params.BoolParam("BOOL_TEST", default=False),
         _params.IntParam("INT_TEST", description="int_description"),
-        _params.FloatParam("FLOAT_TEST", immutable=True),
+        _params._FloatParam("FLOAT_TEST", immutable=True),
         _params.SecretParam("SECRET_TEST"),
         _params.StringParam("STRING_TEST"),
         _params.ListParam("LIST_TEST", default=["1", "2", "3"]),
