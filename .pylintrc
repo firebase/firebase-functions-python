@@ -147,6 +147,7 @@ disable=abstract-method,
         xrange-builtin,
         zip-builtin-not-iterating,
         import-outside-toplevel,
+        protected-access,
 
 
 [REPORTS]

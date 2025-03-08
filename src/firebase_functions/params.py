@@ -344,8 +344,12 @@ class IntParam(Param[int]):
 
 
 @_dataclasses.dataclass(frozen=True)
-class FloatParam(Param[float]):
-    """A parameter as a float value."""
+class _FloatParam(Param[float]):
+    """
+    A parameter as a float value.
+    Marked as private because it is not supported by firebase-tools yet.
+    Unmark when it is supported.
+    """
 
     @property
     def value(self) -> float:

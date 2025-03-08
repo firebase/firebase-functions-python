@@ -241,7 +241,7 @@ def _param_to_spec(
         spec_dict["type"] = "boolean"
     elif isinstance(param, _params.IntParam):
         spec_dict["type"] = "int"
-    elif isinstance(param, _params.FloatParam):
+    elif isinstance(param, _params._FloatParam):
         spec_dict["type"] = "float"
     elif isinstance(param, _params.SecretParam):
         spec_dict["type"] = "secret"

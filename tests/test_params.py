@@ -58,28 +58,28 @@ class TestFloatParams:
     def test_float_param_value(self):
         """Testing if float params correctly returns a value."""
         environ["FLOAT_VALUE_TEST"] = "123.456"
-        assert params.FloatParam("FLOAT_VALUE_TEST",).value == 123.456, \
+        assert params._FloatParam("FLOAT_VALUE_TEST",).value == 123.456, \
             "Failure, params value != 123.456"
 
     def test_float_param_empty_default(self):
         """Testing if float params defaults to empty float if no value and no default."""
-        assert params.FloatParam("FLOAT_DEFAULT_TEST1").value == float(), \
+        assert params._FloatParam("FLOAT_DEFAULT_TEST1").value == float(), \
             "Failure, params value is not float"
 
     def test_float_param_default(self):
         """Testing if float param defaults to provided default value."""
-        assert params.FloatParam("FLOAT_DEFAULT_TEST2",
+        assert params._FloatParam("FLOAT_DEFAULT_TEST2", \
         default=float(456.789)).value == 456.789, \
             "Failure, params default value != 456.789"
 
     def test_float_param_equality(self):
         """Test float equality."""
-        assert (params.FloatParam("FLOAT_TEST1",
-                                  default=123.456).equals(123.456).value
-                is True), "Failure, equality check returned False"
-        assert (params.FloatParam("FLOAT_TEST2",
-                                  default=456.789).equals(123.456).value
-                is False), "Failure, equality check returned False"
+        assert (params._FloatParam("FLOAT_TEST1", \
+        default=123.456).equals(123.456).value \
+            is True), "Failure, equality check returned False"
+        assert (params._FloatParam("FLOAT_TEST2", \
+        default=456.789).equals(123.456).value \
+            is False), "Failure, equality check returned False"
 
 
 class TestIntParams:
