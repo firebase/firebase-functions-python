@@ -21,6 +21,7 @@ import typing as _typing
 import typing_extensions as _typing_extensions
 import enum as _enum
 import json as _json
+import inspect as _inspect
 import firebase_functions.private.util as _util
 import firebase_functions.core as _core
 from functions_framework import logging as _logging
@@ -352,6 +353,22 @@ _C1 = _typing.Callable[[Request], Response]
 _C2 = _typing.Callable[[CallableRequest[_typing.Any]], _typing.Any]
 
 
+class _IterWithReturn:
+    """ Utility class to capture return statements from a generator """
+
+    def __init__(self, iterable):
+        self.iterable = iterable
+
+    def __iter__(self):
+        try:
+            self.value = yield from self.iterable
+        except RuntimeError as e:
+            if isinstance(e.__cause__, StopIteration):
+                self.value = e.__cause__.value
+            else:
+                raise
+
+
 def _on_call_handler(func: _C2, request: Request,
                      enforce_app_check: bool) -> Response:
     try:
@@ -401,7 +418,19 @@ def _on_call_handler(func: _C2, request: Request,
                     "Firebase-Instance-ID-Token"),
             )
         result = _core._with_init(func)(context)
-        return _jsonify(result=result)
+        if not _inspect.isgenerator(result):
+            return _jsonify(result=result)
+
+        if request.headers.get("Accept") != "text/event-stream":
+            vals = _IterWithReturn(result)
+            # Consume and drop yielded results
+            list(vals)
+            return _jsonify(result=vals.value)
+
+        else:
+            return Response(_sse_encode_generator(result),
+                            content_type="text/event-stream")
+
     # Disable broad exceptions lint since we want to handle all exceptions here
     # and wrap as an HttpsError.
     # pylint: disable=broad-except
@@ -411,6 +440,24 @@ def _on_call_handler(func: _C2, request: Request,
             err = HttpsError(FunctionsErrorCode.INTERNAL, "INTERNAL")
         status = err._http_error_code.status
         return _make_response(_jsonify(error=err._as_dict()), status)
+
+
+def _sse_encode_generator(gen: _typing.Generator):
+    with_return = _IterWithReturn(gen)
+    try:
+        for chunk in with_return:
+            data = _json.dumps(obj={"message": chunk})
+            yield f"data: {data}\n\n"
+        result = _json.dumps({"result": with_return.value})
+        yield f"data: {result}\n\n"
+    # pylint: disable=broad-except
+    except Exception as err:
+        if not isinstance(err, HttpsError):
+            _logging.error("Unhandled error: %s", err)
+            err = HttpsError(FunctionsErrorCode.INTERNAL, "INTERNAL")
+        json = _json.dumps(obj={"error": err._as_dict()})
+        yield f"error: {json}\n\n"
+    yield "END"
 
 
 @_util.copy_func_kwargs(HttpsOptions)
