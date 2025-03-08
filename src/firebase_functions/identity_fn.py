@@ -191,7 +191,7 @@ class AdditionalUserInfo:
     The additional user info component of the auth event context.
     """
 
-    provider_id: str
+    provider_id: str | None
     """The provider identifier."""
 
     profile: dict[str, _typing.Any] | None
@@ -205,6 +205,12 @@ class AdditionalUserInfo:
 
     recaptcha_score: float | None
     """The user's reCAPTCHA score, if available."""
+
+    email: str | None
+    """The user's email, if available."""
+
+    phone_number: str | None
+    """The user's phone number, if available."""
 
 
 @_dataclasses.dataclass(frozen=True)
@@ -238,13 +244,18 @@ class Credential:
     """The user's sign-in method."""
 
 
+EmailType = _typing.Literal["EMAIL_SIGN_IN", "PASSWORD_RESET"]
+SmsType = _typing.Literal["SIGN_IN_OR_SIGN_UP", "MULTI_FACTOR_SIGN_IN",
+                          "MULTI_FACTOR_ENROLLMENT"]
+
+
 @_dataclasses.dataclass(frozen=True)
 class AuthBlockingEvent:
     """
     Defines an auth event for identitytoolkit v2 auth blocking events.
     """
 
-    data: AuthUserRecord
+    data: AuthUserRecord | None  # This is None for beforeEmailSent and beforeSmsSent events
     """
     The UserRecord passed to auth blocking functions from the identity platform.
     """
@@ -279,6 +290,12 @@ class AuthBlockingEvent:
 
     credential: Credential | None
     """An object containing information about the user's credential."""
+
+    email_type: EmailType | None
+    """The type of email event."""
+
+    sms_type: SmsType | None
+    """The type of SMS event."""
 
     timestamp: _dt.datetime
     """
@@ -323,6 +340,22 @@ class BeforeSignInResponse(BeforeCreateResponse, total=False):
     """The user's session claims object if available."""
 
 
+class BeforeEmailSentResponse(_typing.TypedDict, total=False):
+    """
+    The handler response type for 'before_email_sent' blocking events.
+    """
+
+    recaptcha_action_override: RecaptchaActionOptions | None
+
+
+class BeforeSmsSentResponse(_typing.TypedDict, total=False):
+    """
+    The handler response type for 'before_sms_sent' blocking events.
+    """
+
+    recaptcha_action_override: RecaptchaActionOptions | None
+
+
 BeforeUserCreatedCallable = _typing.Callable[[AuthBlockingEvent],
                                              BeforeCreateResponse | None]
 """
@@ -333,6 +366,18 @@ BeforeUserSignedInCallable = _typing.Callable[[AuthBlockingEvent],
                                               BeforeSignInResponse | None]
 """
 The type of the callable for 'before_user_signed_in' blocking events.
+"""
+
+BeforeEmailSentCallable = _typing.Callable[[AuthBlockingEvent],
+                                           BeforeEmailSentResponse | None]
+"""
+The type of the callable for 'before_email_sent' blocking events.
+"""
+
+BeforeSmsSentCallable = _typing.Callable[[AuthBlockingEvent],
+                                         BeforeSmsSentResponse | None]
+"""
+The type of the callable for 'before_sms_sent' blocking events.
 """
 
 
@@ -442,3 +487,114 @@ def before_user_created(
         return before_user_created_wrapped
 
     return before_user_created_decorator
+
+
+@_util.copy_func_kwargs(_options.BaseBlockingOptions)
+def before_email_sent(
+    **kwargs,
+) -> _typing.Callable[[BeforeEmailSentCallable], BeforeEmailSentCallable]:
+    """
+    Handles an event that is triggered before a user's email is sent.
+
+    Example:
+
+    .. code-block:: python
+
+      from firebase_functions import identity_fn
+
+      @identity_fn.before_email_sent()
+      def example(
+          event: identity_fn.AuthBlockingEvent
+      ) -> identity_fn.BeforeEmailSentResponse | None:
+          pass
+
+    :param \\*\\*kwargs: Options.
+    :type \\*\\*kwargs: as :exc:`firebase_functions.options.BaseBlockingOptions`
+    :rtype: :exc:`typing.Callable`
+            \\[ \\[ :exc:`firebase_functions.identity_fn.AuthBlockingEvent` \\],
+            :exc:`firebase_functions.identity_fn.BeforeEmailSentResponse` \\| `None` \\]
+            A function that takes a AuthBlockingEvent and optionally returns 
+            BeforeEmailSentResponse.
+    """
+    options = _options.BaseBlockingOptions(**kwargs)
+
+    def before_email_sent_decorator(func: BeforeEmailSentCallable):
+        from firebase_functions.private._identity_fn_event_types import event_type_before_email_sent
+
+        @_functools.wraps(func)
+        def before_email_sent_wrapped(request: _Request) -> _Response:
+            from firebase_functions.private._identity_fn import before_operation_handler
+            return before_operation_handler(
+                func,
+                event_type_before_email_sent,
+                request,
+            )
+
+        _util.set_func_endpoint_attr(
+            before_email_sent_wrapped,
+            options._endpoint(
+                func_name=func.__name__,
+                event_type=event_type_before_email_sent,
+            ),
+        )
+        _util.set_required_apis_attr(
+            before_email_sent_wrapped,
+            options._required_apis(),
+        )
+        return before_email_sent_wrapped
+
+    return before_email_sent_decorator
+
+
+@_util.copy_func_kwargs(_options.BaseBlockingOptions)
+def before_sms_sent(
+    **kwargs,
+) -> _typing.Callable[[BeforeSmsSentCallable], BeforeSmsSentCallable]:
+    """
+    Handles an event that is triggered before a user's SMS is sent.
+
+    Example:
+
+    .. code-block:: python
+
+      from firebase_functions import identity_fn
+
+      @identity_fn.before_sms_sent()
+      def example(event: identity_fn.AuthBlockingEvent) -> identity_fn.BeforeSmsSentResponse | None:
+          pass
+
+    :param \\*\\*kwargs: Options.
+    :type \\*\\*kwargs: as :exc:`firebase_functions.options.BaseBlockingOptions`
+    :rtype: :exc:`typing.Callable`
+            \\[ \\[ :exc:`firebase_functions.identity_fn.AuthBlockingEvent` \\],
+            :exc:`firebase_functions.identity_fn.BeforeSmsSentResponse` \\| `None` \\]
+            A function that takes a AuthBlockingEvent and optionally returns BeforeSmsSentResponse.
+    """
+    options = _options.BaseBlockingOptions(**kwargs)
+
+    def before_sms_sent_decorator(func: BeforeSmsSentCallable):
+        from firebase_functions.private._identity_fn_event_types import event_type_before_sms_sent
+
+        @_functools.wraps(func)
+        def before_sms_sent_wrapped(request: _Request) -> _Response:
+            from firebase_functions.private._identity_fn import before_operation_handler
+            return before_operation_handler(
+                func,
+                event_type_before_sms_sent,
+                request,
+            )
+
+        _util.set_func_endpoint_attr(
+            before_sms_sent_wrapped,
+            options._endpoint(
+                func_name=func.__name__,
+                event_type=event_type_before_sms_sent,
+            ),
+        )
+        _util.set_required_apis_attr(
+            before_sms_sent_wrapped,
+            options._required_apis(),
+        )
+        return before_sms_sent_wrapped
+
+    return before_sms_sent_decorator
