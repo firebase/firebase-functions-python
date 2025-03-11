@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """
 Logger module tests.
 """
@@ -79,3 +80,147 @@ class TestLogger:
         raw_log_output = capsys.readouterr().out
         log_output = json.loads(raw_log_output)
         assert log_output["message"] == expected_message
+
+    def test_remove_circular_references(self,
+                                        capsys: pytest.CaptureFixture[str]):
+        # Create an object with a circular reference.
+        circ = {"b": "foo"}
+        circ["circ"] = circ
+
+        entry = {
+            "severity": "ERROR",
+            "message": "testing circular",
+            "circ": circ,
+        }  # i
+        logger.write(entry)
+        raw_log_output = capsys.readouterr().err
+        log_output = json.loads(raw_log_output)
+
+        expected = {
+            "severity": "ERROR",
+            "message": "testing circular",
+            "circ": {
+                "b": "foo",
+                "circ": "[CIRCULAR]"
+            },
+        }
+        assert log_output == expected
+
+    def test_remove_circular_references_in_arrays(
+            self, capsys: pytest.CaptureFixture[str]):
+        # Create an object with a circular reference inside an array.
+        circ = {"b": "foo"}
+        circ["circ"] = [circ]
+
+        entry = {
+            "severity": "ERROR",
+            "message": "testing circular",
+            "circ": circ,
+        }
+        logger.write(entry)
+        raw_log_output = capsys.readouterr().err
+        log_output = json.loads(raw_log_output)
+
+        expected = {
+            "severity": "ERROR",
+            "message": "testing circular",
+            "circ": {
+                "b": "foo",
+                "circ": ["[CIRCULAR]"]
+            },
+        }
+        assert log_output == expected
+
+    def test_no_false_circular_for_duplicates(
+            self, capsys: pytest.CaptureFixture[str]):
+        # Ensure that duplicate objects (used in multiple keys) are not marked as circular.
+        obj = {"a": "foo"}
+        entry = {
+            "severity": "ERROR",
+            "message": "testing circular",
+            "a": obj,
+            "b": obj,
+        }
+        logger.write(entry)
+        raw_log_output = capsys.readouterr().err
+        log_output = json.loads(raw_log_output)
+
+        expected = {
+            "severity": "ERROR",
+            "message": "testing circular",
+            "a": {
+                "a": "foo"
+            },
+            "b": {
+                "a": "foo"
+            },
+        }
+        assert log_output == expected
+
+    def test_no_false_circular_in_array_duplicates(
+            self, capsys: pytest.CaptureFixture[str]):
+        # Ensure that duplicate objects in arrays are not falsely detected as circular.
+        obj = {"a": "foo"}
+        arr = [
+            {
+                "a": obj,
+                "b": obj
+            },
+            {
+                "a": obj,
+                "b": obj
+            },
+        ]
+        entry = {
+            "severity": "ERROR",
+            "message": "testing circular",
+            "a": arr,
+            "b": arr,
+        }
+        logger.write(entry)
+        raw_log_output = capsys.readouterr().err
+        log_output = json.loads(raw_log_output)
+
+        expected = {
+            "severity":
+                "ERROR",
+            "message":
+                "testing circular",
+            "a": [
+                {
+                    "a": {
+                        "a": "foo"
+                    },
+                    "b": {
+                        "a": "foo"
+                    }
+                },
+                {
+                    "a": {
+                        "a": "foo"
+                    },
+                    "b": {
+                        "a": "foo"
+                    }
+                },
+            ],
+            "b": [
+                {
+                    "a": {
+                        "a": "foo"
+                    },
+                    "b": {
+                        "a": "foo"
+                    }
+                },
+                {
+                    "a": {
+                        "a": "foo"
+                    },
+                    "b": {
+                        "a": "foo"
+                    }
+                },
+            ],
+        }
+        assert log_output == expected
