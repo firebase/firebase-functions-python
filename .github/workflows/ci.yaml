@@ -7,6 +7,25 @@ on:
       - main
 
 jobs:
+  integration-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.12
+      - name: Setup Node 18
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+      - name: Install Node dependencies
+        run: |
+          cd integration_tests && npm install
+      - name: Run Integration Tests
+        run: |
+          cd integration_tests && npm start
+
   test:
     runs-on: ubuntu-latest
     strategy:
@@ -51,11 +70,11 @@ jobs:
       - name: Lint with pylint
         run: |
           source venv/bin/activate
-          python3.10 -m pylint $(git ls-files '*.py')
+          python3.10 -m pylint src tests
       - name: Lint with mypy
         run: |
           source venv/bin/activate
-          python3.10 -m mypy .
+          python3.10 -m mypy src tests 
 
   docs:
     runs-on: ubuntu-latest
