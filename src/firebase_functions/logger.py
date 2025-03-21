@@ -75,21 +75,32 @@ def _remove_circular(obj: _typing.Any,
     if refs is None:
         refs = set()
 
+    # Check if the object is already in the current recursion stack
     if id(obj) in refs:
         return "[CIRCULAR]"
 
+    # For non-primitive objects, add the current object's id to the recursion stack
     if not isinstance(obj, (str, int, float, bool, type(None))):
         refs.add(id(obj))
 
+    # Recursively process the object based on its type
+    result: _typing.Any
     if isinstance(obj, dict):
-        return {key: _remove_circular(value, refs) for key, value in obj.items()}
+        result = {
+            key: _remove_circular(value, refs) for key, value in obj.items()
+        }
     elif isinstance(obj, list):
-        return [_remove_circular(value, refs) for _, value in enumerate(obj)]
+        result = [_remove_circular(item, refs) for item in obj]
     elif isinstance(obj, tuple):
-        return tuple(
-            _remove_circular(value, refs) for _, value in enumerate(obj))
+        result = tuple(_remove_circular(item, refs) for item in obj)
     else:
-        return obj
+        result = obj
+
+    # Remove the object's id from the recursion stack after processing
+    if not isinstance(obj, (str, int, float, bool, type(None))):
+        refs.remove(id(obj))
+
+    return result
 
 
 def _get_write_file(severity: LogSeverity) -> _typing.TextIO:
