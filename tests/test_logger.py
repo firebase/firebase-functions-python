@@ -91,7 +91,7 @@ class TestLogger:
             "severity": "ERROR",
             "message": "testing circular",
             "circ": circ,
-        } 
+        }
         logger.write(entry)
         raw_log_output = capsys.readouterr().err
         log_output = json.loads(raw_log_output)
