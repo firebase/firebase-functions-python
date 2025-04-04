@@ -969,7 +969,60 @@ class DatabaseOptions(RuntimeOptions):
 
 
 @_dataclasses.dataclass(frozen=True, kw_only=True)
-class BlockingOptions(RuntimeOptions):
+class BaseBlockingOptions(RuntimeOptions):
+    """
+    Base class for options that can be set on an Auth Blocking trigger.
+    Internal use only.
+    """
+
+    def _endpoint(
+        self,
+        **kwargs,
+    ) -> _manifest.ManifestEndpoint:
+        from firebase_functions.private._identity_fn_event_types import event_type_before_create, event_type_before_sign_in
+
+        assert kwargs["event_type"] is not None
+
+        blocking_trigger_options: _manifest.BlockingTriggerOptions
+
+        if kwargs["event_type"] == event_type_before_create or kwargs[
+                "event_type"] == event_type_before_sign_in:
+            options = _typing.cast(BlockingOptions, self)
+            blocking_trigger_options = _manifest.BlockingTriggerOptions(
+                idToken=options.id_token
+                if options.id_token is not None else False,
+                accessToken=options.access_token
+                if options.access_token is not None else False,
+                refreshToken=options.refresh_token
+                if options.refresh_token is not None else False,
+            )
+        else:
+            blocking_trigger_options = _manifest.BlockingTriggerOptions()
+
+        blocking_trigger = _manifest.BlockingTrigger(
+            eventType=kwargs["event_type"],
+            options=blocking_trigger_options,
+        )
+
+        kwargs_merged = {
+            **_dataclasses.asdict(super()._endpoint(**kwargs)),
+            "blockingTrigger":
+                blocking_trigger,
+        }
+        return _manifest.ManifestEndpoint(
+            **_typing.cast(_typing.Dict, kwargs_merged))
+
+    def _required_apis(self) -> list[_manifest.ManifestRequiredApi]:
+        return [
+            _manifest.ManifestRequiredApi(
+                api="identitytoolkit.googleapis.com",
+                reason="Needed for auth blocking functions",
+            )
+        ]
+
+
+@_dataclasses.dataclass(frozen=True, kw_only=True)
+class BlockingOptions(BaseBlockingOptions):
     """
     Options that can be set on an Auth Blocking trigger.
     Internal use only.
@@ -989,39 +1042,6 @@ class BlockingOptions(RuntimeOptions):
     """
     Pass the refresh token credential to the function.
     """
-
-    def _endpoint(
-        self,
-        **kwargs,
-    ) -> _manifest.ManifestEndpoint:
-        assert kwargs["event_type"] is not None
-
-        blocking_trigger = _manifest.BlockingTrigger(
-            eventType=kwargs["event_type"],
-            options=_manifest.BlockingTriggerOptions(
-                idToken=self.id_token if self.id_token is not None else False,
-                accessToken=self.access_token
-                if self.access_token is not None else False,
-                refreshToken=self.refresh_token
-                if self.refresh_token is not None else False,
-            ),
-        )
-
-        kwargs_merged = {
-            **_dataclasses.asdict(super()._endpoint(**kwargs)),
-            "blockingTrigger":
-                blocking_trigger,
-        }
-        return _manifest.ManifestEndpoint(
-            **_typing.cast(_typing.Dict, kwargs_merged))
-
-    def _required_apis(self) -> list[_manifest.ManifestRequiredApi]:
-        return [
-            _manifest.ManifestRequiredApi(
-                api="identitytoolkit.googleapis.com",
-                reason="Needed for auth blocking functions",
-            )
-        ]
 
 
 @_dataclasses.dataclass(frozen=True, kw_only=True)

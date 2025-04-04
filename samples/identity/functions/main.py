@@ -11,7 +11,7 @@ def beforeusercreated(
     event: identity_fn.AuthBlockingEvent
 ) -> identity_fn.BeforeCreateResponse | None:
     print(event)
-    if not event.data.email:
+    if not event.data or not event.data.email:
         return None
     if "@cats.com" in event.data.email:
         return identity_fn.BeforeCreateResponse(display_name="Meow!",)
@@ -29,7 +29,7 @@ def beforeusersignedin(
     event: identity_fn.AuthBlockingEvent
 ) -> identity_fn.BeforeSignInResponse | None:
     print(event)
-    if not event.data.email:
+    if not event.data or not event.data.email:
         return None
 
     if "@cats.com" in event.data.email:
@@ -38,4 +38,22 @@ def beforeusersignedin(
     if "@dogs.com" in event.data.email:
         return identity_fn.BeforeSignInResponse(session_claims={"emoji": "🐕"})
 
+    return None
+
+
+@identity_fn.before_email_sent()
+# pylint: disable=useless-return
+def beforeemailsent(
+    event: identity_fn.AuthBlockingEvent
+) -> identity_fn.BeforeEmailSentResponse | None:
+    print(event)
+    return None
+
+
+@identity_fn.before_sms_sent()
+# pylint: disable=useless-return
+def beforesmssent(
+    event: identity_fn.AuthBlockingEvent
+) -> identity_fn.BeforeSmsSentResponse | None:
+    print(event)
     return None
