@@ -200,17 +200,21 @@ def _credential_from_token_data(token_data: dict[str, _typing.Any],
     )
 
 
-def _auth_blocking_event_from_token_data(token_data: dict[str, _typing.Any]):
+def _auth_blocking_event_from_token_data(event_type: str,
+                                         token_data: dict[str, _typing.Any]):
     from firebase_functions.identity_fn import AuthBlockingEvent
     return AuthBlockingEvent(
         data=_auth_user_record_from_token_data(token_data["user_record"]),
         locale=token_data.get("locale"),
+        event_type=event_type,
         event_id=token_data["event_id"],
         ip_address=token_data["ip_address"],
         user_agent=token_data["user_agent"],
         timestamp=_dt.datetime.fromtimestamp(token_data["iat"]),
         additional_user_info=_additional_user_info_from_token_data(token_data),
         credential=_credential_from_token_data(token_data, _time.time()),
+        email_type=token_data.get("email_type"),
+        sms_type=token_data.get("sms_type"),
     )
 
 
@@ -351,7 +355,7 @@ def before_operation_handler(
             raise HttpsError(FunctionsErrorCode.INVALID_ARGUMENT, "Bad Request")
         jwt_token = request.json["data"]["jwt"]
         decoded_token = _token_verifier.verify_auth_blocking_token(jwt_token)
-        event = _auth_blocking_event_from_token_data(decoded_token)
+        event = _auth_blocking_event_from_token_data(event_type, decoded_token)
         auth_response: BeforeCreateResponse | BeforeSignInResponse | None = _with_init(
             func)(event)
         if not auth_response:

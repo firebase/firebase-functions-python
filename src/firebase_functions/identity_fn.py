@@ -18,6 +18,7 @@ import typing as _typing
 import functools as _functools
 import datetime as _dt
 import dataclasses as _dataclasses
+from enum import Enum
 
 import firebase_functions.options as _options
 import firebase_functions.private.util as _util
@@ -238,15 +239,21 @@ class Credential:
     """The user's sign-in method."""
 
 
+class EmailType(str, Enum):
+    EMAIL_SIGN_IN = "EMAIL_SIGN_IN"
+    PASSWORD_RESET = "PASSWORD_RESET"
+
+
+class SmsType(str, Enum):
+    SIGN_IN_OR_SIGN_UP = "SIGN_IN_OR_SIGN_UP"
+    MULTI_FACTOR_SIGN_IN = "MULTI_FACTOR_SIGN_IN"
+    MULTI_FACTOR_ENROLLMENT = "MULTI_FACTOR_ENROLLMENT"
+
+
 @_dataclasses.dataclass(frozen=True)
 class AuthBlockingEvent:
     """
     Defines an auth event for identitytoolkit v2 auth blocking events.
-    """
-
-    data: AuthUserRecord
-    """
-    The UserRecord passed to auth blocking functions from the identity platform.
     """
 
     locale: str | None
@@ -260,6 +267,13 @@ class AuthBlockingEvent:
     """
     The event's unique identifier.
     Example: 'rWsyPtolplG2TBFoOkkgyg'
+    """
+
+    event_type: str
+    """
+    The event type. This provides information on the event name, such as
+    beforeSignIn or beforeCreate, and the associated sign-in method used,
+    like Google or email/password.
     """
 
     ip_address: str
@@ -280,9 +294,20 @@ class AuthBlockingEvent:
     credential: Credential | None
     """An object containing information about the user's credential."""
 
+    email_type: EmailType | None
+    """The type of email event."""
+
+    sms_type: SmsType | None
+    """The type of SMS event."""
+
     timestamp: _dt.datetime
     """
     The time the event was triggered."""
+
+    data: AuthUserRecord
+    """
+    The UserRecord passed to auth blocking functions from the identity platform.
+    """
 
 
 RecaptchaActionOptions = _typing.Literal["ALLOW", "BLOCK"]
