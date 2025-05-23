@@ -10,12 +10,12 @@ Learn more about the Firebase SDK for Cloud Functions in the [Firebase documenta
 
 Here are some resources to get help:
 
-- Start with the quickstart: https://firebase.google.com/docs/functions/get-started
-- Go through the guide: https://firebase.google.com/docs/functions/
-- Read the full API reference: https://firebase.google.com/docs/reference/functions/2nd-gen/python
-- Browse some examples: https://github.com/firebase/functions-samples
+- Start with the quickstart: <https://firebase.google.com/docs/functions/get-started>
+- Go through the guide: <https://firebase.google.com/docs/functions/>
+- Read the full API reference: <https://firebase.google.com/docs/reference/functions/2nd-gen/python>
+- Browse some examples: <https://github.com/firebase/functions-samples>
 
-If the official documentation doesn't help, try asking through our official support channels: https://firebase.google.com/support/
+If the official documentation doesn't help, try asking through our official support channels: <https://firebase.google.com/support/>
 
 ## Usage
 
@@ -36,4 +36,5 @@ To contribute a change, [check out the contributing guide](.github/CONTRIBUTING.
 
 ## License
 
-© Google, 2023. Licensed under [Apache License](LICENSE).
+© Google, 2025. Licensed under [Apache License](LICENSE).
+
