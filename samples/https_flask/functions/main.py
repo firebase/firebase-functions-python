@@ -23,3 +23,15 @@ def world():
 @https_fn.on_request()
 def httpsflaskexample(request):
     return entrypoint(app, request)
+
+
+@https_fn.on_call()
+def callableexample(request: https_fn.CallableRequest):
+    return request.data
+
+
+@https_fn.on_call()
+def streamingcallable(request: https_fn.CallableRequest):
+    yield "Hello,"
+    yield "world!"
+    return request.data
