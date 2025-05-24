@@ -1,0 +1,3 @@
+venv
+build
+!integration_test/.env
