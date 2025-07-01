@@ -61,7 +61,7 @@ def set_func_endpoint_attr(
     func: _typing.Callable[P, _typing.Any],
     endpoint: _typing.Any,
 ) -> _typing.Callable[P, _typing.Any]:
-    func.__firebase_endpoint__ = endpoint
+    func.__firebase_endpoint__ = endpoint  # type: ignore
     return func
 
 
