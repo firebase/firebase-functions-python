@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Cloud functions to handle Eventarc events."""
+
 # pylint: disable=protected-access
 import typing as _typing
 import datetime as _dt
@@ -53,6 +54,7 @@ _disallowed_custom_claims = [
 
 def _auth_user_info_from_token_data(token_data: dict[str, _typing.Any]):
     from firebase_functions.identity_fn import AuthUserInfo
+
     return AuthUserInfo(
         uid=token_data["uid"],
         provider_id=token_data["provider_id"],
@@ -65,24 +67,24 @@ def _auth_user_info_from_token_data(token_data: dict[str, _typing.Any]):
 
 def _auth_user_metadata_from_token_data(token_data: dict[str, _typing.Any]):
     from firebase_functions.identity_fn import AuthUserMetadata
-    creation_time = _dt.datetime.utcfromtimestamp(
-        int(token_data["creation_time"]) / 1000.0)
+
+    creation_time = _dt.datetime.utcfromtimestamp(int(token_data["creation_time"]) / 1000.0)
     last_sign_in_time = None
     if "last_sign_in_time" in token_data:
         last_sign_in_time = _dt.datetime.utcfromtimestamp(
-            int(token_data["last_sign_in_time"]) / 1000.0)
+            int(token_data["last_sign_in_time"]) / 1000.0
+        )
 
-    return AuthUserMetadata(creation_time=creation_time,
-                            last_sign_in_time=last_sign_in_time)
+    return AuthUserMetadata(creation_time=creation_time, last_sign_in_time=last_sign_in_time)
 
 
 def _auth_multi_factor_info_from_token_data(token_data: dict[str, _typing.Any]):
     from firebase_functions.identity_fn import AuthMultiFactorInfo
+
     enrollment_time = token_data.get("enrollment_time")
     if enrollment_time:
         enrollment_time = _dt.datetime.fromisoformat(enrollment_time)
-    factor_id = token_data["factor_id"] if not token_data.get(
-        "phone_number") else "phone"
+    factor_id = token_data["factor_id"] if not token_data.get("phone_number") else "phone"
     return AuthMultiFactorInfo(
         uid=token_data["uid"],
         factor_id=factor_id,
@@ -92,8 +94,7 @@ def _auth_multi_factor_info_from_token_data(token_data: dict[str, _typing.Any]):
     )
 
 
-def _auth_multi_factor_settings_from_token_data(token_data: dict[str,
-                                                                 _typing.Any]):
+def _auth_multi_factor_settings_from_token_data(token_data: dict[str, _typing.Any]):
     if not token_data:
         return None
 
@@ -112,6 +113,7 @@ def _auth_multi_factor_settings_from_token_data(token_data: dict[str,
 
 def _auth_user_record_from_token_data(token_data: dict[str, _typing.Any]):
     from firebase_functions.identity_fn import AuthUserRecord
+
     return AuthUserRecord(
         uid=token_data["uid"],
         email=token_data.get("email"),
@@ -122,24 +124,24 @@ def _auth_user_record_from_token_data(token_data: dict[str, _typing.Any]):
         disabled=token_data.get("disabled", False),
         metadata=_auth_user_metadata_from_token_data(token_data["metadata"]),
         provider_data=[
-            _auth_user_info_from_token_data(info)
-            for info in token_data["provider_data"]
+            _auth_user_info_from_token_data(info) for info in token_data["provider_data"]
         ],
         password_hash=token_data.get("password_hash"),
         password_salt=token_data.get("password_salt"),
         custom_claims=token_data.get("custom_claims"),
         tenant_id=token_data.get("tenant_id"),
-        tokens_valid_after_time=_dt.datetime.utcfromtimestamp(
-            token_data["tokens_valid_after_time"])
-        if token_data.get("tokens_valid_after_time") else None,
-        multi_factor=_auth_multi_factor_settings_from_token_data(
-            token_data["multi_factor"])
-        if "multi_factor" in token_data else None,
+        tokens_valid_after_time=_dt.datetime.utcfromtimestamp(token_data["tokens_valid_after_time"])
+        if token_data.get("tokens_valid_after_time")
+        else None,
+        multi_factor=_auth_multi_factor_settings_from_token_data(token_data["multi_factor"])
+        if "multi_factor" in token_data
+        else None,
     )
 
 
 def _additional_user_info_from_token_data(token_data: dict[str, _typing.Any]):
     from firebase_functions.identity_fn import AdditionalUserInfo
+
     raw_user_info = token_data.get("raw_user_info")
     profile = None
     username = None
@@ -155,9 +157,11 @@ def _additional_user_info_from_token_data(token_data: dict[str, _typing.Any]):
         elif sign_in_method == "twitter.com":
             username = profile.get("screen_name")
 
-    provider_id: str = ("password"
-                        if token_data.get("sign_in_method") == "emailLink" else
-                        str(token_data.get("sign_in_method")))
+    provider_id: str = (
+        "password"
+        if token_data.get("sign_in_method") == "emailLink"
+        else str(token_data.get("sign_in_method"))
+    )
 
     is_new_user = token_data.get("event_type") == "beforeCreate"
 
@@ -170,23 +174,27 @@ def _additional_user_info_from_token_data(token_data: dict[str, _typing.Any]):
     )
 
 
-def _credential_from_token_data(token_data: dict[str, _typing.Any],
-                                time: float):
-    if (not token_data.get("sign_in_attributes") and
-            not token_data.get("oauth_id_token") and
-            not token_data.get("oauth_access_token") and
-            not token_data.get("oauth_refresh_token")):
+def _credential_from_token_data(token_data: dict[str, _typing.Any], time: float):
+    if (
+        not token_data.get("sign_in_attributes")
+        and not token_data.get("oauth_id_token")
+        and not token_data.get("oauth_access_token")
+        and not token_data.get("oauth_refresh_token")
+    ):
         return None
 
     from firebase_functions.identity_fn import Credential
 
     oauth_expires_in = token_data.get("oauth_expires_in")
-    expiration_time = (_dt.datetime.utcfromtimestamp(time + oauth_expires_in)
-                       if oauth_expires_in else None)
+    expiration_time = (
+        _dt.datetime.utcfromtimestamp(time + oauth_expires_in) if oauth_expires_in else None
+    )
 
-    provider_id: str = ("password"
-                        if token_data.get("sign_in_method") == "emailLink" else
-                        str(token_data.get("sign_in_method")))
+    provider_id: str = (
+        "password"
+        if token_data.get("sign_in_method") == "emailLink"
+        else str(token_data.get("sign_in_method"))
+    )
 
     return Credential(
         claims=token_data.get("sign_in_attributes"),
@@ -200,9 +208,9 @@ def _credential_from_token_data(token_data: dict[str, _typing.Any],
     )
 
 
-def _auth_blocking_event_from_token_data(event_type: str,
-                                         token_data: dict[str, _typing.Any]):
+def _auth_blocking_event_from_token_data(event_type: str, token_data: dict[str, _typing.Any]):
     from firebase_functions.identity_fn import AuthBlockingEvent
+
     return AuthBlockingEvent(
         data=_auth_user_record_from_token_data(token_data["user_record"]),
         locale=token_data.get("locale"),
@@ -229,10 +237,8 @@ def _validate_auth_response(
     if auth_response is None:
         auth_response = {}
 
-    custom_claims: dict[str,
-                        _typing.Any] | None = auth_response.get("custom_claims")
-    session_claims: dict[str, _typing.Any] | None = auth_response.get(
-        "session_claims")
+    custom_claims: dict[str, _typing.Any] | None = auth_response.get("custom_claims")
+    session_claims: dict[str, _typing.Any] | None = auth_response.get("session_claims")
 
     if session_claims and event_type == event_type_before_create:
         raise HttpsError(
@@ -242,10 +248,7 @@ def _validate_auth_response(
         )
 
     if custom_claims:
-        invalid_claims = [
-            claim for claim in _disallowed_custom_claims
-            if claim in custom_claims
-        ]
+        invalid_claims = [claim for claim in _disallowed_custom_claims if claim in custom_claims]
 
         if invalid_claims:
             raise HttpsError(
@@ -262,11 +265,7 @@ def _validate_auth_response(
             )
 
     if event_type == event_type_before_sign_in and session_claims:
-
-        invalid_claims = [
-            claim for claim in _disallowed_custom_claims
-            if claim in session_claims
-        ]
+        invalid_claims = [claim for claim in _disallowed_custom_claims if claim in session_claims]
 
         if invalid_claims:
             raise HttpsError(
@@ -282,10 +281,7 @@ def _validate_auth_response(
                 f"{_claims_max_payload_size} characters.",
             )
 
-        combined_claims = {
-            **(custom_claims if custom_claims else {}),
-            **session_claims
-        }
+        combined_claims = {**(custom_claims if custom_claims else {}), **session_claims}
 
         if len(_json.dumps(combined_claims)) > _claims_max_payload_size:
             raise HttpsError(
@@ -309,27 +305,23 @@ def _validate_auth_response(
     if "session_claims" in auth_response_keys:
         auth_response_dict["sessionClaims"] = auth_response["session_claims"]
     if "recaptcha_action_override" in auth_response_keys:
-        auth_response_dict["recaptchaActionOverride"] = auth_response[
-            "recaptcha_action_override"]
+        auth_response_dict["recaptchaActionOverride"] = auth_response["recaptcha_action_override"]
     return auth_response_dict
 
 
 def _generate_response_payload(
-    auth_response_dict: dict[str, _typing.Any] | None
+    auth_response_dict: dict[str, _typing.Any] | None,
 ) -> dict[str, _typing.Any]:
     if not auth_response_dict:
         return {}
 
     formatted_auth_response = auth_response_dict.copy()
-    recaptcha_action_override = formatted_auth_response.pop(
-        "recaptchaActionOverride", None)
+    recaptcha_action_override = formatted_auth_response.pop("recaptchaActionOverride", None)
     result = {}
     update_mask = ",".join(formatted_auth_response.keys())
 
     if len(update_mask) != 0:
-        result["userRecord"] = {
-            **formatted_auth_response, "updateMask": update_mask
-        }
+        result["userRecord"] = {**formatted_auth_response, "updateMask": update_mask}
 
     if recaptcha_action_override is not None:
         result["recaptchaActionOverride"] = recaptcha_action_override
@@ -343,6 +335,7 @@ def before_operation_handler(
     request: _Request,
 ) -> _Response:
     from firebase_functions.identity_fn import BeforeCreateResponse, BeforeSignInResponse
+
     try:
         if not _util.valid_on_call_request(request):
             _logging.error("Invalid request, unable to process.")
@@ -356,8 +349,7 @@ def before_operation_handler(
         jwt_token = request.json["data"]["jwt"]
         decoded_token = _token_verifier.verify_auth_blocking_token(jwt_token)
         event = _auth_blocking_event_from_token_data(event_type, decoded_token)
-        auth_response: BeforeCreateResponse | BeforeSignInResponse | None = _with_init(
-            func)(event)
+        auth_response: BeforeCreateResponse | BeforeSignInResponse | None = _with_init(func)(event)
         if not auth_response:
             return _jsonify({})
         auth_response_dict = _validate_auth_response(event_type, auth_response)

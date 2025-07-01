@@ -14,6 +14,7 @@
 """Module for functions that listen to HTTPS endpoints.
 These can be raw web requests and Callable RPCs.
 """
+
 # pylint: disable=protected-access
 import dataclasses as _dataclasses
 import functools as _functools
@@ -176,40 +177,35 @@ class _HttpErrorCode:
 
 
 _error_code_map = {
-    FunctionsErrorCode.OK:
-        _HttpErrorCode(_CanonicalErrorCodeName.OK, 200),
-    FunctionsErrorCode.CANCELLED:
-        _HttpErrorCode(_CanonicalErrorCodeName.CANCELLED, 499),
-    FunctionsErrorCode.UNKNOWN:
-        _HttpErrorCode(_CanonicalErrorCodeName.UNKNOWN, 500),
-    FunctionsErrorCode.INVALID_ARGUMENT:
-        _HttpErrorCode(_CanonicalErrorCodeName.INVALID_ARGUMENT, 400),
-    FunctionsErrorCode.DEADLINE_EXCEEDED:
-        _HttpErrorCode(_CanonicalErrorCodeName.DEADLINE_EXCEEDED, 504),
-    FunctionsErrorCode.NOT_FOUND:
-        _HttpErrorCode(_CanonicalErrorCodeName.NOT_FOUND, 404),
-    FunctionsErrorCode.ALREADY_EXISTS:
-        _HttpErrorCode(_CanonicalErrorCodeName.ALREADY_EXISTS, 409),
-    FunctionsErrorCode.PERMISSION_DENIED:
-        _HttpErrorCode(_CanonicalErrorCodeName.PERMISSION_DENIED, 403),
-    FunctionsErrorCode.UNAUTHENTICATED:
-        _HttpErrorCode(_CanonicalErrorCodeName.UNAUTHENTICATED, 401),
-    FunctionsErrorCode.RESOURCE_EXHAUSTED:
-        _HttpErrorCode(_CanonicalErrorCodeName.RESOURCE_EXHAUSTED, 429),
-    FunctionsErrorCode.FAILED_PRECONDITION:
-        _HttpErrorCode(_CanonicalErrorCodeName.FAILED_PRECONDITION, 400),
-    FunctionsErrorCode.ABORTED:
-        _HttpErrorCode(_CanonicalErrorCodeName.ABORTED, 409),
-    FunctionsErrorCode.OUT_OF_RANGE:
-        _HttpErrorCode(_CanonicalErrorCodeName.OUT_OF_RANGE, 400),
-    FunctionsErrorCode.UNIMPLEMENTED:
-        _HttpErrorCode(_CanonicalErrorCodeName.UNIMPLEMENTED, 501),
-    FunctionsErrorCode.INTERNAL:
-        _HttpErrorCode(_CanonicalErrorCodeName.INTERNAL, 500),
-    FunctionsErrorCode.UNAVAILABLE:
-        _HttpErrorCode(_CanonicalErrorCodeName.UNAVAILABLE, 503),
-    FunctionsErrorCode.DATA_LOSS:
-        _HttpErrorCode(_CanonicalErrorCodeName.DATA_LOSS, 500),
+    FunctionsErrorCode.OK: _HttpErrorCode(_CanonicalErrorCodeName.OK, 200),
+    FunctionsErrorCode.CANCELLED: _HttpErrorCode(_CanonicalErrorCodeName.CANCELLED, 499),
+    FunctionsErrorCode.UNKNOWN: _HttpErrorCode(_CanonicalErrorCodeName.UNKNOWN, 500),
+    FunctionsErrorCode.INVALID_ARGUMENT: _HttpErrorCode(
+        _CanonicalErrorCodeName.INVALID_ARGUMENT, 400
+    ),
+    FunctionsErrorCode.DEADLINE_EXCEEDED: _HttpErrorCode(
+        _CanonicalErrorCodeName.DEADLINE_EXCEEDED, 504
+    ),
+    FunctionsErrorCode.NOT_FOUND: _HttpErrorCode(_CanonicalErrorCodeName.NOT_FOUND, 404),
+    FunctionsErrorCode.ALREADY_EXISTS: _HttpErrorCode(_CanonicalErrorCodeName.ALREADY_EXISTS, 409),
+    FunctionsErrorCode.PERMISSION_DENIED: _HttpErrorCode(
+        _CanonicalErrorCodeName.PERMISSION_DENIED, 403
+    ),
+    FunctionsErrorCode.UNAUTHENTICATED: _HttpErrorCode(
+        _CanonicalErrorCodeName.UNAUTHENTICATED, 401
+    ),
+    FunctionsErrorCode.RESOURCE_EXHAUSTED: _HttpErrorCode(
+        _CanonicalErrorCodeName.RESOURCE_EXHAUSTED, 429
+    ),
+    FunctionsErrorCode.FAILED_PRECONDITION: _HttpErrorCode(
+        _CanonicalErrorCodeName.FAILED_PRECONDITION, 400
+    ),
+    FunctionsErrorCode.ABORTED: _HttpErrorCode(_CanonicalErrorCodeName.ABORTED, 409),
+    FunctionsErrorCode.OUT_OF_RANGE: _HttpErrorCode(_CanonicalErrorCodeName.OUT_OF_RANGE, 400),
+    FunctionsErrorCode.UNIMPLEMENTED: _HttpErrorCode(_CanonicalErrorCodeName.UNIMPLEMENTED, 501),
+    FunctionsErrorCode.INTERNAL: _HttpErrorCode(_CanonicalErrorCodeName.INTERNAL, 500),
+    FunctionsErrorCode.UNAVAILABLE: _HttpErrorCode(_CanonicalErrorCodeName.UNAVAILABLE, 503),
+    FunctionsErrorCode.DATA_LOSS: _HttpErrorCode(_CanonicalErrorCodeName.DATA_LOSS, 500),
 }
 """
 Standard error codes and HTTP statuses for different ways a request can fail,
@@ -352,8 +348,7 @@ _C1 = _typing.Callable[[Request], Response]
 _C2 = _typing.Callable[[CallableRequest[_typing.Any]], _typing.Any]
 
 
-def _on_call_handler(func: _C2, request: Request,
-                     enforce_app_check: bool) -> Response:
+def _on_call_handler(func: _C2, request: Request, enforce_app_check: bool) -> Response:
     try:
         if not _util.valid_on_call_request(request):
             _logging.error("Invalid request, unable to process.")
@@ -366,27 +361,26 @@ def _on_call_handler(func: _C2, request: Request,
         token_status = _util.on_call_check_tokens(request)
 
         if token_status.auth == _util.OnCallTokenState.INVALID:
-            raise HttpsError(FunctionsErrorCode.UNAUTHENTICATED,
-                             "Unauthenticated")
+            raise HttpsError(FunctionsErrorCode.UNAUTHENTICATED, "Unauthenticated")
 
         if enforce_app_check and token_status.app in (
-                _util.OnCallTokenState.MISSING, _util.OnCallTokenState.INVALID):
-            raise HttpsError(FunctionsErrorCode.UNAUTHENTICATED,
-                             "Unauthenticated")
+            _util.OnCallTokenState.MISSING,
+            _util.OnCallTokenState.INVALID,
+        ):
+            raise HttpsError(FunctionsErrorCode.UNAUTHENTICATED, "Unauthenticated")
         if token_status.app == _util.OnCallTokenState.VALID and token_status.app_token is not None:
             context = _dataclasses.replace(
                 context,
-                app=AppCheckData(token_status.app_token["sub"],
-                                 token_status.app_token),
+                app=AppCheckData(token_status.app_token["sub"], token_status.app_token),
             )
 
         if token_status.auth_token is not None:
             context = _dataclasses.replace(
                 context,
                 auth=AuthData(
-                    token_status.auth_token["uid"]
-                    if "uid" in token_status.auth_token else None,
-                    token_status.auth_token),
+                    token_status.auth_token["uid"] if "uid" in token_status.auth_token else None,
+                    token_status.auth_token,
+                ),
             )
 
         instance_id = request.headers.get("Firebase-Instance-ID-Token")
@@ -397,8 +391,7 @@ def _on_call_handler(func: _C2, request: Request,
             # pushes with FCM. In that case, the FCM APIs will validate the token.
             context = _dataclasses.replace(
                 context,
-                instance_id_token=request.headers.get(
-                    "Firebase-Instance-ID-Token"),
+                instance_id_token=request.headers.get("Firebase-Instance-ID-Token"),
             )
         result = _core._with_init(func)(context)
         return _jsonify(result=result)
@@ -436,7 +429,6 @@ def on_request(**kwargs) -> _typing.Callable[[_C1], _C1]:
     options = HttpsOptions(**kwargs)
 
     def on_request_inner_decorator(func: _C1):
-
         @_functools.wraps(func)
         def on_request_wrapped(request: Request) -> Response:
             if options.cors is not None:

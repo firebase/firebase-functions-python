@@ -26,9 +26,8 @@ from firebase_functions.core import CloudEvent, _with_init
 
 @_util.copy_func_kwargs(_options.EventarcTriggerOptions)
 def on_custom_event_published(
-    **kwargs
-) -> _typing.Callable[[_typing.Callable[[CloudEvent], None]], _typing.Callable[
-    [CloudEvent], None]]:
+    **kwargs,
+) -> _typing.Callable[[_typing.Callable[[CloudEvent], None]], _typing.Callable[[CloudEvent], None]]:
     """
     Creates a handler for events published on the default event eventarc channel.
 
@@ -52,9 +51,7 @@ def on_custom_event_published(
     """
     options = _options.EventarcTriggerOptions(**kwargs)
 
-    def on_custom_event_published_decorator(func: _typing.Callable[[CloudEvent],
-                                                                   None]):
-
+    def on_custom_event_published_decorator(func: _typing.Callable[[CloudEvent], None]):
         @_functools.wraps(func)
         def on_custom_event_published_wrapped(raw: _ce.CloudEvent):
             event_attributes = raw._get_attributes()
@@ -65,8 +62,7 @@ def on_custom_event_published(
                 id=event_dict["id"],
                 source=event_dict["source"],
                 specversion=event_dict["specversion"],
-                subject=event_dict["subject"]
-                if "subject" in event_dict else None,
+                subject=event_dict["subject"] if "subject" in event_dict else None,
                 time=_dt.datetime.strptime(
                     event_dict["time"],
                     "%Y-%m-%dT%H:%M:%S.%f%z",

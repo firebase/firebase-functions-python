@@ -31,9 +31,7 @@ class TestHttps(unittest.TestCase):
             environ = EnvironBuilder(
                 method="POST",
                 json={
-                    "data": {
-                        "test": "value"
-                    },
+                    "data": {"test": "value"},
                 },
             ).get_environ()
             request = Request(environ)
@@ -59,9 +57,7 @@ class TestHttps(unittest.TestCase):
             environ = EnvironBuilder(
                 method="POST",
                 json={
-                    "data": {
-                        "test": "value"
-                    },
+                    "data": {"test": "value"},
                 },
             ).get_environ()
             request = Request(environ)

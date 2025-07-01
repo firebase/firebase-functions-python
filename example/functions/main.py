@@ -1,6 +1,7 @@
 """
 Example Firebase Functions written in Python
 """
+
 from firebase_functions import https_fn, options, params, pubsub_fn
 from firebase_admin import initialize_app
 
@@ -31,7 +32,8 @@ def oncallexample(req: https_fn.CallableRequest):
     return "Hello from https on call function example"
 
 
-@pubsub_fn.on_message_published(topic="hello",)
-def onmessagepublishedexample(
-        event: pubsub_fn.CloudEvent[pubsub_fn.MessagePublishedData]) -> None:
+@pubsub_fn.on_message_published(
+    topic="hello",
+)
+def onmessagepublishedexample(event: pubsub_fn.CloudEvent[pubsub_fn.MessagePublishedData]) -> None:
     print("Hello from pubsub event:", event)

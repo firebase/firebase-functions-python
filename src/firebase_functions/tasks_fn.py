@@ -51,8 +51,7 @@ def _on_call_handler(func: _C2, request: Request) -> Response:
             # pushes with FCM. In that case, the FCM APIs will validate the token.
             context = _dataclasses.replace(
                 context,
-                instance_id_token=request.headers.get(
-                    "Firebase-Instance-ID-Token"),
+                instance_id_token=request.headers.get("Firebase-Instance-ID-Token"),
             )
         result = _core._with_init(func)(context)
         return _jsonify(result=result)
@@ -91,7 +90,6 @@ def on_task_dispatched(**kwargs) -> _typing.Callable[[_C], Response]:
     options = _options.TaskQueueOptions(**kwargs)
 
     def on_task_dispatched_decorator(func: _C):
-
         @_functools.wraps(func)
         def on_task_dispatched_wrapped(request: Request) -> Response:
             return _on_call_handler(func, request)

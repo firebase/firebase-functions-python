@@ -63,7 +63,7 @@ The type of the callable for 'on_alert_published' functions.
 
 @_util.copy_func_kwargs(FirebaseAlertOptions)
 def on_alert_published(
-    **kwargs
+    **kwargs,
 ) -> _typing.Callable[[OnAlertPublishedCallable], OnAlertPublishedCallable]:
     """
     Event handler that triggers when a Firebase Alerts event is published.
@@ -72,7 +72,7 @@ def on_alert_published(
 
     .. code-block:: python
 
-      from firebase_functions import alerts_fn   
+      from firebase_functions import alerts_fn
 
       @alerts_fn.on_alert_published(
           alert_type=alerts_fn.AlertType.CRASHLYTICS_NEW_FATAL_ISSUE,
@@ -91,10 +91,10 @@ def on_alert_published(
     options = FirebaseAlertOptions(**kwargs)
 
     def on_alert_published_inner_decorator(func: OnAlertPublishedCallable):
-
         @_functools.wraps(func)
         def on_alert_published_wrapped(raw: _ce.CloudEvent):
             from firebase_functions.private._alerts_fn import alerts_event_from_ce
+
             _with_init(func)(alerts_event_from_ce(raw))
 
         _util.set_func_endpoint_attr(

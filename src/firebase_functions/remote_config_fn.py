@@ -15,6 +15,7 @@
 """
 Cloud functions to handle Remote Config events.
 """
+
 import dataclasses as _dataclasses
 import functools as _functools
 import datetime as _dt
@@ -163,8 +164,7 @@ def _config_handler(func: _C1, raw: _ce.CloudEvent) -> None:
 
     config_data = ConfigUpdateData(
         version_number=event_data["versionNumber"],
-        update_time=_dt.datetime.strptime(event_data["updateTime"],
-                                          "%Y-%m-%dT%H:%M:%S.%f%z"),
+        update_time=_dt.datetime.strptime(event_data["updateTime"], "%Y-%m-%dT%H:%M:%S.%f%z"),
         update_user=ConfigUser(
             name=event_data["updateUser"]["name"],
             email=event_data["updateUser"]["email"],
@@ -216,7 +216,6 @@ def on_config_updated(**kwargs) -> _typing.Callable[[_C1], _C1]:
     options = EventHandlerOptions(**kwargs)
 
     def on_config_updated_inner_decorator(func: _C1):
-
         @_functools.wraps(func)
         def on_config_updated_wrapped(raw: _ce.CloudEvent):
             return _config_handler(func, raw)
@@ -226,7 +225,7 @@ def on_config_updated(**kwargs) -> _typing.Callable[[_C1], _C1]:
             options._endpoint(
                 func_name=func.__name__,
                 event_filters={},
-                event_type="google.firebase.remoteconfig.remoteConfig.v1.updated"
+                event_type="google.firebase.remoteconfig.remoteConfig.v1.updated",
             ),
         )
         return on_config_updated_wrapped

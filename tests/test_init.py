@@ -12,7 +12,6 @@ class TestInit(unittest.TestCase):
     """
 
     def test_init_is_initialized(self):
-
         @core.init
         def fn():
             pass

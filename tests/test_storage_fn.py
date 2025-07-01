@@ -23,19 +23,18 @@ class TestStorage(unittest.TestCase):
             hello = "world"
 
         func = Mock(__name__="example_func")
-        event = CloudEvent(attributes={
-            "source": "source",
-            "type": "type"
-        },
-                           data={
-                               "bucket": "bucket",
-                               "generation": "generation",
-                               "id": "id",
-                               "metageneration": "metageneration",
-                               "name": "name",
-                               "size": "size",
-                               "storageClass": "storageClass",
-                           })
+        event = CloudEvent(
+            attributes={"source": "source", "type": "type"},
+            data={
+                "bucket": "bucket",
+                "generation": "generation",
+                "id": "id",
+                "metageneration": "metageneration",
+                "name": "name",
+                "size": "size",
+                "storageClass": "storageClass",
+            },
+        )
 
         decorated_func = storage_fn.on_object_archived(bucket="bucket")(func)
         decorated_func(event)

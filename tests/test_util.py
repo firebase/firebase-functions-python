@@ -14,13 +14,23 @@
 """
 Internal utils tests.
 """
+
 from os import environ, path
-from firebase_functions.private.util import firebase_config, microsecond_timestamp_conversion, nanoseconds_timestamp_conversion, get_precision_timestamp, normalize_path, deep_merge, PrecisionTimestamp, second_timestamp_conversion, _unsafe_decode_id_token
+from firebase_functions.private.util import (
+    firebase_config,
+    microsecond_timestamp_conversion,
+    nanoseconds_timestamp_conversion,
+    get_precision_timestamp,
+    normalize_path,
+    deep_merge,
+    PrecisionTimestamp,
+    second_timestamp_conversion,
+    _unsafe_decode_id_token,
+)
 import datetime as _dt
 
 test_bucket = "python-functions-testing.appspot.com"
-test_config_file = path.join(path.dirname(path.realpath(__file__)),
-                             "firebase_config_test.json")
+test_config_file = path.join(path.dirname(path.realpath(__file__)), "firebase_config_test.json")
 
 
 def test_firebase_config_loads_from_env_json():
@@ -30,7 +40,8 @@ def test_firebase_config_loads_from_env_json():
     """
     environ["FIREBASE_CONFIG"] = f'{{"storageBucket": "{test_bucket}"}}'
     assert firebase_config().storage_bucket == test_bucket, (
-        "Failure, firebase_config did not load from env variable.")
+        "Failure, firebase_config did not load from env variable."
+    )
 
 
 def test_firebase_config_loads_from_env_file():
@@ -40,7 +51,8 @@ def test_firebase_config_loads_from_env_file():
     """
     environ["FIREBASE_CONFIG"] = test_config_file
     assert firebase_config().storage_bucket == test_bucket, (
-        "Failure, firebase_config did not load from env variable.")
+        "Failure, firebase_config did not load from env variable."
+    )
 
 
 def test_microsecond_conversion():
@@ -55,11 +67,9 @@ def test_microsecond_conversion():
     ]
 
     for input_timestamp, expected_output in timestamps:
-        expected_datetime = _dt.datetime.strptime(expected_output,
-                                                  "%Y-%m-%dT%H:%M:%S.%fZ")
+        expected_datetime = _dt.datetime.strptime(expected_output, "%Y-%m-%dT%H:%M:%S.%fZ")
         expected_datetime = expected_datetime.replace(tzinfo=_dt.timezone.utc)
-        assert microsecond_timestamp_conversion(
-            input_timestamp) == expected_datetime
+        assert microsecond_timestamp_conversion(input_timestamp) == expected_datetime
 
 
 def test_nanosecond_conversion():
@@ -74,11 +84,9 @@ def test_nanosecond_conversion():
     ]
 
     for input_timestamp, expected_output in timestamps:
-        expected_datetime = _dt.datetime.strptime(expected_output,
-                                                  "%Y-%m-%dT%H:%M:%S.%fZ")
+        expected_datetime = _dt.datetime.strptime(expected_output, "%Y-%m-%dT%H:%M:%S.%fZ")
         expected_datetime = expected_datetime.replace(tzinfo=_dt.timezone.utc)
-        assert nanoseconds_timestamp_conversion(
-            input_timestamp) == expected_datetime
+        assert nanoseconds_timestamp_conversion(input_timestamp) == expected_datetime
 
 
 def test_second_conversion():
@@ -93,8 +101,7 @@ def test_second_conversion():
     ]
 
     for input_timestamp, expected_output in timestamps:
-        expected_datetime = _dt.datetime.strptime(expected_output,
-                                                  "%Y-%m-%dT%H:%M:%SZ")
+        expected_datetime = _dt.datetime.strptime(expected_output, "%Y-%m-%dT%H:%M:%SZ")
         expected_datetime = expected_datetime.replace(tzinfo=_dt.timezone.utc)
         assert second_timestamp_conversion(input_timestamp) == expected_datetime
 
@@ -118,30 +125,18 @@ def test_is_nanoseconds_timestamp():
     second_timestamp3 = "2023-03-21T06:43:58Z"
     second_timestamp4 = "2023-08-15T22:22:22Z"
 
-    assert get_precision_timestamp(
-        microsecond_timestamp1) is PrecisionTimestamp.MICROSECONDS
-    assert get_precision_timestamp(
-        microsecond_timestamp2) is PrecisionTimestamp.MICROSECONDS
-    assert get_precision_timestamp(
-        microsecond_timestamp3) is PrecisionTimestamp.MICROSECONDS
-    assert get_precision_timestamp(
-        microsecond_timestamp4) is PrecisionTimestamp.MICROSECONDS
-    assert get_precision_timestamp(
-        nanosecond_timestamp1) is PrecisionTimestamp.NANOSECONDS
-    assert get_precision_timestamp(
-        nanosecond_timestamp2) is PrecisionTimestamp.NANOSECONDS
-    assert get_precision_timestamp(
-        nanosecond_timestamp3) is PrecisionTimestamp.NANOSECONDS
-    assert get_precision_timestamp(
-        nanosecond_timestamp4) is PrecisionTimestamp.NANOSECONDS
-    assert get_precision_timestamp(
-        second_timestamp1) is PrecisionTimestamp.SECONDS
-    assert get_precision_timestamp(
-        second_timestamp2) is PrecisionTimestamp.SECONDS
-    assert get_precision_timestamp(
-        second_timestamp3) is PrecisionTimestamp.SECONDS
-    assert get_precision_timestamp(
-        second_timestamp4) is PrecisionTimestamp.SECONDS
+    assert get_precision_timestamp(microsecond_timestamp1) is PrecisionTimestamp.MICROSECONDS
+    assert get_precision_timestamp(microsecond_timestamp2) is PrecisionTimestamp.MICROSECONDS
+    assert get_precision_timestamp(microsecond_timestamp3) is PrecisionTimestamp.MICROSECONDS
+    assert get_precision_timestamp(microsecond_timestamp4) is PrecisionTimestamp.MICROSECONDS
+    assert get_precision_timestamp(nanosecond_timestamp1) is PrecisionTimestamp.NANOSECONDS
+    assert get_precision_timestamp(nanosecond_timestamp2) is PrecisionTimestamp.NANOSECONDS
+    assert get_precision_timestamp(nanosecond_timestamp3) is PrecisionTimestamp.NANOSECONDS
+    assert get_precision_timestamp(nanosecond_timestamp4) is PrecisionTimestamp.NANOSECONDS
+    assert get_precision_timestamp(second_timestamp1) is PrecisionTimestamp.SECONDS
+    assert get_precision_timestamp(second_timestamp2) is PrecisionTimestamp.SECONDS
+    assert get_precision_timestamp(second_timestamp3) is PrecisionTimestamp.SECONDS
+    assert get_precision_timestamp(second_timestamp4) is PrecisionTimestamp.SECONDS
 
 
 def test_normalize_document_path():
@@ -150,16 +145,15 @@ def test_normalize_document_path():
     is normalized.
     """
     test_path = "/test/document/"
-    assert normalize_path(test_path) == "test/document", (
-        "Failure, path was not normalized.")
+    assert normalize_path(test_path) == "test/document", "Failure, path was not normalized."
 
     test_path1 = "//////test/document//////////"
-    assert normalize_path(test_path1) == "test/document", (
-        "Failure, path was not normalized.")
+    assert normalize_path(test_path1) == "test/document", "Failure, path was not normalized."
 
     test_path2 = "test/document"
     assert normalize_path(test_path2) == "test/document", (
-        "Failure, path should not be changed if it is already normalized.")
+        "Failure, path should not be changed if it is already normalized."
+    )
 
 
 def test_toplevel_keys():

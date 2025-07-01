@@ -49,10 +49,14 @@ def _entry_from_args(severity: LogSeverity, *args, **kwargs) -> LogEntry:
     Creates a `LogEntry` from the given arguments.
     """
 
-    message: str = " ".join([
-        value if isinstance(value, str) else _json.dumps(
-            _remove_circular(value), ensure_ascii=False) for value in args
-    ])
+    message: str = " ".join(
+        [
+            value
+            if isinstance(value, str)
+            else _json.dumps(_remove_circular(value), ensure_ascii=False)
+            for value in args
+        ]
+    )
 
     other: _typing.Dict[str, _typing.Any] = {
         key: value if isinstance(value, str) else _remove_circular(value)
@@ -66,8 +70,7 @@ def _entry_from_args(severity: LogSeverity, *args, **kwargs) -> LogEntry:
     return _typing.cast(LogEntry, entry)
 
 
-def _remove_circular(obj: _typing.Any,
-                     refs: _typing.Set[_typing.Any] | None = None):
+def _remove_circular(obj: _typing.Any, refs: _typing.Set[_typing.Any] | None = None):
     """
     Removes circular references from the given object and replaces them with "[CIRCULAR]".
     """
@@ -86,9 +89,7 @@ def _remove_circular(obj: _typing.Any,
     # Recursively process the object based on its type
     result: _typing.Any
     if isinstance(obj, dict):
-        result = {
-            key: _remove_circular(value, refs) for key, value in obj.items()
-        }
+        result = {key: _remove_circular(value, refs) for key, value in obj.items()}
     elif isinstance(obj, list):
         result = [_remove_circular(item, refs) for item in obj]
     elif isinstance(obj, tuple):
@@ -111,8 +112,7 @@ def _get_write_file(severity: LogSeverity) -> _typing.TextIO:
 
 def write(entry: LogEntry) -> None:
     write_file = _get_write_file(entry["severity"])
-    print(_json.dumps(_remove_circular(entry), ensure_ascii=False),
-          file=write_file)
+    print(_json.dumps(_remove_circular(entry), ensure_ascii=False), file=write_file)
 
 
 def debug(*args, **kwargs) -> None:

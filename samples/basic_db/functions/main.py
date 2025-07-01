@@ -1,6 +1,7 @@
 """
 Example Firebase Functions for RTDB written in Python
 """
+
 from firebase_functions import db_fn, options
 from firebase_admin import initialize_app
 

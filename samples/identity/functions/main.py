@@ -1,4 +1,5 @@
 """Firebase Cloud Functions for blocking auth functions example."""
+
 from firebase_functions import identity_fn
 
 
@@ -8,15 +9,19 @@ from firebase_functions import identity_fn
     refresh_token=True,
 )
 def beforeusercreated(
-    event: identity_fn.AuthBlockingEvent
+    event: identity_fn.AuthBlockingEvent,
 ) -> identity_fn.BeforeCreateResponse | None:
     print(event)
     if not event.data.email:
         return None
     if "@cats.com" in event.data.email:
-        return identity_fn.BeforeCreateResponse(display_name="Meow!",)
+        return identity_fn.BeforeCreateResponse(
+            display_name="Meow!",
+        )
     if "@dogs.com" in event.data.email:
-        return identity_fn.BeforeCreateResponse(display_name="Woof!",)
+        return identity_fn.BeforeCreateResponse(
+            display_name="Woof!",
+        )
     return None
 
 
@@ -26,7 +31,7 @@ def beforeusercreated(
     refresh_token=True,
 )
 def beforeusersignedin(
-    event: identity_fn.AuthBlockingEvent
+    event: identity_fn.AuthBlockingEvent,
 ) -> identity_fn.BeforeSignInResponse | None:
     print(event)
     if not event.data.email:

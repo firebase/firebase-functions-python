@@ -28,6 +28,7 @@ from flask import (
 )
 
 from firebase_functions.core import _with_init
+
 # Export for user convenience.
 # pylint: disable=unused-import
 from firebase_functions.options import Timezone
@@ -91,12 +92,10 @@ def on_schedule(**kwargs) -> _typing.Callable[[_C], _Response]:
     options = _options.ScheduleOptions(**kwargs)
 
     def on_schedule_decorator(func: _C):
-
         @_functools.wraps(func)
         def on_schedule_wrapped(request: _Request) -> _Response:
             schedule_time: _dt.datetime
-            schedule_time_str = request.headers.get(
-                "X-CloudScheduler-ScheduleTime")
+            schedule_time_str = request.headers.get("X-CloudScheduler-ScheduleTime")
             if schedule_time_str is None:
                 schedule_time = _dt.datetime.utcnow()
             else:

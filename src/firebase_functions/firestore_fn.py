@@ -14,6 +14,7 @@
 """
 Module for Cloud Functions that are triggered by Firestore.
 """
+
 # pylint: disable=protected-access
 import dataclasses as _dataclass
 import functools as _functools
@@ -87,8 +88,7 @@ _E2 = Event[DocumentSnapshot | None]
 _C1 = _typing.Callable[[_E1], None]
 _C2 = _typing.Callable[[_E2], None]
 
-AuthType = _typing.Literal["service_account", "api_key", "system",
-                           "unauthenticated", "unknown"]
+AuthType = _typing.Literal["service_account", "api_key", "system", "unauthenticated", "unknown"]
 
 
 @_dataclass.dataclass(frozen=True)
@@ -117,17 +117,18 @@ def _firestore_endpoint_handler(
     content_type: str = event_attributes["datacontenttype"]
     if "application/json" in content_type or isinstance(event_data, dict):
         firestore_event_data = _typing.cast(
-            _firestore.DocumentEventData,
-            _firestore.DocumentEventData.from_json(event_data))
-    elif "application/protobuf" in content_type or isinstance(
-            event_data, bytes):
+            _firestore.DocumentEventData, _firestore.DocumentEventData.from_json(event_data)
+        )
+    elif "application/protobuf" in content_type or isinstance(event_data, bytes):
         firestore_event_data = _typing.cast(
-            _firestore.DocumentEventData,
-            _firestore.DocumentEventData.deserialize(event_data))
+            _firestore.DocumentEventData, _firestore.DocumentEventData.deserialize(event_data)
+        )
     else:
         actual_type = type(event_data)
-        raise TypeError(f"Firestore: Cannot parse event payload of data type "
-                        f"'{actual_type}' and content type '{content_type}'.")
+        raise TypeError(
+            f"Firestore: Cannot parse event payload of data type "
+            f"'{actual_type}' and content type '{content_type}'."
+        )
 
     event_location = event_attributes["location"]
     event_project = event_attributes["project"]
@@ -141,15 +142,15 @@ def _firestore_endpoint_handler(
     if _DEFAULT_APP_NAME not in _apps:
         initialize_app()
     app = get_app()
-    firestore_client = _firestore_v1.Client(project=app.project_id,
-                                            database=event_database)
+    firestore_client = _firestore_v1.Client(project=app.project_id, database=event_database)
     firestore_ref: DocumentReference = firestore_client.document(event_document)
     value_snapshot: DocumentSnapshot | None = None
     old_value_snapshot: DocumentSnapshot | None = None
 
     if firestore_event_data.value:
         document_dict = _firestore_helpers.decode_dict(
-            firestore_event_data.value.fields, firestore_client)
+            firestore_event_data.value.fields, firestore_client
+        )
         value_snapshot = _firestore_v1.DocumentSnapshot(
             firestore_ref,
             document_dict,
@@ -160,7 +161,8 @@ def _firestore_endpoint_handler(
         )
     if firestore_event_data.old_value:
         document_dict = _firestore_helpers.decode_dict(
-            firestore_event_data.old_value.fields, firestore_client)
+            firestore_event_data.old_value.fields, firestore_client
+        )
         old_value_snapshot = _firestore_v1.DocumentSnapshot(
             firestore_ref,
             document_dict,
@@ -170,23 +172,23 @@ def _firestore_endpoint_handler(
             firestore_event_data.old_value.update_time,
         )
 
-    if event_type in (_event_type_deleted,
-                      _event_type_deleted_with_auth_context):
-        firestore_event_data = _typing.cast(_firestore.DocumentEventData,
-                                            old_value_snapshot)
-    if event_type in (_event_type_created,
-                      _event_type_created_with_auth_context):
-        firestore_event_data = _typing.cast(_firestore.DocumentEventData,
-                                            value_snapshot)
-    if event_type in (_event_type_written, _event_type_updated,
-                      _event_type_written_with_auth_context,
-                      _event_type_updated_with_auth_context):
+    if event_type in (_event_type_deleted, _event_type_deleted_with_auth_context):
+        firestore_event_data = _typing.cast(_firestore.DocumentEventData, old_value_snapshot)
+    if event_type in (_event_type_created, _event_type_created_with_auth_context):
+        firestore_event_data = _typing.cast(_firestore.DocumentEventData, value_snapshot)
+    if event_type in (
+        _event_type_written,
+        _event_type_updated,
+        _event_type_written_with_auth_context,
+        _event_type_updated_with_auth_context,
+    ):
         firestore_event_data = _typing.cast(
             _firestore.DocumentEventData,
             Change(
                 before=old_value_snapshot,
                 after=value_snapshot,
-            ))
+            ),
+        )
 
     params: dict[str, str] = {
         **document_pattern.extract_matches(event_document),
@@ -213,9 +215,9 @@ def _firestore_endpoint_handler(
     if event_type.endswith(".withAuthContext"):
         event_auth_type = event_attributes["authtype"]
         event_auth_id = event_attributes["authid"]
-        database_event_with_auth_context = AuthEvent(**vars(database_event),
-                                                     auth_type=event_auth_type,
-                                                     auth_id=event_auth_id)
+        database_event_with_auth_context = AuthEvent(
+            **vars(database_event), auth_type=event_auth_type, auth_id=event_auth_id
+        )
         func(database_event_with_auth_context)
     else:
         # mypy cannot infer that the event type is correct, hence the cast
@@ -245,8 +247,7 @@ def on_document_written(**kwargs) -> _typing.Callable[[_C1], _C1]:
     options = FirestoreOptions(**kwargs)
 
     def on_document_written_inner_decorator(func: _C1):
-        document_pattern = _path_pattern.PathPattern(
-            _util.normalize_path(options.document))
+        document_pattern = _path_pattern.PathPattern(_util.normalize_path(options.document))
 
         @_functools.wraps(func)
         def on_document_written_wrapped(raw: _ce.CloudEvent):
@@ -271,8 +272,7 @@ def on_document_written(**kwargs) -> _typing.Callable[[_C1], _C1]:
 
 
 @_util.copy_func_kwargs(FirestoreOptions)
-def on_document_written_with_auth_context(**kwargs
-                                         ) -> _typing.Callable[[_C1], _C1]:
+def on_document_written_with_auth_context(**kwargs) -> _typing.Callable[[_C1], _C1]:
     """
     Event handler that triggers when a document is created, updated, or deleted in Firestore.
     This trigger will also provide the authentication context of the principal who triggered
@@ -296,8 +296,7 @@ def on_document_written_with_auth_context(**kwargs
     options = FirestoreOptions(**kwargs)
 
     def on_document_written_with_auth_context_inner_decorator(func: _C1):
-        document_pattern = _path_pattern.PathPattern(
-            _util.normalize_path(options.document))
+        document_pattern = _path_pattern.PathPattern(_util.normalize_path(options.document))
 
         @_functools.wraps(func)
         def on_document_written_with_auth_context_wrapped(raw: _ce.CloudEvent):
@@ -344,8 +343,7 @@ def on_document_updated(**kwargs) -> _typing.Callable[[_C1], _C1]:
     options = FirestoreOptions(**kwargs)
 
     def on_document_updated_inner_decorator(func: _C1):
-        document_pattern = _path_pattern.PathPattern(
-            _util.normalize_path(options.document))
+        document_pattern = _path_pattern.PathPattern(_util.normalize_path(options.document))
 
         @_functools.wraps(func)
         def on_document_updated_wrapped(raw: _ce.CloudEvent):
@@ -370,8 +368,7 @@ def on_document_updated(**kwargs) -> _typing.Callable[[_C1], _C1]:
 
 
 @_util.copy_func_kwargs(FirestoreOptions)
-def on_document_updated_with_auth_context(**kwargs
-                                         ) -> _typing.Callable[[_C1], _C1]:
+def on_document_updated_with_auth_context(**kwargs) -> _typing.Callable[[_C1], _C1]:
     """
     Event handler that triggers when a document is updated in Firestore.
     This trigger will also provide the authentication context of the principal who triggered
@@ -395,8 +392,7 @@ def on_document_updated_with_auth_context(**kwargs
     options = FirestoreOptions(**kwargs)
 
     def on_document_updated_with_auth_context_inner_decorator(func: _C1):
-        document_pattern = _path_pattern.PathPattern(
-            _util.normalize_path(options.document))
+        document_pattern = _path_pattern.PathPattern(_util.normalize_path(options.document))
 
         @_functools.wraps(func)
         def on_document_updated_with_auth_context_wrapped(raw: _ce.CloudEvent):
@@ -443,8 +439,7 @@ def on_document_created(**kwargs) -> _typing.Callable[[_C2], _C2]:
     options = FirestoreOptions(**kwargs)
 
     def on_document_created_inner_decorator(func: _C2):
-        document_pattern = _path_pattern.PathPattern(
-            _util.normalize_path(options.document))
+        document_pattern = _path_pattern.PathPattern(_util.normalize_path(options.document))
 
         @_functools.wraps(func)
         def on_document_created_wrapped(raw: _ce.CloudEvent):
@@ -469,8 +464,7 @@ def on_document_created(**kwargs) -> _typing.Callable[[_C2], _C2]:
 
 
 @_util.copy_func_kwargs(FirestoreOptions)
-def on_document_created_with_auth_context(**kwargs
-                                         ) -> _typing.Callable[[_C2], _C2]:
+def on_document_created_with_auth_context(**kwargs) -> _typing.Callable[[_C2], _C2]:
     """
     Event handler that triggers when a document is created in Firestore.
     This trigger will also provide the authentication context of the principal who triggered
@@ -494,8 +488,7 @@ def on_document_created_with_auth_context(**kwargs
     options = FirestoreOptions(**kwargs)
 
     def on_document_created_with_auth_context_inner_decorator(func: _C2):
-        document_pattern = _path_pattern.PathPattern(
-            _util.normalize_path(options.document))
+        document_pattern = _path_pattern.PathPattern(_util.normalize_path(options.document))
 
         @_functools.wraps(func)
         def on_document_created_with_auth_context_wrapped(raw: _ce.CloudEvent):
@@ -542,8 +535,7 @@ def on_document_deleted(**kwargs) -> _typing.Callable[[_C2], _C2]:
     options = FirestoreOptions(**kwargs)
 
     def on_document_deleted_inner_decorator(func: _C2):
-        document_pattern = _path_pattern.PathPattern(
-            _util.normalize_path(options.document))
+        document_pattern = _path_pattern.PathPattern(_util.normalize_path(options.document))
 
         @_functools.wraps(func)
         def on_document_deleted_wrapped(raw: _ce.CloudEvent):
@@ -568,8 +560,7 @@ def on_document_deleted(**kwargs) -> _typing.Callable[[_C2], _C2]:
 
 
 @_util.copy_func_kwargs(FirestoreOptions)
-def on_document_deleted_with_auth_context(**kwargs
-                                         ) -> _typing.Callable[[_C2], _C2]:
+def on_document_deleted_with_auth_context(**kwargs) -> _typing.Callable[[_C2], _C2]:
     """
     Event handler that triggers when a document is deleted in Firestore.
     This trigger will also provide the authentication context of the principal who triggered
@@ -593,8 +584,7 @@ def on_document_deleted_with_auth_context(**kwargs
     options = FirestoreOptions(**kwargs)
 
     def on_document_deleted_with_auth_context_inner_decorator(func: _C2):
-        document_pattern = _path_pattern.PathPattern(
-            _util.normalize_path(options.document))
+        document_pattern = _path_pattern.PathPattern(_util.normalize_path(options.document))
 
         @_functools.wraps(func)
         def on_document_deleted_with_auth_context_wrapped(raw: _ce.CloudEvent):

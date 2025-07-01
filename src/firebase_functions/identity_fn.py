@@ -33,6 +33,7 @@ class AuthUserInfo:
     """
     User info that is part of the AuthUserRecord.
     """
+
     uid: str
     """The user identifier for the linked provider."""
 
@@ -57,6 +58,7 @@ class AuthUserMetadata:
     """
     Additional metadata about the user.
     """
+
     creation_time: _dt.datetime
     """The date the user was created."""
 
@@ -348,14 +350,12 @@ class BeforeSignInResponse(BeforeCreateResponse, total=False):
     """The user's session claims object if available."""
 
 
-BeforeUserCreatedCallable = _typing.Callable[[AuthBlockingEvent],
-                                             BeforeCreateResponse | None]
+BeforeUserCreatedCallable = _typing.Callable[[AuthBlockingEvent], BeforeCreateResponse | None]
 """
 The type of the callable for 'before_user_created' blocking events.
 """
 
-BeforeUserSignedInCallable = _typing.Callable[[AuthBlockingEvent],
-                                              BeforeSignInResponse | None]
+BeforeUserSignedInCallable = _typing.Callable[[AuthBlockingEvent], BeforeSignInResponse | None]
 """
 The type of the callable for 'before_user_signed_in' blocking events.
 """
@@ -393,6 +393,7 @@ def before_user_signed_in(
         @_functools.wraps(func)
         def before_user_signed_in_wrapped(request: _Request) -> _Response:
             from firebase_functions.private._identity_fn import before_operation_handler
+
             return before_operation_handler(
                 func,
                 event_type_before_sign_in,
@@ -447,6 +448,7 @@ def before_user_created(
         @_functools.wraps(func)
         def before_user_created_wrapped(request: _Request) -> _Response:
             from firebase_functions.private._identity_fn import before_operation_handler
+
             return before_operation_handler(
                 func,
                 event_type_before_create,

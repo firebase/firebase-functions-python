@@ -15,6 +15,7 @@
 """
 Cloud functions to handle Crashlytics events from Firebase Alerts.
 """
+
 import dataclasses as _dataclasses
 import typing as _typing
 import cloudevents.http as _ce
@@ -220,8 +221,7 @@ CrashlyticsNewFatalIssueEvent = CrashlyticsEvent[NewFatalIssuePayload]
 The type of the event for 'on_new_fatal_issue_published' functions.
 """
 
-OnNewFatalIssuePublishedCallable = _typing.Callable[
-    [CrashlyticsNewFatalIssueEvent], None]
+OnNewFatalIssuePublishedCallable = _typing.Callable[[CrashlyticsNewFatalIssueEvent], None]
 """
 The type of the callable for 'on_new_fatal_issue_published' functions.
 """
@@ -231,8 +231,7 @@ CrashlyticsNewNonfatalIssueEvent = CrashlyticsEvent[NewNonfatalIssuePayload]
 The type of the event for 'on_new_nonfatal_issue_published' functions.
 """
 
-OnNewNonfatalIssuePublishedCallable = _typing.Callable[
-    [CrashlyticsNewNonfatalIssueEvent], None]
+OnNewNonfatalIssuePublishedCallable = _typing.Callable[[CrashlyticsNewNonfatalIssueEvent], None]
 """
 The type of the callable for 'on_new_nonfatal_issue_published' functions.
 """
@@ -242,8 +241,7 @@ CrashlyticsRegressionAlertEvent = CrashlyticsEvent[RegressionAlertPayload]
 The type of the event for 'on_regression_alert_published' functions.
 """
 
-OnRegressionAlertPublishedCallable = _typing.Callable[
-    [CrashlyticsRegressionAlertEvent], None]
+OnRegressionAlertPublishedCallable = _typing.Callable[[CrashlyticsRegressionAlertEvent], None]
 """
 The type of the callable for 'on_regression_alert_published' functions.
 """
@@ -253,8 +251,7 @@ CrashlyticsStabilityDigestEvent = CrashlyticsEvent[StabilityDigestPayload]
 The type of the event for 'on_stability_digest_published' functions.
 """
 
-OnStabilityDigestPublishedCallable = _typing.Callable[
-    [CrashlyticsStabilityDigestEvent], None]
+OnStabilityDigestPublishedCallable = _typing.Callable[[CrashlyticsStabilityDigestEvent], None]
 """
 The type of the callable for 'on_stability_digest_published' functions.
 """
@@ -264,8 +261,7 @@ CrashlyticsVelocityAlertEvent = CrashlyticsEvent[VelocityAlertPayload]
 The type of the event for 'on_velocity_alert_published' functions.
 """
 
-OnVelocityAlertPublishedCallable = _typing.Callable[
-    [CrashlyticsVelocityAlertEvent], None]
+OnVelocityAlertPublishedCallable = _typing.Callable[[CrashlyticsVelocityAlertEvent], None]
 """
 The type of the callable for 'on_velocity_alert_published' functions.
 """
@@ -275,8 +271,7 @@ CrashlyticsNewAnrIssueEvent = CrashlyticsEvent[NewAnrIssuePayload]
 The type of the event for 'on_new_anr_issue_published' functions.
 """
 
-OnNewAnrIssuePublishedCallable = _typing.Callable[[CrashlyticsNewAnrIssueEvent],
-                                                  None]
+OnNewAnrIssuePublishedCallable = _typing.Callable[[CrashlyticsNewAnrIssueEvent], None]
 """
 The type of the callable for 'on_new_anr_issue_published' functions.
 """
@@ -289,10 +284,10 @@ def _create_crashlytics_decorator(
     options = CrashlyticsOptions(**kwargs)
 
     def crashlytics_decorator_inner(func: _typing.Callable):
-
         @_functools.wraps(func)
         def crashlytics_decorator_wrapped(raw: _ce.CloudEvent):
             from firebase_functions.private._alerts_fn import crashlytics_event_from_ce
+
             func(crashlytics_event_from_ce(raw))
 
         _util.set_func_endpoint_attr(
@@ -309,9 +304,8 @@ def _create_crashlytics_decorator(
 
 @_util.copy_func_kwargs(CrashlyticsOptions)
 def on_new_fatal_issue_published(
-    **kwargs
-) -> _typing.Callable[[OnNewFatalIssuePublishedCallable],
-                      OnNewFatalIssuePublishedCallable]:
+    **kwargs,
+) -> _typing.Callable[[OnNewFatalIssuePublishedCallable], OnNewFatalIssuePublishedCallable]:
     """
     Event handler which runs every time a new fatal issue is received.
 
@@ -334,14 +328,13 @@ def on_new_fatal_issue_published(
             \\]
             A function that takes a CrashlyticsNewFatalIssueEvent and returns None.
     """
-    return _create_crashlytics_decorator('crashlytics.newFatalIssue', **kwargs)
+    return _create_crashlytics_decorator("crashlytics.newFatalIssue", **kwargs)
 
 
 @_util.copy_func_kwargs(CrashlyticsOptions)
 def on_new_nonfatal_issue_published(
-    **kwargs
-) -> _typing.Callable[[OnNewNonfatalIssuePublishedCallable],
-                      OnNewNonfatalIssuePublishedCallable]:
+    **kwargs,
+) -> _typing.Callable[[OnNewNonfatalIssuePublishedCallable], OnNewNonfatalIssuePublishedCallable]:
     """
     Event handler which runs every time a new nonfatal issue is received.
 
@@ -364,15 +357,13 @@ def on_new_nonfatal_issue_published(
             \\]
             A function that takes a CrashlyticsNewNonfatalIssueEvent and returns None.
     """
-    return _create_crashlytics_decorator('crashlytics.newNonfatalIssue',
-                                         **kwargs)
+    return _create_crashlytics_decorator("crashlytics.newNonfatalIssue", **kwargs)
 
 
 @_util.copy_func_kwargs(CrashlyticsOptions)
 def on_regression_alert_published(
-    **kwargs
-) -> _typing.Callable[[OnRegressionAlertPublishedCallable],
-                      OnRegressionAlertPublishedCallable]:
+    **kwargs,
+) -> _typing.Callable[[OnRegressionAlertPublishedCallable], OnRegressionAlertPublishedCallable]:
     """
     Event handler which runs every time a regression alert is received.
 
@@ -395,14 +386,13 @@ def on_regression_alert_published(
             \\]
             A function that takes a CrashlyticsRegressionAlertEvent and returns None.
     """
-    return _create_crashlytics_decorator('crashlytics.regression', **kwargs)
+    return _create_crashlytics_decorator("crashlytics.regression", **kwargs)
 
 
 @_util.copy_func_kwargs(CrashlyticsOptions)
 def on_stability_digest_published(
-    **kwargs
-) -> _typing.Callable[[OnStabilityDigestPublishedCallable],
-                      OnStabilityDigestPublishedCallable]:
+    **kwargs,
+) -> _typing.Callable[[OnStabilityDigestPublishedCallable], OnStabilityDigestPublishedCallable]:
     """
     Event handler which runs every time a stability digest is received.
 
@@ -425,15 +415,13 @@ def on_stability_digest_published(
             \\]
             A function that takes a CrashlyticsStabilityDigestEvent and returns None.
     """
-    return _create_crashlytics_decorator('crashlytics.stabilityDigest',
-                                         **kwargs)
+    return _create_crashlytics_decorator("crashlytics.stabilityDigest", **kwargs)
 
 
 @_util.copy_func_kwargs(CrashlyticsOptions)
 def on_velocity_alert_published(
-    **kwargs
-) -> _typing.Callable[[OnVelocityAlertPublishedCallable],
-                      OnVelocityAlertPublishedCallable]:
+    **kwargs,
+) -> _typing.Callable[[OnVelocityAlertPublishedCallable], OnVelocityAlertPublishedCallable]:
     """
     Event handler which runs every time a velocity alert is received.
 
@@ -456,14 +444,13 @@ def on_velocity_alert_published(
             \\]
             A function that takes a CrashlyticsVelocityAlertEvent and returns None.
     """
-    return _create_crashlytics_decorator('crashlytics.velocity', **kwargs)
+    return _create_crashlytics_decorator("crashlytics.velocity", **kwargs)
 
 
 @_util.copy_func_kwargs(CrashlyticsOptions)
 def on_new_anr_issue_published(
-    **kwargs
-) -> _typing.Callable[[OnNewAnrIssuePublishedCallable],
-                      OnNewAnrIssuePublishedCallable]:
+    **kwargs,
+) -> _typing.Callable[[OnNewAnrIssuePublishedCallable], OnNewAnrIssuePublishedCallable]:
     """
     Event handler which runs every time a new ANR issue is received.
 
@@ -486,4 +473,4 @@ def on_new_anr_issue_published(
             \\]
             A function that takes a CrashlyticsNewAnrIssueEvent and returns None.
     """
-    return _create_crashlytics_decorator('crashlytics.newAnrIssue', **kwargs)
+    return _create_crashlytics_decorator("crashlytics.newAnrIssue", **kwargs)

@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Task Queue function tests."""
+
 import unittest
 
 from unittest.mock import MagicMock, Mock
@@ -58,9 +59,7 @@ class TestTasks(unittest.TestCase):
             environ = EnvironBuilder(
                 method="POST",
                 json={
-                    "data": {
-                        "test": "value"
-                    },
+                    "data": {"test": "value"},
                 },
             ).get_environ()
             request = Request(environ)
@@ -87,9 +86,7 @@ class TestTasks(unittest.TestCase):
             environ = EnvironBuilder(
                 method="POST",
                 json={
-                    "data": {
-                        "test": "value"
-                    },
+                    "data": {"test": "value"},
                 },
             ).get_environ()
             request = Request(environ)

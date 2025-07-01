@@ -14,6 +14,7 @@
 """
 Module for Cloud Functions that are triggered by the Firebase Realtime Database.
 """
+
 # pylint: disable=protected-access
 import dataclasses as _dataclass
 import functools as _functools
@@ -147,7 +148,8 @@ def on_value_written(**kwargs) -> _typing.Callable[[_C1], _C1]:
     def on_value_written_inner_decorator(func: _C1):
         ref_pattern = _path_pattern.PathPattern(options.reference)
         instance_pattern = _path_pattern.PathPattern(
-            options.instance if options.instance is not None else "*")
+            options.instance if options.instance is not None else "*"
+        )
 
         @_functools.wraps(func)
         def on_value_written_wrapped(raw: _ce.CloudEvent):
@@ -197,7 +199,8 @@ def on_value_updated(**kwargs) -> _typing.Callable[[_C1], _C1]:
     def on_value_updated_inner_decorator(func: _C1):
         ref_pattern = _path_pattern.PathPattern(options.reference)
         instance_pattern = _path_pattern.PathPattern(
-            options.instance if options.instance is not None else "*")
+            options.instance if options.instance is not None else "*"
+        )
 
         @_functools.wraps(func)
         def on_value_updated_wrapped(raw: _ce.CloudEvent):
@@ -247,7 +250,8 @@ def on_value_created(**kwargs) -> _typing.Callable[[_C2], _C2]:
     def on_value_created_inner_decorator(func: _C2):
         ref_pattern = _path_pattern.PathPattern(options.reference)
         instance_pattern = _path_pattern.PathPattern(
-            options.instance if options.instance is not None else "*")
+            options.instance if options.instance is not None else "*"
+        )
 
         @_functools.wraps(func)
         def on_value_created_wrapped(raw: _ce.CloudEvent):
@@ -297,7 +301,8 @@ def on_value_deleted(**kwargs) -> _typing.Callable[[_C2], _C2]:
     def on_value_deleted_inner_decorator(func: _C2):
         ref_pattern = _path_pattern.PathPattern(options.reference)
         instance_pattern = _path_pattern.PathPattern(
-            options.instance if options.instance is not None else "*")
+            options.instance if options.instance is not None else "*"
+        )
 
         @_functools.wraps(func)
         def on_value_deleted_wrapped(raw: _ce.CloudEvent):

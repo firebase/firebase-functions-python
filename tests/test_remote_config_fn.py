@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Remote Config function tests."""
+
 import unittest
 from unittest.mock import MagicMock
 from cloudevents.http import CloudEvent as _CloudEvent
@@ -66,13 +67,14 @@ class TestRemoteConfig(unittest.TestCase):
                 "updateUser": {
                     "name": "John Doe",
                     "email": "johndoe@example.com",
-                    "imageUrl": "https://example.com/image.jpg"
+                    "imageUrl": "https://example.com/image.jpg",
                 },
                 "description": "Test update",
                 "updateOrigin": "CONSOLE",
                 "updateType": "INCREMENTAL_UPDATE",
-                "rollbackSource": 41
-            })
+                "rollbackSource": 41,
+            },
+        )
 
         _config_handler(func, raw_event)
 
@@ -83,8 +85,6 @@ class TestRemoteConfig(unittest.TestCase):
         self.assertIsInstance(event_arg.data, ConfigUpdateData)
         self.assertIsInstance(event_arg.data.update_user, ConfigUser)
         self.assertEqual(event_arg.data.version_number, 42)
-        self.assertEqual(event_arg.data.update_origin,
-                         ConfigUpdateOrigin.CONSOLE)
-        self.assertEqual(event_arg.data.update_type,
-                         ConfigUpdateType.INCREMENTAL_UPDATE)
+        self.assertEqual(event_arg.data.update_origin, ConfigUpdateOrigin.CONSOLE)
+        self.assertEqual(event_arg.data.update_type, ConfigUpdateType.INCREMENTAL_UPDATE)
         self.assertEqual(event_arg.data.rollback_source, 41)

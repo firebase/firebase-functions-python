@@ -12,18 +12,13 @@ from firebase_functions import core, identity_fn
 token_verifier_mock = MagicMock()
 token_verifier_mock.verify_auth_blocking_token = Mock(
     return_value={
-        "user_record": {
-            "uid": "uid",
-            "metadata": {
-                "creation_time": 0
-            },
-            "provider_data": []
-        },
+        "user_record": {"uid": "uid", "metadata": {"creation_time": 0}, "provider_data": []},
         "event_id": "event_id",
         "ip_address": "ip_address",
         "user_agent": "user_agent",
-        "iat": 0
-    })
+        "iat": 0,
+    }
+)
 mocked_modules = {
     "firebase_functions.private.token_verifier": token_verifier_mock,
 }
@@ -45,16 +40,13 @@ class TestIdentity(unittest.TestCase):
         with patch.dict("sys.modules", mocked_modules):
             app = Flask(__name__)
 
-            func = Mock(__name__="example_func",
-                        return_value=identity_fn.BeforeSignInResponse())
+            func = Mock(__name__="example_func", return_value=identity_fn.BeforeSignInResponse())
 
             with app.test_request_context("/"):
                 environ = EnvironBuilder(
                     method="POST",
                     json={
-                        "data": {
-                            "jwt": "jwt"
-                        },
+                        "data": {"jwt": "jwt"},
                     },
                 ).get_environ()
                 request = Request(environ)

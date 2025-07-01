@@ -14,6 +14,7 @@
 """
 Module used to serve Firebase functions locally and remotely.
 """
+
 # pylint: disable=protected-access
 import os
 import inspect
@@ -52,7 +53,6 @@ def get_functions():
 
 
 def to_spec(data: dict) -> dict:
-
     def convert_value(obj):
         if isinstance(obj, enum.Enum):
             return obj.value
@@ -62,13 +62,12 @@ def to_spec(data: dict) -> dict:
             return list(map(convert_value, obj))
         return obj
 
-    without_nones = dict(
-        (k, convert_value(v)) for k, v in data.items() if v is not None)
+    without_nones = dict((k, convert_value(v)) for k, v in data.items() if v is not None)
     return without_nones
 
 
 def merge_required_apis(
-    required_apis: list[_manifest.ManifestRequiredApi]
+    required_apis: list[_manifest.ManifestRequiredApi],
 ) -> list[_manifest.ManifestRequiredApi]:
     api_to_reasons: dict[str, list[str]] = {}
     for api_reason in required_apis:
@@ -125,7 +124,6 @@ def get_functions_yaml() -> Response:
 
 
 def quitquitquit():
-
     def quit_after_close():
         kill(getpid(), SIGTERM)
 

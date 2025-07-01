@@ -31,8 +31,7 @@ from firebase_admin import app_check as _app_check
 P = _typing.ParamSpec("P")
 R = _typing.TypeVar("R")
 
-JWT_REGEX = _re.compile(
-    r"^[a-zA-Z0-9\-_=]+?\.[a-zA-Z0-9\-_=]+?\.([a-zA-Z0-9\-_=]+)?$")
+JWT_REGEX = _re.compile(r"^[a-zA-Z0-9\-_=]+?\.[a-zA-Z0-9\-_=]+?\.([a-zA-Z0-9\-_=]+)?$")
 
 
 class Sentinel:
@@ -42,14 +41,12 @@ class Sentinel:
         self.description = description
 
     def __eq__(self, other):
-        return isinstance(other,
-                          Sentinel) and self.description == other.description
+        return isinstance(other, Sentinel) and self.description == other.description
 
 
 def copy_func_kwargs(
     func_with_kwargs: _typing.Callable[P, _typing.Any],  # pylint: disable=unused-argument
 ) -> _typing.Callable[[_typing.Callable[..., R]], _typing.Callable[P, R]]:
-
     def return_func(func: _typing.Callable[..., R]) -> _typing.Callable[P, R]:
         return _typing.cast(_typing.Callable[P, R], func)
 
@@ -95,16 +92,16 @@ def deep_merge(dict1, dict2):
 
 def valid_on_call_request(request: _Request) -> bool:
     """Validate request"""
-    if (_on_call_valid_method(request) and
-            _on_call_valid_content_type(request) and
-            _on_call_valid_body(request)):
+    if (
+        _on_call_valid_method(request)
+        and _on_call_valid_content_type(request)
+        and _on_call_valid_body(request)
+    ):
         return True
     return False
 
 
-def convert_keys_to_camel_case(
-        data: dict[str, _typing.Any]) -> dict[str, _typing.Any]:
-
+def convert_keys_to_camel_case(data: dict[str, _typing.Any]) -> dict[str, _typing.Any]:
     def snake_to_camel(word: str) -> str:
         components = word.split("_")
         return components[0] + "".join(x.capitalize() for x in components[1:])
@@ -123,9 +120,7 @@ def _on_call_valid_body(request: _Request) -> bool:
         _logging.warning("Request body is missing data.", request.json)
         return False
 
-    extra_keys = {
-        key: request.json[key] for key in request.json.keys() if key != "data"
-    }
+    extra_keys = {key: request.json[key] for key in request.json.keys() if key != "data"}
     if len(extra_keys) != 0:
         _logging.warning(
             "Request body has extra fields: %s",
@@ -212,11 +207,11 @@ class _OnCallTokenVerification:
 
 
 def _on_call_check_auth_token(
-    request: _Request
+    request: _Request,
 ) -> None | _typing.Literal[OnCallTokenState.INVALID] | dict[str, _typing.Any]:
     """
-        Validates the auth token in a callable request.
-        If verify_token is False, the token will be decoded without verification.
+    Validates the auth token in a callable request.
+    If verify_token is False, the token will be decoded without verification.
     """
     authorization = request.headers.get("Authorization")
     if authorization is None:
@@ -235,7 +230,7 @@ def _on_call_check_auth_token(
 
 
 def _on_call_check_app_token(
-    request: _Request
+    request: _Request,
 ) -> None | _typing.Literal[OnCallTokenState.INVALID] | dict[str, _typing.Any]:
     """Validates the app token in a callable request."""
     app_check = request.headers.get("X-Firebase-AppCheck")
@@ -304,14 +299,13 @@ def on_call_check_tokens(request: _Request) -> _OnCallTokenVerification:
     if len(errs) == 0:
         _logging.info("Callable request verification passed: %s", log_payload)
     else:
-        _logging.warning(f"Callable request verification failed: ${errs}",
-                         log_payload)
+        _logging.warning(f"Callable request verification failed: ${errs}", log_payload)
 
     return verifications
 
 
 @_dataclasses.dataclass(frozen=True)
-class FirebaseConfig():
+class FirebaseConfig:
     """
     A collection of configuration options needed to
     initialize a firebase App.
@@ -340,8 +334,7 @@ def firebase_config() -> None | FirebaseConfig:
             with open(config_file, "r", encoding="utf8") as json_file:
                 json_str = json_file.read()
         except Exception as err:
-            raise ValueError(
-                f"Unable to read file {config_file}. {err}") from err
+            raise ValueError(f"Unable to read file {config_file}. {err}") from err
     try:
         json_data: dict = _json.loads(json_str)
     except Exception as err:
@@ -355,13 +348,11 @@ def nanoseconds_timestamp_conversion(time: str) -> _dt.datetime:
     """Converts a nanosecond timestamp and returns a datetime object of the current time in UTC"""
 
     # Separate the date and time part from the nanoseconds.
-    datetime_str, nanosecond_str = time.replace("Z", "").replace("z",
-                                                                 "").split(".")
+    datetime_str, nanosecond_str = time.replace("Z", "").replace("z", "").split(".")
     # Parse the date and time part of the string.
     event_time = _dt.datetime.strptime(datetime_str, "%Y-%m-%dT%H:%M:%S")
     # Add the microseconds and timezone.
-    event_time = event_time.replace(microsecond=int(nanosecond_str[:6]),
-                                    tzinfo=_dt.timezone.utc)
+    event_time = event_time.replace(microsecond=int(nanosecond_str[:6]), tzinfo=_dt.timezone.utc)
 
     return event_time
 
@@ -398,8 +389,7 @@ def get_precision_timestamp(time: str) -> PrecisionTimestamp:
         return PrecisionTimestamp.SECONDS
 
     # Split the fraction from the timezone specifier ('Z' or 'z')
-    s_fraction, _ = s_fraction.split(
-        "Z") if "Z" in s_fraction else s_fraction.split("z")
+    s_fraction, _ = s_fraction.split("Z") if "Z" in s_fraction else s_fraction.split("z")
 
     # If the fraction is more than 6 digits long, it's a nanosecond timestamp
     if len(s_fraction) > 6:
