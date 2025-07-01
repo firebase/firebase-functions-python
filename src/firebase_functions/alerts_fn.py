@@ -29,7 +29,7 @@ from firebase_functions.core import T, _with_init
 
 # Explicitly import AlertType to make it available in the public API.
 # pylint: disable=unused-import
-from firebase_functions.options import FirebaseAlertOptions
+from firebase_functions.options import AlertType, FirebaseAlertOptions
 
 
 @_dataclasses.dataclass(frozen=True)

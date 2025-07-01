@@ -100,9 +100,7 @@ class TestIntParams:
 
     def test_int_param_empty_default(self):
         """Testing if int param defaults to empty int if no value and no default."""
-        assert params.IntParam("INT_DEFAULT_TEST1").value == 0, (
-            "Failure, params value is not int"
-        )
+        assert params.IntParam("INT_DEFAULT_TEST1").value == 0, "Failure, params value is not int"
 
     def test_int_param_default(self):
         """Testing if int param defaults to provided default value."""

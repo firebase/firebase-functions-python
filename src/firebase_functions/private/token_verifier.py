@@ -118,13 +118,13 @@ class _JWTVerifier:
                 f'got "{issuer}". {project_id_match_msg} {verify_id_token_msg}'
             )
         elif subject is None or not isinstance(subject, str):
-            error_message = f'Firebase {self.short_name} has no "sub" (subject) claim. {verify_id_token_msg}'
+            error_message = (
+                f'Firebase {self.short_name} has no "sub" (subject) claim. {verify_id_token_msg}'
+            )
         elif not subject:
             error_message = f'Firebase {self.short_name} has an empty string "sub" (subject) claim. {verify_id_token_msg}'
         elif len(subject) > 128:
-            error_message = (
-                f'Firebase {self.short_name} has a "sub" (subject) claim longer than 128 characters. {verify_id_token_msg}'
-            )
+            error_message = f'Firebase {self.short_name} has a "sub" (subject) claim longer than 128 characters. {verify_id_token_msg}'
 
         if error_message:
             raise self._invalid_token_error(error_message)

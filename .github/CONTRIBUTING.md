@@ -49,7 +49,7 @@ python3.11 -m pytest --cov=src --cov-report term --cov-report html --cov-report 
 ### Formatting code
 
 ```bash
-yapf -i -r -p .
+python3.11 -m ruff format .
 ```
 
 ### Running lints & type checking
@@ -58,7 +58,7 @@ yapf -i -r -p .
 # Type checking
 python3.11 -m mypy .
 # Linting
-python3.11 -m pylint $(git ls-files '*.py')
+python3.11 -m ruff check .
 ```
 
 ### Generating Docs

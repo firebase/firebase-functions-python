@@ -35,6 +35,7 @@ from firebase_functions.core import _with_init
 
 # Export for user convenience.
 # pylint: disable=unused-import
+from firebase_functions.options import Timezone
 
 
 @_dataclasses.dataclass(frozen=True)
