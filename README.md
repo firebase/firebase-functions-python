@@ -1,4 +1,4 @@
-# Cloud Functions for Firebase Python SDK (Public Preview)
+# Cloud Functions for Firebase Python SDK
 
 The [`firebase-functions`](https://pypi.org/project/firebase-functions/) package provides an SDK for defining Cloud Functions for Firebase in Python.
 
