@@ -27,9 +27,12 @@ from firebase_functions.alerts import FirebaseAlertData
 from firebase_functions.core import CloudEvent as _CloudEvent
 from firebase_functions.core import T, _with_init
 
-# Explicitly import AlertType to make it available in the public API.
-# pylint: disable=unused-import
-from firebase_functions.options import AlertType, FirebaseAlertOptions
+# Re-export AlertType from options module so users can import it directly from alerts_fn
+# This provides a more convenient API: from firebase_functions.alerts_fn import AlertType
+from firebase_functions.options import (
+    AlertType,  # noqa: F401
+    FirebaseAlertOptions,
+)
 
 
 @_dataclasses.dataclass(frozen=True)

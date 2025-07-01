@@ -33,9 +33,9 @@ import firebase_functions.options as _options
 import firebase_functions.private.util as _util
 from firebase_functions.core import _with_init
 
-# Export for user convenience.
-# pylint: disable=unused-import
-from firebase_functions.options import Timezone
+# Re-export Timezone from options module so users can import it directly from scheduler_fn
+# This provides a more convenient API: from firebase_functions.scheduler_fn import Timezone
+from firebase_functions.options import Timezone  # noqa: F401
 
 
 @_dataclasses.dataclass(frozen=True)
