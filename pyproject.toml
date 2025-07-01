@@ -1,7 +1,73 @@
+[build-system]
+requires = ["setuptools>=63.4.2", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "firebase_functions"
+description = "Firebase Functions Python SDK"
+readme = "README.md"
+license = {text = "Apache-2.0"}
+authors = [
+    {name = "Firebase Team"}
+]
+keywords = ["firebase", "functions", "google", "cloud"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Topic :: Software Development :: Build Tools",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+]
+requires-python = ">=3.10"
+dependencies = [
+    "flask>=2.1.2",
+    "functions-framework>=3.0.0",
+    "firebase-admin>=6.0.0",
+    "pyyaml>=6.0",
+    "typing-extensions>=4.4.0",
+    "cloudevents>=1.2.0,<2.0.0",
+    "flask-cors>=3.0.10",
+    "pyjwt[crypto]>=2.5.0",
+    "google-events==0.5.0",
+    "google-cloud-firestore>=2.11.0",
+]
+dynamic = ["version"]
+
+[project.urls]
+"Homepage" = "https://github.com/firebase/firebase-functions-python"
+"Documentation" = "https://firebase.google.com/docs/functions"
+"Repository" = "https://github.com/firebase/firebase-functions-python"
+"Bug Tracker" = "https://github.com/firebase/firebase-functions-python/issues"
+
+[dependency-groups]
+dev = [
+    "pytest>=7.1.2,<9",
+    "setuptools>=63.4.2",
+    "pytest-cov>=3.0.0",
+    "mypy>=1.0.0",
+    "sphinx>=6.1.3",
+    "sphinxcontrib-napoleon>=0.7",
+    "toml>=0.10.2",
+    "google-cloud-tasks>=2.13.1",
+    "ruff>=0.1.0",
+    "build>=1.0.0",
+]
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+packages = ["firebase_functions"]
+
+[tool.setuptools.package-data]
+firebase_functions = ["py.typed"]
+
+[tool.setuptools.dynamic]
+version = {attr = "firebase_functions.__version__"}
+
 [tool.pytest.ini_options]
 pythonpath = [
   ".", "src/",
 ]
+
 [tool.coverage]
     [tool.coverage.run]
     omit = [
