@@ -2,8 +2,9 @@
 Example Function params & inputs.
 """
 
-from firebase_functions import storage_fn, params
 from firebase_admin import initialize_app
+
+from firebase_functions import params, storage_fn
 
 initialize_app()
 

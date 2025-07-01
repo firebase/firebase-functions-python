@@ -14,18 +14,21 @@
 """Cloud functions to handle Eventarc events."""
 
 # pylint: disable=protected-access,cyclic-import
-import typing as _typing
-import functools as _functools
-import datetime as _dt
 import dataclasses as _dataclasses
+import datetime as _dt
+import functools as _functools
+import typing as _typing
 from enum import Enum
+
+from flask import (
+    Request as _Request,
+)
+from flask import (
+    Response as _Response,
+)
 
 import firebase_functions.options as _options
 import firebase_functions.private.util as _util
-from flask import (
-    Request as _Request,
-    Response as _Response,
-)
 
 
 @_dataclasses.dataclass(frozen=True)
@@ -62,7 +65,7 @@ class AuthUserMetadata:
     creation_time: _dt.datetime
     """The date the user was created."""
 
-    last_sign_in_time: _typing.Optional[_dt.datetime]
+    last_sign_in_time: _dt.datetime | None
     """The date the user last signed in."""
 
 

@@ -20,6 +20,7 @@ import dataclasses as _dataclasses
 import datetime as _dt
 import functools as _functools
 import typing as _typing
+
 import cloudevents.http as _ce
 
 import firebase_functions.private.util as _util

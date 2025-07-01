@@ -17,16 +17,16 @@ deployments.
 """
 
 # pylint: disable=protected-access
-import enum as _enum
 import dataclasses as _dataclasses
+import enum as _enum
 import re as _re
 import typing as _typing
 from zoneinfo import ZoneInfo as _ZoneInfo
 
 import firebase_functions.private.manifest as _manifest
-import firebase_functions.private.util as _util
 import firebase_functions.private.path_pattern as _path_pattern
-from firebase_functions.params import SecretParam, Expression
+import firebase_functions.private.util as _util
+from firebase_functions.params import Expression, SecretParam
 
 Timezone = _ZoneInfo
 """An alias of the zoneinfo.ZoneInfo for convenience."""
@@ -470,7 +470,7 @@ class TaskQueueOptions(RuntimeOptions):
                 retryConfig=retry_config,
             ),
         }
-        return _manifest.ManifestEndpoint(**_typing.cast(_typing.Dict, kwargs_merged))
+        return _manifest.ManifestEndpoint(**_typing.cast(dict, kwargs_merged))
 
     def _required_apis(self) -> list[_manifest.ManifestRequiredApi]:
         return [
@@ -511,7 +511,7 @@ class EventHandlerOptions(RuntimeOptions):
             **_dataclasses.asdict(super()._endpoint(**kwargs)),
             "eventTrigger": event_trigger,
         }
-        return _manifest.ManifestEndpoint(**_typing.cast(_typing.Dict, kwargs_merged))
+        return _manifest.ManifestEndpoint(**_typing.cast(dict, kwargs_merged))
 
 
 @_dataclasses.dataclass(frozen=True, kw_only=True)
@@ -536,7 +536,7 @@ class PubSubOptions(EventHandlerOptions):
         event_type = "google.cloud.pubsub.topic.v1.messagePublished"
         return _manifest.ManifestEndpoint(
             **_typing.cast(
-                _typing.Dict,
+                dict,
                 _dataclasses.asdict(
                     super()._endpoint(**kwargs, event_filters=event_filters, event_type=event_type)
                 ),
@@ -640,7 +640,7 @@ class FirebaseAlertOptions(EventHandlerOptions):
         event_type = "google.firebase.firebasealerts.alerts.v1.published"
         return _manifest.ManifestEndpoint(
             **_typing.cast(
-                _typing.Dict,
+                dict,
                 _dataclasses.asdict(
                     super()._endpoint(
                         **kwargs,
@@ -778,7 +778,7 @@ class EventarcTriggerOptions(EventHandlerOptions):
         event_filters = {} if self.filters is None else self.filters
         endpoint = _manifest.ManifestEndpoint(
             **_typing.cast(
-                _typing.Dict,
+                dict,
                 _dataclasses.asdict(
                     super()._endpoint(
                         **kwargs,
@@ -871,7 +871,7 @@ class ScheduleOptions(RuntimeOptions):
                 retryConfig=retry_config,
             ),
         }
-        return _manifest.ManifestEndpoint(**_typing.cast(_typing.Dict, kwargs_merged))
+        return _manifest.ManifestEndpoint(**_typing.cast(dict, kwargs_merged))
 
     def _required_apis(self) -> list[_manifest.ManifestRequiredApi]:
         return [
@@ -923,7 +923,7 @@ class StorageOptions(RuntimeOptions):
             **_dataclasses.asdict(super()._endpoint(**kwargs)),
             "eventTrigger": event_trigger,
         }
-        return _manifest.ManifestEndpoint(**_typing.cast(_typing.Dict, kwargs_merged))
+        return _manifest.ManifestEndpoint(**_typing.cast(dict, kwargs_merged))
 
 
 @_dataclasses.dataclass(frozen=True, kw_only=True)
@@ -977,7 +977,7 @@ class DatabaseOptions(RuntimeOptions):
             **_dataclasses.asdict(super()._endpoint(**kwargs)),
             "eventTrigger": event_trigger,
         }
-        return _manifest.ManifestEndpoint(**_typing.cast(_typing.Dict, kwargs_merged))
+        return _manifest.ManifestEndpoint(**_typing.cast(dict, kwargs_merged))
 
 
 @_dataclasses.dataclass(frozen=True, kw_only=True)
@@ -1021,7 +1021,7 @@ class BlockingOptions(RuntimeOptions):
             **_dataclasses.asdict(super()._endpoint(**kwargs)),
             "blockingTrigger": blocking_trigger,
         }
-        return _manifest.ManifestEndpoint(**_typing.cast(_typing.Dict, kwargs_merged))
+        return _manifest.ManifestEndpoint(**_typing.cast(dict, kwargs_merged))
 
     def _required_apis(self) -> list[_manifest.ManifestRequiredApi]:
         return [
@@ -1084,7 +1084,7 @@ class FirestoreOptions(RuntimeOptions):
             **_dataclasses.asdict(super()._endpoint(**kwargs)),
             "eventTrigger": event_trigger,
         }
-        return _manifest.ManifestEndpoint(**_typing.cast(_typing.Dict, kwargs_merged))
+        return _manifest.ManifestEndpoint(**_typing.cast(dict, kwargs_merged))
 
 
 @_dataclasses.dataclass(frozen=True, kw_only=True)
@@ -1149,7 +1149,7 @@ class HttpsOptions(RuntimeOptions):
                 https_trigger["invoker"] = invoker
             kwargs_merged["httpsTrigger"] = https_trigger
 
-        return _manifest.ManifestEndpoint(**_typing.cast(_typing.Dict, kwargs_merged))
+        return _manifest.ManifestEndpoint(**_typing.cast(dict, kwargs_merged))
 
 
 _GLOBAL_OPTIONS = RuntimeOptions()

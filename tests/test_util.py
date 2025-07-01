@@ -15,19 +15,20 @@
 Internal utils tests.
 """
 
+import datetime as _dt
 from os import environ, path
+
 from firebase_functions.private.util import (
+    PrecisionTimestamp,
+    _unsafe_decode_id_token,
+    deep_merge,
     firebase_config,
+    get_precision_timestamp,
     microsecond_timestamp_conversion,
     nanoseconds_timestamp_conversion,
-    get_precision_timestamp,
     normalize_path,
-    deep_merge,
-    PrecisionTimestamp,
     second_timestamp_conversion,
-    _unsafe_decode_id_token,
 )
-import datetime as _dt
 
 test_bucket = "python-functions-testing.appspot.com"
 test_config_file = path.join(path.dirname(path.realpath(__file__)), "firebase_config_test.json")

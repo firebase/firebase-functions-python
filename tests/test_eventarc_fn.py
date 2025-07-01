@@ -39,7 +39,7 @@ class TestEventarcFn(unittest.TestCase):
             event_type="firebase.extensions.storage-resize-images.v1.complete",
         )(func)
 
-        endpoint = getattr(decorated_func, "__firebase_endpoint__")
+        endpoint = decorated_func.__firebase_endpoint__
         self.assertIsNotNone(endpoint)
         self.assertIsNotNone(endpoint.eventTrigger)
         self.assertEqual(

@@ -3,7 +3,8 @@ Identity function tests.
 """
 
 import unittest
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import MagicMock, Mock, patch
+
 from flask import Flask, Request
 from werkzeug.test import EnvironBuilder
 

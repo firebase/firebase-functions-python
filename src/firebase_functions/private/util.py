@@ -16,17 +16,18 @@ Module for internal utilities.
 """
 
 import base64
-import os as _os
-import json as _json
-import re as _re
-import typing as _typing
 import dataclasses as _dataclasses
 import datetime as _dt
 import enum as _enum
+import json as _json
+import os as _os
+import re as _re
+import typing as _typing
+
+from firebase_admin import app_check as _app_check
+from firebase_admin import auth as _auth
 from flask import Request as _Request
 from functions_framework import logging as _logging
-from firebase_admin import auth as _auth
-from firebase_admin import app_check as _app_check
 
 P = _typing.ParamSpec("P")
 R = _typing.TypeVar("R")
@@ -39,6 +40,9 @@ class Sentinel:
 
     def __init__(self, description):
         self.description = description
+
+    def __hash__(self):
+        return hash(self.description)
 
     def __eq__(self, other):
         return isinstance(other, Sentinel) and self.description == other.description
@@ -57,7 +61,7 @@ def set_func_endpoint_attr(
     func: _typing.Callable[P, _typing.Any],
     endpoint: _typing.Any,
 ) -> _typing.Callable[P, _typing.Any]:
-    setattr(func, "__firebase_endpoint__", endpoint)
+    func.__firebase_endpoint__ = endpoint
     return func
 
 
@@ -331,7 +335,7 @@ def firebase_config() -> None | FirebaseConfig:
         # explicitly state that the user can set the env to a file:
         # https://firebase.google.com/docs/admin/setup#initialize-without-parameters
         try:
-            with open(config_file, "r", encoding="utf8") as json_file:
+            with open(config_file, encoding="utf8") as json_file:
                 json_str = json_file.read()
         except Exception as err:
             raise ValueError(f"Unable to read file {config_file}. {err}") from err

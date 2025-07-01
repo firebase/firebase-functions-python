@@ -15,18 +15,19 @@
 
 import unittest
 from unittest.mock import MagicMock, Mock
+
 from cloudevents.http import CloudEvent as _CloudEvent
 
 from firebase_functions import core
 from firebase_functions.test_lab_fn import (
+    ClientInfo,
     CloudEvent,
-    TestMatrixCompletedData,
-    TestState,
     OutcomeSummary,
     ResultStorage,
-    ClientInfo,
-    on_test_matrix_completed,
+    TestMatrixCompletedData,
+    TestState,
     _event_handler,
+    on_test_matrix_completed,
 )
 
 
@@ -43,7 +44,7 @@ class TestTestLab(unittest.TestCase):
         func = MagicMock()
         func.__name__ = "testfn"
         decorated_func = on_test_matrix_completed()(func)
-        endpoint = getattr(decorated_func, "__firebase_endpoint__")
+        endpoint = decorated_func.__firebase_endpoint__
         self.assertIsNotNone(endpoint)
         self.assertIsNotNone(endpoint.eventTrigger)
         self.assertIsNotNone(endpoint.eventTrigger["eventType"])

@@ -4,6 +4,7 @@ Tests for the https module.
 
 import unittest
 from unittest.mock import Mock
+
 from flask import Flask, Request
 from werkzeug.test import EnvironBuilder
 

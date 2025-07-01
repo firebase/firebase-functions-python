@@ -13,18 +13,19 @@
 # limitations under the License.
 """PubSub function tests."""
 
-import unittest
 import datetime as _dt
+import unittest
 from unittest.mock import MagicMock
+
 from cloudevents.http import CloudEvent as _CloudEvent
 
 from firebase_functions import core
 from firebase_functions.pubsub_fn import (
+    CloudEvent,
     Message,
     MessagePublishedData,
-    on_message_published,
     _message_handler,
-    CloudEvent,
+    on_message_published,
 )
 
 
@@ -41,7 +42,7 @@ class TestPubSub(unittest.TestCase):
         func = MagicMock()
         func.__name__ = "testfn"
         decorated_func = on_message_published(topic="hello-world")(func)
-        endpoint = getattr(decorated_func, "__firebase_endpoint__")
+        endpoint = decorated_func.__firebase_endpoint__
         self.assertIsNotNone(endpoint)
         self.assertIsNotNone(endpoint.eventTrigger)
         self.assertIsNotNone(endpoint.eventTrigger["eventType"])

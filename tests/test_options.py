@@ -15,10 +15,11 @@
 Options unit tests.
 """
 
-from firebase_functions import options, https_fn
-from firebase_functions import params
-from firebase_functions.private.serving import functions_as_yaml, merge_required_apis
 from pytest import raises
+
+from firebase_functions import https_fn, options, params
+from firebase_functions.private.serving import functions_as_yaml, merge_required_apis
+
 # pylint: disable=protected-access
 
 

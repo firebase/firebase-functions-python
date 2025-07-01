@@ -2,8 +2,9 @@
 Example Firebase Functions written in Python
 """
 
-from firebase_functions import https_fn, options, params, pubsub_fn
 from firebase_admin import initialize_app
+
+from firebase_functions import https_fn, options, params, pubsub_fn
 
 initialize_app()
 

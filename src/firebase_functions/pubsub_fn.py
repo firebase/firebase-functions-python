@@ -16,16 +16,16 @@ Functions to handle events from Google Cloud Pub/Sub.
 """
 
 # pylint: disable=protected-access
+import base64 as _base64
 import dataclasses as _dataclasses
 import datetime as _dt
 import functools as _functools
-import typing as _typing
 import json as _json
-import base64 as _base64
+import typing as _typing
+
 import cloudevents.http as _ce
 
 import firebase_functions.private.util as _util
-
 from firebase_functions.core import CloudEvent, T, _with_init
 from firebase_functions.options import PubSubOptions
 

@@ -14,11 +14,13 @@
 """Scheduler function tests."""
 
 import unittest
-from unittest.mock import Mock
 from datetime import datetime
-from flask import Request, Flask
+from unittest.mock import Mock
+
+from flask import Flask, Request
 from werkzeug.test import EnvironBuilder
-from firebase_functions import scheduler_fn, core
+
+from firebase_functions import core, scheduler_fn
 
 
 class TestScheduler(unittest.TestCase):
@@ -38,7 +40,7 @@ class TestScheduler(unittest.TestCase):
         decorated_func = scheduler_fn.on_schedule(
             schedule="* * * * *", timezone=scheduler_fn.Timezone(tz)
         )(example_func)
-        endpoint = getattr(decorated_func, "__firebase_endpoint__")
+        endpoint = decorated_func.__firebase_endpoint__
 
         self.assertIsNotNone(endpoint)
         self.assertIsNotNone(endpoint.scheduleTrigger)

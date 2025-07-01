@@ -17,14 +17,16 @@ Cloud functions to handle Crashlytics events from Firebase Alerts.
 """
 
 import dataclasses as _dataclasses
-import typing as _typing
-import cloudevents.http as _ce
 import datetime as _dt
 import functools as _functools
-from firebase_functions.alerts import FirebaseAlertData
-from firebase_functions.core import T, CloudEvent
-from firebase_functions.options import CrashlyticsOptions
+import typing as _typing
+
+import cloudevents.http as _ce
+
 import firebase_functions.private.util as _util
+from firebase_functions.alerts import FirebaseAlertData
+from firebase_functions.core import CloudEvent, T
+from firebase_functions.options import CrashlyticsOptions
 
 
 @_dataclasses.dataclass(frozen=True)

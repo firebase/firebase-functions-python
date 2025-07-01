@@ -13,8 +13,8 @@
 # limitations under the License.
 """Manifest unit tests."""
 
-import firebase_functions.private.manifest as _manifest
 import firebase_functions.params as _params
+import firebase_functions.private.manifest as _manifest
 
 full_endpoint = _manifest.ManifestEndpoint(
     platform="gcfv2",

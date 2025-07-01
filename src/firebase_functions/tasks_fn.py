@@ -14,19 +14,20 @@
 """Functions to handle Tasks enqueued with Google Cloud Tasks."""
 
 # pylint: disable=protected-access
-import typing as _typing
-import functools as _functools
 import dataclasses as _dataclasses
+import functools as _functools
 import json as _json
+import typing as _typing
 
-from flask import Request, Response, make_response as _make_response, jsonify as _jsonify
+from flask import Request, Response
+from flask import jsonify as _jsonify
+from flask import make_response as _make_response
+from functions_framework import logging as _logging
 
 import firebase_functions.core as _core
 import firebase_functions.options as _options
 import firebase_functions.private.util as _util
-from firebase_functions.https_fn import CallableRequest, HttpsError, FunctionsErrorCode
-
-from functions_framework import logging as _logging
+from firebase_functions.https_fn import CallableRequest, FunctionsErrorCode, HttpsError
 
 _C = _typing.Callable[[CallableRequest[_typing.Any]], _typing.Any]
 _C1 = _typing.Callable[[Request], Response]

@@ -5,8 +5,9 @@ Tests for the storage function.
 import unittest
 from unittest.mock import Mock
 
-from firebase_functions import core, storage_fn
 from cloudevents.http import CloudEvent
+
+from firebase_functions import core, storage_fn
 
 
 class TestStorage(unittest.TestCase):

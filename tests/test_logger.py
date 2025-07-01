@@ -3,8 +3,10 @@
 Logger module tests.
 """
 
-import pytest
 import json
+
+import pytest
+
 from firebase_functions import logger
 
 

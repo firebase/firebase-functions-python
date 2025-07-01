@@ -16,6 +16,7 @@ Setup for Firebase Functions Python.
 """
 
 from os import path
+
 from setuptools import find_packages, setup
 
 install_requires = [

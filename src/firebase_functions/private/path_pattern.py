@@ -13,12 +13,12 @@
 # limitations under the License.
 """Path pattern matching utilities."""
 
-from enum import Enum
 import re
+from enum import Enum
 
 
 def path_parts(path: str) -> list[str]:
-    if not path or path == "" or path == "/":
+    if not path or path in {"", "/"}:
         return []
     return path.strip("/").split("/")
 

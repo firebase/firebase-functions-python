@@ -16,6 +16,7 @@
 from os import environ
 
 import pytest
+
 from firebase_functions import params
 
 
@@ -25,7 +26,7 @@ class TestBoolParams:
     def test_bool_param_value_true_or_false(self):
         """Testing if bool params correctly returns a true or false value."""
         bool_param = params.BoolParam("BOOL_VALUE_TEST1")
-        for value_true, value_false in zip(["true"], ["false", "anything", "else"]):
+        for value_true, value_false in zip(["true"], ["false", "anything", "else"], strict=False):
             environ["BOOL_VALUE_TEST1"] = value_true
             assert bool_param.value is True, "Failure, params returned False"
             environ["BOOL_VALUE_TEST1"] = value_false
@@ -69,13 +70,13 @@ class TestFloatParams:
 
     def test_float_param_empty_default(self):
         """Testing if float params defaults to empty float if no value and no default."""
-        assert params._FloatParam("FLOAT_DEFAULT_TEST1").value == float(), (
+        assert params._FloatParam("FLOAT_DEFAULT_TEST1").value == 0.0, (
             "Failure, params value is not float"
         )
 
     def test_float_param_default(self):
         """Testing if float param defaults to provided default value."""
-        assert params._FloatParam("FLOAT_DEFAULT_TEST2", default=float(456.789)).value == 456.789, (
+        assert params._FloatParam("FLOAT_DEFAULT_TEST2", default=456.789).value == 456.789, (
             "Failure, params default value != 456.789"
         )
 
@@ -99,7 +100,7 @@ class TestIntParams:
 
     def test_int_param_empty_default(self):
         """Testing if int param defaults to empty int if no value and no default."""
-        assert params.IntParam("INT_DEFAULT_TEST1").value == int(), (
+        assert params.IntParam("INT_DEFAULT_TEST1").value == 0, (
             "Failure, params value is not int"
         )
 
@@ -137,7 +138,7 @@ class TestStringParams:
 
     def test_string_param_empty_default(self):
         """Testing if string param defaults to empty string if no value and no default."""
-        assert params.StringParam("STRING_DEFAULT_TEST1").value == str(), (
+        assert params.StringParam("STRING_DEFAULT_TEST1").value == "", (
             "Failure, params value is not a string"
         )
 

@@ -3,6 +3,7 @@ Test the init decorator.
 """
 
 import unittest
+
 from firebase_functions import core
 
 

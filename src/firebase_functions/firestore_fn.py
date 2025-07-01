@@ -19,20 +19,20 @@ Module for Cloud Functions that are triggered by Firestore.
 import dataclasses as _dataclass
 import functools as _functools
 import typing as _typing
-import google.events.cloud.firestore as _firestore
-import google.cloud.firestore_v1 as _firestore_v1
-import firebase_functions.private.util as _util
-import firebase_functions.private.path_pattern as _path_pattern
-import firebase_functions.core as _core
-import cloudevents.http as _ce
 
-from firebase_admin import initialize_app, get_app, _apps, _DEFAULT_APP_NAME
+import cloudevents.http as _ce
+import google.cloud.firestore_v1 as _firestore_v1
+import google.events.cloud.firestore as _firestore
+from firebase_admin import _DEFAULT_APP_NAME, _apps, get_app, initialize_app
 from google.cloud._helpers import _datetime_to_pb_timestamp
+from google.cloud.firestore_v1 import DocumentReference, DocumentSnapshot
 from google.cloud.firestore_v1 import _helpers as _firestore_helpers
 
-from google.cloud.firestore_v1 import DocumentSnapshot, DocumentReference
-from firebase_functions.options import FirestoreOptions
+import firebase_functions.core as _core
+import firebase_functions.private.path_pattern as _path_pattern
+import firebase_functions.private.util as _util
 from firebase_functions.core import Change
+from firebase_functions.options import FirestoreOptions
 
 _event_type_written = "google.cloud.firestore.document.v1.written"
 _event_type_created = "google.cloud.firestore.document.v1.created"

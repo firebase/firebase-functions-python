@@ -15,19 +15,19 @@
 Module for internal token verification.
 """
 
-from firebase_admin import (
-    _token_gen,
-    exceptions,
-    _auth_utils,
-    initialize_app,
-    get_app,
-    _apps,
-    _DEFAULT_APP_NAME,
-)
-from google.auth import jwt
 import google.auth.exceptions
 import google.oauth2.id_token
 import google.oauth2.service_account
+from firebase_admin import (
+    _DEFAULT_APP_NAME,
+    _apps,
+    _auth_utils,
+    _token_gen,
+    exceptions,
+    get_app,
+    initialize_app,
+)
+from google.auth import jwt
 
 
 # pylint: disable=consider-using-f-string
@@ -48,9 +48,9 @@ class _JWTVerifier:
         self.issuer = kwargs.pop("issuer")
         self.expected_audience = kwargs.pop("expected_audience")
         if self.short_name[0].lower() in "aeiou":
-            self.articled_short_name = "an {0}".format(self.short_name)
+            self.articled_short_name = f"an {self.short_name}"
         else:
-            self.articled_short_name = "a {0}".format(self.short_name)
+            self.articled_short_name = f"a {self.short_name}"
         self._invalid_token_error = kwargs.pop("invalid_token_error")
         self._expired_token_error = kwargs.pop("expired_token_error")
 
@@ -59,17 +59,15 @@ class _JWTVerifier:
         token = token.encode("utf-8") if isinstance(token, str) else token
         if not isinstance(token, bytes) or not token:
             raise ValueError(
-                "Illegal {0} provided: {1}. {0} must be a non-empty string.".format(
-                    self.short_name, token
-                )
+                f"Illegal {self.short_name} provided: {token}. {self.short_name} must be a non-empty string."
             )
 
         if not self.project_id:
             raise ValueError(
                 "Failed to ascertain project ID from the credential or the environment. Project "
-                "ID is required to call {0}. Initialize the app with a credentials.Certificate "
+                f"ID is required to call {self.operation}. Initialize the app with a credentials.Certificate "
                 "or set your Firebase project ID as an app option. Alternatively set the "
-                "GOOGLE_CLOUD_PROJECT environment variable.".format(self.operation)
+                "GOOGLE_CLOUD_PROJECT environment variable."
             )
 
         header, payload = self._decode_unverified(token)
@@ -79,83 +77,53 @@ class _JWTVerifier:
         expected_issuer = self.issuer + self.project_id
 
         project_id_match_msg = (
-            "Make sure the {0} comes from the same Firebase project as the service account used "
-            "to authenticate this SDK.".format(self.short_name)
+            f"Make sure the {self.short_name} comes from the same Firebase project as the service account used "
+            "to authenticate this SDK."
         )
-        verify_id_token_msg = "See {0} for details on how to retrieve {1}.".format(
-            self.url, self.short_name
-        )
+        verify_id_token_msg = f"See {self.url} for details on how to retrieve {self.short_name}."
 
         emulated = _auth_utils.is_emulated()
 
         error_message = None
         if audience == _token_gen.FIREBASE_AUDIENCE:
-            error_message = "{0} expects {1}, but was given a custom token.".format(
-                self.operation, self.articled_short_name
-            )
+            error_message = f"{self.operation} expects {self.articled_short_name}, but was given a custom token."
         elif not emulated and not header.get("kid"):
             if (
                 header.get("alg") == "HS256"
                 and payload.get("v") == 0
                 and "uid" in payload.get("d", {})
             ):
-                error_message = "{0} expects {1}, but was given a legacy custom token.".format(
-                    self.operation, self.articled_short_name
-                )
+                error_message = f"{self.operation} expects {self.articled_short_name}, but was given a legacy custom token."
             else:
-                error_message = 'Firebase {0} has no "kid" claim.'.format(self.short_name)
+                error_message = f'Firebase {self.short_name} has no "kid" claim.'
         elif not emulated and header.get("alg") != "RS256":
             error_message = (
-                'Firebase {0} has incorrect algorithm. Expected "RS256" but got "{1}". {2}'.format(
+                'Firebase {} has incorrect algorithm. Expected "RS256" but got "{}". {}'.format(
                     self.short_name, header.get("alg"), verify_id_token_msg
                 )
             )
         elif not emulated and self.expected_audience and self.expected_audience not in audience:
             error_message = (
-                'Firebase {0} has incorrect "aud" (audience) claim. Expected "{1}" but '
-                'got "{2}". {3} {4}'.format(
-                    self.short_name,
-                    self.expected_audience,
-                    audience,
-                    project_id_match_msg,
-                    verify_id_token_msg,
-                )
+                f'Firebase {self.short_name} has incorrect "aud" (audience) claim. Expected "{self.expected_audience}" but '
+                f'got "{audience}". {project_id_match_msg} {verify_id_token_msg}'
             )
         elif not emulated and not self.expected_audience and audience != self.project_id:
             error_message = (
-                'Firebase {0} has incorrect "aud" (audience) claim. Expected "{1}" but '
-                'got "{2}". {3} {4}'.format(
-                    self.short_name,
-                    self.project_id,
-                    audience,
-                    project_id_match_msg,
-                    verify_id_token_msg,
-                )
+                f'Firebase {self.short_name} has incorrect "aud" (audience) claim. Expected "{self.project_id}" but '
+                f'got "{audience}". {project_id_match_msg} {verify_id_token_msg}'
             )
         elif issuer != expected_issuer:
             error_message = (
-                'Firebase {0} has incorrect "iss" (issuer) claim. Expected "{1}" but '
-                'got "{2}". {3} {4}'.format(
-                    self.short_name,
-                    expected_issuer,
-                    issuer,
-                    project_id_match_msg,
-                    verify_id_token_msg,
-                )
+                f'Firebase {self.short_name} has incorrect "iss" (issuer) claim. Expected "{expected_issuer}" but '
+                f'got "{issuer}". {project_id_match_msg} {verify_id_token_msg}'
             )
         elif subject is None or not isinstance(subject, str):
-            error_message = 'Firebase {0} has no "sub" (subject) claim. {1}'.format(
-                self.short_name, verify_id_token_msg
-            )
+            error_message = f'Firebase {self.short_name} has no "sub" (subject) claim. {verify_id_token_msg}'
         elif not subject:
-            error_message = 'Firebase {0} has an empty string "sub" (subject) claim. {1}'.format(
-                self.short_name, verify_id_token_msg
-            )
+            error_message = f'Firebase {self.short_name} has an empty string "sub" (subject) claim. {verify_id_token_msg}'
         elif len(subject) > 128:
             error_message = (
-                'Firebase {0} has a "sub" (subject) claim longer than 128 characters. {1}'.format(
-                    self.short_name, verify_id_token_msg
-                )
+                f'Firebase {self.short_name} has a "sub" (subject) claim longer than 128 characters. {verify_id_token_msg}'
             )
 
         if error_message:
@@ -176,11 +144,11 @@ class _JWTVerifier:
             verified_claims["uid"] = verified_claims["sub"]
             return verified_claims
         except google.auth.exceptions.TransportError as error:
-            raise _token_gen.CertificateFetchError(str(error), cause=error)
+            raise _token_gen.CertificateFetchError(str(error), cause=error)  # noqa: B904
         except ValueError as error:
             if "Token expired" in str(error):
-                raise self._expired_token_error(str(error), cause=error)
-            raise self._invalid_token_error(str(error), cause=error)
+                raise self._expired_token_error(str(error), cause=error)  # noqa: B904
+            raise self._invalid_token_error(str(error), cause=error)  # noqa: B904
 
     def _decode_unverified(self, token):
         try:
@@ -188,7 +156,7 @@ class _JWTVerifier:
             payload = jwt.decode(token, verify=False)
             return header, payload
         except ValueError as error:
-            raise self._invalid_token_error(str(error), cause=error)
+            raise self._invalid_token_error(str(error), cause=error)  # noqa: B904
 
 
 class InvalidAuthBlockingTokenError(exceptions.InvalidArgumentError):

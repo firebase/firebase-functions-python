@@ -2,8 +2,9 @@
 Example Firebase Functions for Firestore written in Python
 """
 
-from firebase_functions import firestore_fn, options
 from firebase_admin import initialize_app
+
+from firebase_functions import firestore_fn, options
 
 initialize_app()
 

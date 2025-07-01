@@ -19,17 +19,17 @@ Cloud functions to handle events from Firebase Alerts.
 import dataclasses as _dataclasses
 import functools as _functools
 import typing as _typing
+
 import cloudevents.http as _ce
-from firebase_functions.alerts import FirebaseAlertData
 
 import firebase_functions.private.util as _util
-
-from firebase_functions.core import T, CloudEvent as _CloudEvent, _with_init
-from firebase_functions.options import FirebaseAlertOptions
+from firebase_functions.alerts import FirebaseAlertData
+from firebase_functions.core import CloudEvent as _CloudEvent
+from firebase_functions.core import T, _with_init
 
 # Explicitly import AlertType to make it available in the public API.
 # pylint: disable=unused-import
-from firebase_functions.options import AlertType
+from firebase_functions.options import FirebaseAlertOptions
 
 
 @_dataclasses.dataclass(frozen=True)

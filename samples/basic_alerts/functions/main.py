@@ -1,10 +1,12 @@
 """Cloud function samples for Firebase Alerts."""
 
 from firebase_functions import alerts_fn
-from firebase_functions.alerts import app_distribution_fn
-from firebase_functions.alerts import billing_fn
-from firebase_functions.alerts import crashlytics_fn
-from firebase_functions.alerts import performance_fn
+from firebase_functions.alerts import (
+    app_distribution_fn,
+    billing_fn,
+    crashlytics_fn,
+    performance_fn,
+)
 
 
 @alerts_fn.on_alert_published(alert_type=alerts_fn.AlertType.BILLING_PLAN_UPDATE)

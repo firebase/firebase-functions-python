@@ -14,7 +14,8 @@
 """Path Pattern unit tests."""
 
 from unittest import TestCase
-from firebase_functions.private.path_pattern import path_parts, PathPattern, trim_param
+
+from firebase_functions.private.path_pattern import PathPattern, path_parts, trim_param
 
 
 class TestPathUtilities(TestCase):

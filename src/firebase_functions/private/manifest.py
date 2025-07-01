@@ -19,11 +19,12 @@
 
 import dataclasses as _dataclasses
 import typing as _typing
+from enum import Enum as _Enum
+
 import typing_extensions as _typing_extensions
 
 import firebase_functions.params as _params
 import firebase_functions.private.util as _util
-from enum import Enum as _Enum
 
 
 class SecretEnvironmentVariable(_typing.TypedDict):
@@ -211,7 +212,7 @@ def _param_input_to_spec(
             },
         }
 
-    if isinstance(param_input, (_params.MultiSelectInput, _params.SelectInput)):
+    if isinstance(param_input, _params.MultiSelectInput | _params.SelectInput):
         key = "select" if isinstance(param_input, _params.SelectInput) else "multiSelect"
         return {
             key: {
@@ -280,7 +281,7 @@ def _object_to_spec(data) -> object:
         return data
 
 
-def _dict_factory(data: list[_typing.Tuple[str, _typing.Any]]) -> dict:
+def _dict_factory(data: list[tuple[str, _typing.Any]]) -> dict:
     out: dict = {}
     for key, value in data:
         if value is not None:

@@ -19,12 +19,12 @@ Cloud functions to handle Firebase Performance Monitoring events from Firebase A
 import dataclasses as _dataclasses
 import functools as _functools
 import typing as _typing
+
 import cloudevents.http as _ce
-from firebase_functions.alerts import FirebaseAlertData
 
 import firebase_functions.private.util as _util
-
-from firebase_functions.core import T, CloudEvent
+from firebase_functions.alerts import FirebaseAlertData
+from firebase_functions.core import CloudEvent, T
 from firebase_functions.options import PerformanceOptions
 
 
@@ -37,19 +37,19 @@ class ThresholdAlertPayload:
 
     event_name: str
     """
-    Name of the trace or network request this alert is for 
+    Name of the trace or network request this alert is for
     (e.g. my_custom_trace, firebase.com/api/123).
     """
 
     event_type: str
     """
-    The resource type this alert is for (i.e. trace, network request, 
+    The resource type this alert is for (i.e. trace, network request,
     screen rendering, etc.).
     """
 
     metric_type: str
     """
-    The metric type this alert is for (i.e. success rate, 
+    The metric type this alert is for (i.e. success rate,
     response time, duration, etc.).
     """
 
@@ -85,15 +85,15 @@ class ThresholdAlertPayload:
 
     condition_percentile: float | int | None = None
     """
-    The percentile of the alert condition, can be 0 if percentile 
+    The percentile of the alert condition, can be 0 if percentile
     is not applicable to the alert condition and omitted;
     range: [1, 100].
     """
 
     app_version: str | None = None
     """
-    The app version this alert was triggered for, can be omitted 
-    if the alert is for a network request (because the alert was 
+    The app version this alert was triggered for, can be omitted
+    if the alert is for a network request (because the alert was
     checked against data from all versions of app) or a web app
     (where the app is versionless).
     """

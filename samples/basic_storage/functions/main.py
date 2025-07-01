@@ -2,9 +2,10 @@
 Example Firebase Functions for Storage triggers.
 """
 
-from firebase_functions import storage_fn
-from firebase_functions.storage_fn import StorageObjectData, CloudEvent
 from firebase_admin import initialize_app
+
+from firebase_functions import storage_fn
+from firebase_functions.storage_fn import CloudEvent, StorageObjectData
 
 initialize_app()
 

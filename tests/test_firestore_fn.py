@@ -21,10 +21,15 @@ class TestFirestore(TestCase):
     def test_firestore_endpoint_handler_calls_function_with_correct_args(self):
         with patch.dict("sys.modules", mocked_modules):
             from cloudevents.http import CloudEvent
+
+            from firebase_functions.firestore_fn import (
+                AuthEvent,
+            )
             from firebase_functions.firestore_fn import (
                 _event_type_created_with_auth_context as event_type,
+            )
+            from firebase_functions.firestore_fn import (
                 _firestore_endpoint_handler as firestore_endpoint_handler,
-                AuthEvent,
             )
             from firebase_functions.private import path_pattern
 
@@ -62,8 +67,9 @@ class TestFirestore(TestCase):
 
     def test_calls_init_function(self):
         with patch.dict("sys.modules", mocked_modules):
-            from firebase_functions import firestore_fn, core
             from cloudevents.http import CloudEvent
+
+            from firebase_functions import core, firestore_fn
 
             func = Mock(__name__="example_func")
 

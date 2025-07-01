@@ -15,11 +15,12 @@
 
 # pylint: disable=protected-access,cyclic-import
 import typing as _typing
+
 import cloudevents.http as _ce
+from functions_framework import logging as _logging
+
 import firebase_functions.private.util as _util
 from firebase_functions.alerts import FirebaseAlertData
-
-from functions_framework import logging as _logging
 
 
 def plan_update_payload_from_ce_payload(payload: dict):

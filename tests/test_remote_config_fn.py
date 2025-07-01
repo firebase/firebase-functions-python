@@ -15,16 +15,17 @@
 
 import unittest
 from unittest.mock import MagicMock
+
 from cloudevents.http import CloudEvent as _CloudEvent
 
 from firebase_functions.remote_config_fn import (
     CloudEvent,
-    ConfigUser,
     ConfigUpdateData,
     ConfigUpdateOrigin,
     ConfigUpdateType,
-    on_config_updated,
+    ConfigUser,
     _config_handler,
+    on_config_updated,
 )
 
 
@@ -41,7 +42,7 @@ class TestRemoteConfig(unittest.TestCase):
         func = MagicMock()
         func.__name__ = "testfn"
         decorated_func = on_config_updated()(func)
-        endpoint = getattr(decorated_func, "__firebase_endpoint__")
+        endpoint = decorated_func.__firebase_endpoint__
         self.assertIsNotNone(endpoint)
         self.assertIsNotNone(endpoint.eventTrigger)
         self.assertIsNotNone(endpoint.eventTrigger["eventType"])

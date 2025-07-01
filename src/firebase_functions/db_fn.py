@@ -17,16 +17,17 @@ Module for Cloud Functions that are triggered by the Firebase Realtime Database.
 
 # pylint: disable=protected-access
 import dataclasses as _dataclass
+import datetime as _dt
 import functools as _functools
 import typing as _typing
-import datetime as _dt
-import firebase_functions.private.util as _util
-import firebase_functions.private.path_pattern as _path_pattern
-import firebase_functions.core as _core
+
 import cloudevents.http as _ce
 
-from firebase_functions.options import DatabaseOptions
+import firebase_functions.core as _core
+import firebase_functions.private.path_pattern as _path_pattern
+import firebase_functions.private.util as _util
 from firebase_functions.core import Change, T
+from firebase_functions.options import DatabaseOptions
 
 _event_type_written = "google.firebase.database.ref.v1.written"
 _event_type_created = "google.firebase.database.ref.v1.created"

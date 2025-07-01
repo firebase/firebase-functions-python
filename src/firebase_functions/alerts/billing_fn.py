@@ -19,12 +19,12 @@ Cloud functions to handle billing events from Firebase Alerts.
 import dataclasses as _dataclasses
 import functools as _functools
 import typing as _typing
+
 import cloudevents.http as _ce
-from firebase_functions.alerts import FirebaseAlertData
 
 import firebase_functions.private.util as _util
-
-from firebase_functions.core import T, CloudEvent
+from firebase_functions.alerts import FirebaseAlertData
+from firebase_functions.core import CloudEvent, T
 from firebase_functions.options import BillingOptions
 
 

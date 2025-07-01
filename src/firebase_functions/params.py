@@ -14,11 +14,11 @@
 """Module for params that can make Cloud Functions codebases generic."""
 
 import abc as _abc
-import json as _json
 import dataclasses as _dataclasses
+import enum as _enum
+import json as _json
 import os as _os
 import re as _re
-import enum as _enum
 import typing as _typing
 
 _T = _typing.TypeVar("_T", str, int, float, bool, list)
@@ -327,7 +327,7 @@ class StringParam(Param[str]):
         if self.default is not None:
             return self.default.value if isinstance(self.default, Expression) else self.default
 
-        return str()
+        return ""
 
 
 @_dataclasses.dataclass(frozen=True)
@@ -340,7 +340,7 @@ class IntParam(Param[int]):
             return int(_os.environ[self.name])
         if self.default is not None:
             return self.default.value if isinstance(self.default, Expression) else self.default
-        return int()
+        return 0
 
 
 @_dataclasses.dataclass(frozen=True)
@@ -357,7 +357,7 @@ class _FloatParam(Param[float]):
             return float(_os.environ[self.name])
         if self.default is not None:
             return self.default.value if isinstance(self.default, Expression) else self.default
-        return float()
+        return 0.0
 
 
 @_dataclasses.dataclass(frozen=True)

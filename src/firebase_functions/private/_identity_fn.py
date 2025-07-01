@@ -14,23 +14,29 @@
 """Cloud functions to handle Eventarc events."""
 
 # pylint: disable=protected-access
-import typing as _typing
 import datetime as _dt
-import time as _time
 import json as _json
+import time as _time
+import typing as _typing
 
-from firebase_functions.core import _with_init
-from firebase_functions.https_fn import HttpsError, FunctionsErrorCode
-
-import firebase_functions.private.util as _util
-import firebase_functions.private.token_verifier as _token_verifier
 from flask import (
     Request as _Request,
+)
+from flask import (
     Response as _Response,
-    make_response as _make_response,
+)
+from flask import (
     jsonify as _jsonify,
 )
+from flask import (
+    make_response as _make_response,
+)
 from functions_framework import logging as _logging
+
+import firebase_functions.private.token_verifier as _token_verifier
+import firebase_functions.private.util as _util
+from firebase_functions.core import _with_init
+from firebase_functions.https_fn import FunctionsErrorCode, HttpsError
 
 _claims_max_payload_size = 1000
 _disallowed_custom_claims = [

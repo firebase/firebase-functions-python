@@ -14,9 +14,10 @@
 """Cloud functions to handle Eventarc events."""
 
 # pylint: disable=protected-access
-import typing as _typing
-import functools as _functools
 import datetime as _dt
+import functools as _functools
+import typing as _typing
+
 import cloudevents.http as _ce
 
 import firebase_functions.options as _options

@@ -4,7 +4,9 @@ Tests for the db module.
 
 import unittest
 from unittest import mock
+
 from cloudevents.http import CloudEvent
+
 from firebase_functions import core, db_fn
 
 

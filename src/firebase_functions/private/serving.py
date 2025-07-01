@@ -16,20 +16,20 @@ Module used to serve Firebase functions locally and remotely.
 """
 
 # pylint: disable=protected-access
-import os
-import inspect
 import enum
-import yaml
 import importlib
+import inspect
+import os
 import sys
-from os import kill, getpid
+from os import getpid, kill
 from signal import SIGTERM
 
-from flask import Flask
-from flask import Response
+import yaml
+from flask import Flask, Response
 
+from firebase_functions import options as _options
+from firebase_functions import params as _params
 from firebase_functions.private import manifest as _manifest
-from firebase_functions import params as _params, options as _options
 from firebase_functions.private import util as _util
 
 
@@ -62,7 +62,7 @@ def to_spec(data: dict) -> dict:
             return list(map(convert_value, obj))
         return obj
 
-    without_nones = dict((k, convert_value(v)) for k, v in data.items() if v is not None)
+    without_nones = {k: convert_value(v) for k, v in data.items() if v is not None}
     return without_nones
 
 

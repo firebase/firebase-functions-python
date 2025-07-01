@@ -17,14 +17,14 @@ Cloud functions to handle Test Lab events.
 """
 
 import dataclasses as _dataclasses
-import functools as _functools
 import datetime as _dt
-import typing as _typing
-import cloudevents.http as _ce
 import enum as _enum
+import functools as _functools
+import typing as _typing
+
+import cloudevents.http as _ce
 
 import firebase_functions.private.util as _util
-
 from firebase_functions.core import CloudEvent, _with_init
 from firebase_functions.options import EventHandlerOptions
 
