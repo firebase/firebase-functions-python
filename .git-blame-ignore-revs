@@ -1,0 +1,6 @@
+# .git-blame-ignore-revs
+# Use this file to ignore commits in git blame that are just formatting changes
+# Configure with: git config blame.ignoreRevsFile .git-blame-ignore-revs
+
+# Switch from yapf to ruff formatting (one-time reformatting)
+# TODO: Add commit hash here after formatting commit
