@@ -23,42 +23,50 @@ information on using pull requests.
 
 ## Setup local environment
 
-Clone the project and run the following commands to setup your environment 
+Clone the project and install [uv](https://github.com/astral-sh/uv) (our package manager):
 
 ```sh
-python3.11 -m venv venv
-source venv/bin/activate 
-pip3 install --upgrade pip 
-python3.11 -m pip install -e ".[dev]"
+# Install uv (if not already installed)
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Clone and setup the project
+git clone https://github.com/firebase/firebase-functions-python.git
+cd firebase-functions-python
+uv sync --dev
 ```
 
-(this also applies to setting up samples environment for each sample)
+This will automatically:
+- Create a virtual environment
+- Install all runtime and development dependencies
+- Use the Python version specified in `.python-version` (3.10)
+
+(For samples, you can use the same approach but run `uv sync` in each sample directory)
 
 ### Running tests
 
 Without coverage:
 ```bash
-python3.11 -m pytest
+uv run pytest
 ```
 
 With coverage:
 ```bash
-python3.11 -m pytest --cov=src --cov-report term --cov-report html --cov-report xml -vv
+uv run pytest --cov=src --cov-report term --cov-report html --cov-report xml -vv
 ```
 
 ### Formatting code
 
 ```bash
-python3.11 -m ruff format .
+uv run ruff format .
 ```
 
 ### Running lints & type checking
 
 ```bash
 # Type checking
-python3.11 -m mypy .
+uv run mypy .
 # Linting
-python3.11 -m ruff check .
+uv run ruff check .
 ```
 
 ### Generating Docs
