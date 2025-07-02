@@ -32,7 +32,7 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 # Clone and setup the project
 git clone https://github.com/firebase/firebase-functions-python.git
 cd firebase-functions-python
-uv sync --dev
+uv sync
 ```
 
 This will automatically:
