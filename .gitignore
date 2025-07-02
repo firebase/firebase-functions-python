@@ -139,8 +139,3 @@ doc/dist
 .idea
 .vscode/*
 !.vscode/settings.json
-
-# Local development files
-async.md
-modernization.md
-uv.lock

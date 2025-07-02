@@ -16,20 +16,18 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
-      - name: Set up Python ${{ matrix.python }}
-        uses: actions/setup-python@v4
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
         with:
-          python-version: ${{ matrix.python }}
+          enable-cache: true
+      - name: Set up Python ${{ matrix.python }}
+        run: uv python install ${{ matrix.python }}
       - name: Install dependencies
         run: |
-          python${{ matrix.python }} -m venv venv
-          source venv/bin/activate 
-          pip3 install --upgrade pip 
-          python${{ matrix.python }} -m pip install -e ".[dev]"
+          uv sync --python ${{ matrix.python }}
       - name: Test with pytest & coverage
         run: |
-          source venv/bin/activate
-          python${{ matrix.python }} -m pytest --cov=src --cov-report term --cov-report html --cov-report xml -vv
+          uv run --python ${{ matrix.python }} pytest --cov=src --cov-report term --cov-report html --cov-report xml -vv
       # TODO requires activation for this repository on codecov website first.
       # - name: Upload coverage to Codecov
       #   uses: codecov/codecov-action@v3
@@ -38,44 +36,39 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - name: Set up Python
-        uses: actions/setup-python@v4
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
         with:
-          python-version: "3.10"
+          enable-cache: true
+      - name: Set up Python
+        run: uv python install 3.10
       - name: Install dependencies
         run: |
-          python3.10 -m venv venv
-          source venv/bin/activate 
-          pip3 install --upgrade pip 
-          python3.10 -m pip install -e ".[dev]"
+          uv sync
       - name: Lint with ruff
         run: |
-          source venv/bin/activate
-          python3.10 -m ruff check .
+          uv run ruff check .
       - name: Lint with mypy
         run: |
-          source venv/bin/activate
-          python3.10 -m mypy .
+          uv run mypy .
 
   docs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - name: Set up Python
-        uses: actions/setup-python@v4
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
         with:
-          python-version: "3.10"
+          enable-cache: true
+      - name: Set up Python
+        run: uv python install 3.10
       - name: Install dependencies
         run: |
-          python3.10 -m venv venv
-          source venv/bin/activate 
-          pip3 install --upgrade pip 
-          python3.10 -m pip install -e ".[dev]"
+          uv sync
       - name: Generate Reference Docs
         run: |
-          source venv/bin/activate
           mkdir ./docs/build
-          ./docs/generate.sh --out=./docs/build/ --pypath=src/
+          uv run ./docs/generate.sh --out=./docs/build/ --pypath=src/
       - uses: actions/upload-artifact@v4
         name: Upload Docs Preview
         with:
@@ -86,17 +79,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - name: Set up Python
-        uses: actions/setup-python@v4
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
         with:
-          python-version: "3.10"
+          enable-cache: true
+      - name: Set up Python
+        run: uv python install 3.10
       - name: Install dependencies
         run: |
-          python3.10 -m venv venv
-          source venv/bin/activate 
-          pip3 install --upgrade pip 
-          python3.10 -m pip install -e ".[dev]"
+          uv sync
       - name: Check Formatting with ruff
         run: |
-          source venv/bin/activate
-          python3.10 -m ruff format --check .
+          uv run ruff format --check .

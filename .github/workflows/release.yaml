@@ -41,20 +41,23 @@ jobs:
       with:
         python-version: '3.10'
 
+    - name: Install uv
+      uses: astral-sh/setup-uv@v3
+      with:
+        enable-cache: true
+
     - name: Install dependencies
       run: |
-        pip install --upgrade pip
-        python -m pip install -e ".[dev]"
+        uv sync --dev
 
     - name: Test with pytest & coverage
       run: |
-        python -m pytest --cov=src --cov-report term --cov-report html --cov-report xml -vv
+        uv run pytest --cov=src --cov-report term --cov-report html --cov-report xml -vv
 
     # Build the Python Wheel and the source distribution.
     - name: Package release artifacts
       run: |
-       python -m pip install setuptools wheel
-       python setup.py bdist_wheel sdist
+       uv run python -m build
 
     # Attach the packaged artifacts to the workflow output. These can be manually
     # downloaded for later inspection if necessary.
