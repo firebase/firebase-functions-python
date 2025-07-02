@@ -26,7 +26,7 @@ information on using pull requests.
 Clone the project and install [uv](https://github.com/astral-sh/uv) (our package manager):
 
 ```sh
-# Install uv (if not already installed)
+# Install uv (if not already installed). You can also use 'pip install uv'.
 curl -LsSf https://astral.sh/uv/install.sh | sh
 
 # Clone and setup the project
