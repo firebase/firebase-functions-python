@@ -15,15 +15,16 @@
 """
 Cloud functions to handle Firebase App Distribution events from Firebase Alerts.
 """
+
 import dataclasses as _dataclasses
 import functools as _functools
 import typing as _typing
+
 import cloudevents.http as _ce
-from firebase_functions.alerts import FirebaseAlertData
 
 import firebase_functions.private.util as _util
-
-from firebase_functions.core import T, CloudEvent
+from firebase_functions.alerts import FirebaseAlertData
+from firebase_functions.core import CloudEvent, T
 from firebase_functions.options import AppDistributionOptions
 
 
@@ -64,7 +65,7 @@ class InAppFeedbackPayload:
 
     feedback_report: str
     """
-    Resource name. Format: 
+    Resource name. Format:
     `projects/{project_number}/apps/{app_id}/releases/{release_id}/feedbackReports/{feedback_id}`
     """
 
@@ -127,8 +128,7 @@ InAppFeedbackEvent = AppDistributionEvent[InAppFeedbackPayload]
 The type of the event for 'on_in_app_feedback_published' functions.
 """
 
-OnNewTesterIosDevicePublishedCallable = _typing.Callable[[NewTesterDeviceEvent],
-                                                         None]
+OnNewTesterIosDevicePublishedCallable = _typing.Callable[[NewTesterDeviceEvent], None]
 """
 The type of the callable for 'on_new_tester_ios_device_published' functions.
 """
@@ -141,9 +141,10 @@ The type of the callable for 'on_in_app_feedback_published' functions.
 
 @_util.copy_func_kwargs(AppDistributionOptions)
 def on_new_tester_ios_device_published(
-    **kwargs
-) -> _typing.Callable[[OnNewTesterIosDevicePublishedCallable],
-                      OnNewTesterIosDevicePublishedCallable]:
+    **kwargs,
+) -> _typing.Callable[
+    [OnNewTesterIosDevicePublishedCallable], OnNewTesterIosDevicePublishedCallable
+]:
     """
     Event handler which runs every time a new tester iOS device is added.
 
@@ -151,7 +152,7 @@ def on_new_tester_ios_device_published(
 
     .. code-block:: python
 
-      import firebase_functions.alerts.app_distribution_fn as app_distribution_fn   
+      import firebase_functions.alerts.app_distribution_fn as app_distribution_fn
 
       @app_distribution_fn.on_new_tester_ios_device_published()
       def example(alert: app_distribution_fn.NewTesterDeviceEvent) -> None:
@@ -160,27 +161,28 @@ def on_new_tester_ios_device_published(
     :param \\*\\*kwargs: Options.
     :type \\*\\*kwargs: as :exc:`firebase_functions.options.AppDistributionOptions`
     :rtype: :exc:`typing.Callable`
-            \\[ 
-            \\[ :exc:`firebase_functions.alerts.app_distribution_fn.NewTesterDeviceEvent` \\], 
-            `None` 
+            \\[
+            \\[ :exc:`firebase_functions.alerts.app_distribution_fn.NewTesterDeviceEvent` \\],
+            `None`
             \\]
             A function that takes a NewTesterDeviceEvent and returns None.
     """
     options = AppDistributionOptions(**kwargs)
 
     def on_new_tester_ios_device_published_inner_decorator(
-            func: OnNewTesterIosDevicePublishedCallable):
-
+        func: OnNewTesterIosDevicePublishedCallable,
+    ):
         @_functools.wraps(func)
         def on_new_tester_ios_device_published_wrapped(raw: _ce.CloudEvent):
             from firebase_functions.private._alerts_fn import app_distribution_event_from_ce
+
             func(app_distribution_event_from_ce(raw))
 
         _util.set_func_endpoint_attr(
             on_new_tester_ios_device_published_wrapped,
             options._endpoint(
                 func_name=func.__name__,
-                alert_type='appDistribution.newTesterIosDevice',
+                alert_type="appDistribution.newTesterIosDevice",
             ),
         )
         return on_new_tester_ios_device_published_wrapped
@@ -190,9 +192,8 @@ def on_new_tester_ios_device_published(
 
 @_util.copy_func_kwargs(AppDistributionOptions)
 def on_in_app_feedback_published(
-    **kwargs
-) -> _typing.Callable[[OnInAppFeedbackPublishedCallable],
-                      OnInAppFeedbackPublishedCallable]:
+    **kwargs,
+) -> _typing.Callable[[OnInAppFeedbackPublishedCallable], OnInAppFeedbackPublishedCallable]:
     """
     Event handler which runs every time new feedback is received.
 
@@ -200,7 +201,7 @@ def on_in_app_feedback_published(
 
     .. code-block:: python
 
-      import firebase_functions.alerts.app_distribution_fn as app_distribution_fn   
+      import firebase_functions.alerts.app_distribution_fn as app_distribution_fn
 
       @app_distribution_fn.on_in_app_feedback_published()
       def example(alert: app_distribution_fn.InAppFeedbackEvent) -> None:
@@ -209,27 +210,26 @@ def on_in_app_feedback_published(
     :param \\*\\*kwargs: Options.
     :type \\*\\*kwargs: as :exc:`firebase_functions.options.AppDistributionOptions`
     :rtype: :exc:`typing.Callable`
-            \\[ 
-            \\[ :exc:`firebase_functions.alerts.app_distribution_fn.InAppFeedbackEvent` \\], 
-            `None` 
+            \\[
+            \\[ :exc:`firebase_functions.alerts.app_distribution_fn.InAppFeedbackEvent` \\],
+            `None`
             \\]
             A function that takes a NewTesterDeviceEvent and returns None.
     """
     options = AppDistributionOptions(**kwargs)
 
-    def on_in_app_feedback_published_inner_decorator(
-            func: OnInAppFeedbackPublishedCallable):
-
+    def on_in_app_feedback_published_inner_decorator(func: OnInAppFeedbackPublishedCallable):
         @_functools.wraps(func)
         def on_in_app_feedback_published_wrapped(raw: _ce.CloudEvent):
             from firebase_functions.private._alerts_fn import app_distribution_event_from_ce
+
             func(app_distribution_event_from_ce(raw))
 
         _util.set_func_endpoint_attr(
             on_in_app_feedback_published_wrapped,
             options._endpoint(
                 func_name=func.__name__,
-                alert_type='appDistribution.inAppFeedback',
+                alert_type="appDistribution.inAppFeedback",
             ),
         )
         return on_in_app_feedback_published_wrapped

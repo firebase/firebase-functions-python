@@ -12,14 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Task Queue function tests."""
-import unittest
 
+import unittest
 from unittest.mock import MagicMock, Mock
+
 from flask import Flask, Request
 from werkzeug.test import EnvironBuilder
 
 from firebase_functions import core
-from firebase_functions.tasks_fn import on_task_dispatched, CallableRequest
+from firebase_functions.tasks_fn import CallableRequest, on_task_dispatched
 
 
 class TestTasks(unittest.TestCase):
@@ -36,7 +37,7 @@ class TestTasks(unittest.TestCase):
         func = MagicMock()
         func.__name__ = "testfn"
         decorated_func = on_task_dispatched()(func)
-        endpoint = getattr(decorated_func, "__firebase_endpoint__")
+        endpoint = decorated_func.__firebase_endpoint__
         self.assertIsNotNone(endpoint)
         self.assertIsNotNone(endpoint.taskQueueTrigger)
 
@@ -58,9 +59,7 @@ class TestTasks(unittest.TestCase):
             environ = EnvironBuilder(
                 method="POST",
                 json={
-                    "data": {
-                        "test": "value"
-                    },
+                    "data": {"test": "value"},
                 },
             ).get_environ()
             request = Request(environ)
@@ -87,9 +86,7 @@ class TestTasks(unittest.TestCase):
             environ = EnvironBuilder(
                 method="POST",
                 json={
-                    "data": {
-                        "test": "value"
-                    },
+                    "data": {"test": "value"},
                 },
             ).get_environ()
             request = Request(environ)

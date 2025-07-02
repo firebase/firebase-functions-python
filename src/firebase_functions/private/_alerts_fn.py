@@ -15,15 +15,17 @@
 
 # pylint: disable=protected-access,cyclic-import
 import typing as _typing
+
 import cloudevents.http as _ce
+from functions_framework import logging as _logging
+
 import firebase_functions.private.util as _util
 from firebase_functions.alerts import FirebaseAlertData
-
-from functions_framework import logging as _logging
 
 
 def plan_update_payload_from_ce_payload(payload: dict):
     from firebase_functions.alerts.billing_fn import PlanUpdatePayload
+
     return PlanUpdatePayload(
         notification_type=payload["notificationType"],
         billing_plan=payload["billingPlan"],
@@ -33,6 +35,7 @@ def plan_update_payload_from_ce_payload(payload: dict):
 
 def plan_automated_update_payload_from_ce_payload(payload: dict):
     from firebase_functions.alerts.billing_fn import PlanAutomatedUpdatePayload
+
     return PlanAutomatedUpdatePayload(
         notification_type=payload["notificationType"],
         billing_plan=payload["billingPlan"],
@@ -41,6 +44,7 @@ def plan_automated_update_payload_from_ce_payload(payload: dict):
 
 def in_app_feedback_payload_from_ce_payload(payload: dict):
     from firebase_functions.alerts.app_distribution_fn import InAppFeedbackPayload
+
     return InAppFeedbackPayload(
         feedback_report=payload["feedbackReport"],
         feedback_console_uri=payload["feedbackConsoleUri"],
@@ -54,6 +58,7 @@ def in_app_feedback_payload_from_ce_payload(payload: dict):
 
 def new_tester_device_payload_from_ce_payload(payload: dict):
     from firebase_functions.alerts.app_distribution_fn import NewTesterDevicePayload
+
     return NewTesterDevicePayload(
         tester_name=payload["testerName"],
         tester_email=payload["testerEmail"],
@@ -64,6 +69,7 @@ def new_tester_device_payload_from_ce_payload(payload: dict):
 
 def threshold_alert_payload_from_ce_payload(payload: dict):
     from firebase_functions.alerts.performance_fn import ThresholdAlertPayload
+
     return ThresholdAlertPayload(
         event_name=payload["eventName"],
         event_type=payload["eventType"],
@@ -81,6 +87,7 @@ def threshold_alert_payload_from_ce_payload(payload: dict):
 
 def issue_from_ce_payload(payload: dict):
     from firebase_functions.alerts.crashlytics_fn import Issue
+
     return Issue(
         id=payload["id"],
         title=payload["title"],
@@ -91,21 +98,24 @@ def issue_from_ce_payload(payload: dict):
 
 def new_fatal_issue_payload_from_ce_payload(payload: dict):
     from firebase_functions.alerts.crashlytics_fn import NewFatalIssuePayload
+
     return NewFatalIssuePayload(issue=issue_from_ce_payload(payload["issue"]))
 
 
 def new_nonfatal_issue_payload_from_ce_payload(payload: dict):
     from firebase_functions.alerts.crashlytics_fn import NewNonfatalIssuePayload
-    return NewNonfatalIssuePayload(
-        issue=issue_from_ce_payload(payload["issue"]))
+
+    return NewNonfatalIssuePayload(issue=issue_from_ce_payload(payload["issue"]))
 
 
 def regression_alert_payload_from_ce_payload(payload: dict):
     from firebase_functions.alerts.crashlytics_fn import RegressionAlertPayload
-    return RegressionAlertPayload(type=payload["type"],
-                                  issue=issue_from_ce_payload(payload["issue"]),
-                                  resolve_time=_util.timestamp_conversion(
-                                      payload["resolveTime"]))
+
+    return RegressionAlertPayload(
+        type=payload["type"],
+        issue=issue_from_ce_payload(payload["issue"]),
+        resolve_time=_util.timestamp_conversion(payload["resolveTime"]),
+    )
 
 
 def trending_issue_details_from_ce_payload(payload: dict):
@@ -125,8 +135,7 @@ def stability_digest_payload_from_ce_payload(payload: dict):
     return StabilityDigestPayload(
         digest_date=_util.timestamp_conversion(payload["digestDate"]),
         trending_issues=[
-            trending_issue_details_from_ce_payload(issue)
-            for issue in payload["trendingIssues"]
+            trending_issue_details_from_ce_payload(issue) for issue in payload["trendingIssues"]
         ],
     )
 
@@ -149,7 +158,9 @@ def new_anr_issue_payload_from_ce_payload(payload: dict):
     return NewAnrIssuePayload(issue=issue_from_ce_payload(payload["issue"]))
 
 
-def firebase_alert_data_from_ce(event_dict: dict,) -> FirebaseAlertData:
+def firebase_alert_data_from_ce(
+    event_dict: dict,
+) -> FirebaseAlertData:
     from firebase_functions.options import AlertType
 
     alert_type: str = event_dict["alerttype"]
@@ -157,8 +168,7 @@ def firebase_alert_data_from_ce(event_dict: dict,) -> FirebaseAlertData:
     if alert_type == AlertType.CRASHLYTICS_NEW_FATAL_ISSUE.value:
         alert_payload = new_fatal_issue_payload_from_ce_payload(alert_payload)
     elif alert_type == AlertType.CRASHLYTICS_NEW_NONFATAL_ISSUE.value:
-        alert_payload = new_nonfatal_issue_payload_from_ce_payload(
-            alert_payload)
+        alert_payload = new_nonfatal_issue_payload_from_ce_payload(alert_payload)
     elif alert_type == AlertType.CRASHLYTICS_REGRESSION.value:
         alert_payload = regression_alert_payload_from_ce_payload(alert_payload)
     elif alert_type == AlertType.CRASHLYTICS_STABILITY_DIGEST.value:
@@ -170,8 +180,7 @@ def firebase_alert_data_from_ce(event_dict: dict,) -> FirebaseAlertData:
     elif alert_type == AlertType.BILLING_PLAN_UPDATE.value:
         alert_payload = plan_update_payload_from_ce_payload(alert_payload)
     elif alert_type == AlertType.BILLING_PLAN_AUTOMATED_UPDATE.value:
-        alert_payload = plan_automated_update_payload_from_ce_payload(
-            alert_payload)
+        alert_payload = plan_automated_update_payload_from_ce_payload(alert_payload)
     elif alert_type == AlertType.APP_DISTRIBUTION_NEW_TESTER_IOS_DEVICE.value:
         alert_payload = new_tester_device_payload_from_ce_payload(alert_payload)
     elif alert_type == AlertType.APP_DISTRIBUTION_IN_APP_FEEDBACK.value:
@@ -184,7 +193,8 @@ def firebase_alert_data_from_ce(event_dict: dict,) -> FirebaseAlertData:
     return FirebaseAlertData(
         create_time=_util.timestamp_conversion(event_dict["createTime"]),
         end_time=_util.timestamp_conversion(event_dict["endTime"])
-        if "endTime" in event_dict else None,
+        if "endTime" in event_dict
+        else None,
         payload=alert_payload,
     )
 

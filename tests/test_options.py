@@ -14,10 +14,12 @@
 """
 Options unit tests.
 """
-from firebase_functions import options, https_fn
-from firebase_functions import params
-from firebase_functions.private.serving import functions_as_yaml, merge_required_apis
+
 from pytest import raises
+
+from firebase_functions import https_fn, options, params
+from firebase_functions.private.serving import functions_as_yaml, merge_required_apis
+
 # pylint: disable=protected-access
 
 
@@ -47,19 +49,18 @@ def test_global_options_merged_with_provider_options():
     options.set_global_options(max_instances=66)
     pubsub_options = options.PubSubOptions(topic="foo")  # pylint: disable=unexpected-keyword-arg
     pubsub_options_dict = pubsub_options._asdict_with_global_options()
-    assert (pubsub_options_dict["topic"] == "foo"
-           ), "'topic' property missing from dict"
+    assert pubsub_options_dict["topic"] == "foo", "'topic' property missing from dict"
     assert "options" not in pubsub_options_dict, "'options' key should not exist in dict"
-    assert (pubsub_options_dict["max_instances"] == 66
-           ), "provider option did not update using the global option"
+    assert pubsub_options_dict["max_instances"] == 66, (
+        "provider option did not update using the global option"
+    )
 
 
 def test_https_options_removes_cors():
     """
     Testing _HttpsOptions strips out the 'cors' property when converted to a dict.
     """
-    https_options = options.HttpsOptions(cors=options.CorsOptions(
-        cors_origins="*"))
+    https_options = options.HttpsOptions(cors=options.CorsOptions(cors_origins="*"))
     assert https_options.cors.cors_origins == "*", "cors options were not set"
     https_options_dict = https_options._asdict_with_global_options()
     assert "cors" not in https_options_dict, "'cors' key should not exist in dict"
@@ -71,25 +72,25 @@ def test_options_asdict_uses_cel_representation():
     CEL values for manifest representation.
     """
     int_param = params.IntParam("MIN")
-    https_options_dict = options.HttpsOptions(
-        min_instances=int_param)._asdict_with_global_options()
-    assert https_options_dict[
-        "min_instances"] == f"{int_param}", "param was not converted to CEL string"
+    https_options_dict = options.HttpsOptions(min_instances=int_param)._asdict_with_global_options()
+    assert https_options_dict["min_instances"] == f"{int_param}", (
+        "param was not converted to CEL string"
+    )
 
 
 def test_options_preserve_external_changes():
     """
     Testing if setting a global option internally change the values.
     """
-    assert (options._GLOBAL_OPTIONS.preserve_external_changes
-            is None), "option should not already be set"
+    assert options._GLOBAL_OPTIONS.preserve_external_changes is None, (
+        "option should not already be set"
+    )
     options.set_global_options(
         preserve_external_changes=False,
         min_instances=5,
     )
     options_asdict = options._GLOBAL_OPTIONS._asdict_with_global_options()
-    assert (options_asdict["max_instances"]
-            is options.RESET_VALUE), "option should be RESET_VALUE"
+    assert options_asdict["max_instances"] is options.RESET_VALUE, "option should be RESET_VALUE"
     assert options_asdict["min_instances"] == 5, "option should be set"
 
     firebase_functions = {
@@ -132,33 +133,15 @@ def test_merge_apis_no_duplicate_apis():
     APIs without modification when there is no duplication.
     """
     required_apis = [
-        {
-            "api": "API1",
-            "reason": "Reason 1"
-        },
-        {
-            "api": "API2",
-            "reason": "Reason 2"
-        },
-        {
-            "api": "API3",
-            "reason": "Reason 3"
-        },
+        {"api": "API1", "reason": "Reason 1"},
+        {"api": "API2", "reason": "Reason 2"},
+        {"api": "API3", "reason": "Reason 3"},
     ]
 
     expected_output = [
-        {
-            "api": "API1",
-            "reason": "Reason 1"
-        },
-        {
-            "api": "API2",
-            "reason": "Reason 2"
-        },
-        {
-            "api": "API3",
-            "reason": "Reason 3"
-        },
+        {"api": "API1", "reason": "Reason 1"},
+        {"api": "API2", "reason": "Reason 2"},
+        {"api": "API3", "reason": "Reason 3"},
     ]
 
     merged_apis = merge_required_apis(required_apis)
@@ -176,48 +159,32 @@ def test_merge_apis_duplicate_apis():
     APIs and combines the reasons associated with them.
     """
     required_apis = [
-        {
-            "api": "API1",
-            "reason": "Reason 1"
-        },
-        {
-            "api": "API2",
-            "reason": "Reason 2"
-        },
-        {
-            "api": "API1",
-            "reason": "Reason 3"
-        },
-        {
-            "api": "API2",
-            "reason": "Reason 4"
-        },
+        {"api": "API1", "reason": "Reason 1"},
+        {"api": "API2", "reason": "Reason 2"},
+        {"api": "API1", "reason": "Reason 3"},
+        {"api": "API2", "reason": "Reason 4"},
     ]
 
     expected_output = [
-        {
-            "api": "API1",
-            "reason": "Reason 1 Reason 3"
-        },
-        {
-            "api": "API2",
-            "reason": "Reason 2 Reason 4"
-        },
+        {"api": "API1", "reason": "Reason 1 Reason 3"},
+        {"api": "API2", "reason": "Reason 2 Reason 4"},
     ]
 
     merged_apis = merge_required_apis(required_apis)
 
-    assert len(merged_apis) == len(
-        expected_output
-    ), f"Expected a list of length {len(expected_output)}, but got {len(merged_apis)}"
+    assert len(merged_apis) == len(expected_output), (
+        f"Expected a list of length {len(expected_output)}, but got {len(merged_apis)}"
+    )
 
     for expected_item in expected_output:
-        assert (expected_item in merged_apis
-               ), f"Expected item {expected_item} missing from the merged list"
+        assert expected_item in merged_apis, (
+            f"Expected item {expected_item} missing from the merged list"
+        )
 
     for actual_item in merged_apis:
-        assert (actual_item in expected_output
-               ), f"Unexpected item {actual_item} found in the merged list"
+        assert actual_item in expected_output, (
+            f"Unexpected item {actual_item} found in the merged list"
+        )
 
 
 def test_invoker_with_one_element_doesnt_throw():
@@ -226,8 +193,6 @@ def test_invoker_with_one_element_doesnt_throw():
 
 def test_invoker_with_no_element_throws():
     with raises(
-            AssertionError,
-            match=
-            "HttpsOptions: Invalid option for invoker - must be a non-empty list."
+        AssertionError, match="HttpsOptions: Invalid option for invoker - must be a non-empty list."
     ):
         options.HttpsOptions(invoker=[])._endpoint(func_name="test")

@@ -13,12 +13,12 @@
 # limitations under the License.
 """Path pattern matching utilities."""
 
-from enum import Enum
 import re
+from enum import Enum
 
 
 def path_parts(path: str) -> list[str]:
-    if not path or path == "" or path == "/":
+    if not path or path in {"", "/"}:
         return []
     return path.strip("/").split("/")
 
@@ -30,7 +30,7 @@ def join_path(base: str, child: str) -> str:
 def trim_param(param: str) -> str:
     param_no_braces = param[1:-1]
     if "=" in param_no_braces:
-        return param_no_braces[:param_no_braces.index("=")]
+        return param_no_braces[: param_no_braces.index("=")]
     return param_no_braces
 
 
@@ -50,6 +50,7 @@ class PathSegment:
     """
     A segment of a path pattern.
     """
+
     name: SegmentName
     value: str
     trimmed: str
@@ -89,6 +90,7 @@ class SingleCaptureSegment(PathSegment):
     """
     A segment of a path pattern that captures a single segment.
     """
+
     name = SegmentName.SINGLE_CAPTURE
 
     def __init__(self, value):
@@ -129,6 +131,7 @@ class PathPattern:
     Implements Eventarc's path pattern from the spec
     https://cloud.google.com/eventarc/docs/path-patterns
     """
+
     segments: list[PathSegment]
 
     def __init__(self, raw_path: str):
@@ -157,15 +160,17 @@ class PathPattern:
 
     @property
     def has_wildcards(self) -> bool:
-        return any(segment.is_single_segment_wildcard or
-                   segment.is_multi_segment_wildcard
-                   for segment in self.segments)
+        return any(
+            segment.is_single_segment_wildcard or segment.is_multi_segment_wildcard
+            for segment in self.segments
+        )
 
     @property
     def has_captures(self) -> bool:
-        return any(segment.name in (SegmentName.SINGLE_CAPTURE,
-                                    SegmentName.MULTI_CAPTURE)
-                   for segment in self.segments)
+        return any(
+            segment.name in (SegmentName.SINGLE_CAPTURE, SegmentName.MULTI_CAPTURE)
+            for segment in self.segments
+        )
 
     def extract_matches(self, path: str) -> dict[str, str]:
         matches: dict[str, str] = {}
@@ -180,7 +185,6 @@ class PathPattern:
             if segment.name == SegmentName.SINGLE_CAPTURE:
                 matches[segment.trimmed] = path_segments[path_ndx]
             elif segment.name == SegmentName.MULTI_CAPTURE:
-                matches[segment.trimmed] = "/".join(
-                    path_segments[path_ndx:next_path_ndx])
+                matches[segment.trimmed] = "/".join(path_segments[path_ndx:next_path_ndx])
             path_ndx = next_path_ndx if segment.is_multi_segment_wildcard else path_ndx + 1
         return matches

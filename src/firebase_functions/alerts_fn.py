@@ -19,17 +19,20 @@ Cloud functions to handle events from Firebase Alerts.
 import dataclasses as _dataclasses
 import functools as _functools
 import typing as _typing
+
 import cloudevents.http as _ce
-from firebase_functions.alerts import FirebaseAlertData
 
 import firebase_functions.private.util as _util
+from firebase_functions.alerts import FirebaseAlertData
+from firebase_functions.core import CloudEvent as _CloudEvent
+from firebase_functions.core import T, _with_init
 
-from firebase_functions.core import T, CloudEvent as _CloudEvent, _with_init
-from firebase_functions.options import FirebaseAlertOptions
-
-# Explicitly import AlertType to make it available in the public API.
-# pylint: disable=unused-import
-from firebase_functions.options import AlertType
+# Re-export AlertType from options module so users can import it directly from alerts_fn
+# This provides a more convenient API: from firebase_functions.alerts_fn import AlertType
+from firebase_functions.options import (
+    AlertType,  # noqa: F401
+    FirebaseAlertOptions,
+)
 
 
 @_dataclasses.dataclass(frozen=True)
@@ -63,7 +66,7 @@ The type of the callable for 'on_alert_published' functions.
 
 @_util.copy_func_kwargs(FirebaseAlertOptions)
 def on_alert_published(
-    **kwargs
+    **kwargs,
 ) -> _typing.Callable[[OnAlertPublishedCallable], OnAlertPublishedCallable]:
     """
     Event handler that triggers when a Firebase Alerts event is published.
@@ -72,7 +75,7 @@ def on_alert_published(
 
     .. code-block:: python
 
-      from firebase_functions import alerts_fn   
+      from firebase_functions import alerts_fn
 
       @alerts_fn.on_alert_published(
           alert_type=alerts_fn.AlertType.CRASHLYTICS_NEW_FATAL_ISSUE,
@@ -91,10 +94,10 @@ def on_alert_published(
     options = FirebaseAlertOptions(**kwargs)
 
     def on_alert_published_inner_decorator(func: OnAlertPublishedCallable):
-
         @_functools.wraps(func)
         def on_alert_published_wrapped(raw: _ce.CloudEvent):
             from firebase_functions.private._alerts_fn import alerts_event_from_ce
+
             _with_init(func)(alerts_event_from_ce(raw))
 
         _util.set_func_endpoint_attr(

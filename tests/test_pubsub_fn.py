@@ -12,18 +12,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """PubSub function tests."""
-import unittest
+
 import datetime as _dt
+import unittest
 from unittest.mock import MagicMock
+
 from cloudevents.http import CloudEvent as _CloudEvent
 
 from firebase_functions import core
 from firebase_functions.pubsub_fn import (
+    CloudEvent,
     Message,
     MessagePublishedData,
-    on_message_published,
     _message_handler,
-    CloudEvent,
+    on_message_published,
 )
 
 
@@ -40,12 +42,11 @@ class TestPubSub(unittest.TestCase):
         func = MagicMock()
         func.__name__ = "testfn"
         decorated_func = on_message_published(topic="hello-world")(func)
-        endpoint = getattr(decorated_func, "__firebase_endpoint__")
+        endpoint = decorated_func.__firebase_endpoint__
         self.assertIsNotNone(endpoint)
         self.assertIsNotNone(endpoint.eventTrigger)
         self.assertIsNotNone(endpoint.eventTrigger["eventType"])
-        self.assertEqual("hello-world",
-                         endpoint.eventTrigger["eventFilters"]["topic"])
+        self.assertEqual("hello-world", endpoint.eventTrigger["eventFilters"]["topic"])
 
     def test_message_handler(self):
         """
@@ -64,9 +65,7 @@ class TestPubSub(unittest.TestCase):
             },
             data={
                 "message": {
-                    "attributes": {
-                        "key": "value"
-                    },
+                    "attributes": {"key": "value"},
                     # {"test": "value"}
                     "data": "eyJ0ZXN0IjogInZhbHVlIn0=",
                     "message_id": "message-id-123",
@@ -88,11 +87,10 @@ class TestPubSub(unittest.TestCase):
             _dt.datetime.strptime(
                 "2023-03-11T13:25:37.403Z",
                 "%Y-%m-%dT%H:%M:%S.%f%z",
-            ))
-        self.assertDictEqual(event_arg.data.message.attributes,
-                             {"key": "value"})
-        self.assertEqual(event_arg.data.message.data,
-                         "eyJ0ZXN0IjogInZhbHVlIn0=")
+            ),
+        )
+        self.assertDictEqual(event_arg.data.message.attributes, {"key": "value"})
+        self.assertEqual(event_arg.data.message.data, "eyJ0ZXN0IjogInZhbHVlIn0=")
         self.assertIsNone(event_arg.data.message.ordering_key)
         self.assertEqual(event_arg.data.subscription, "my-subscription")
 
@@ -115,9 +113,7 @@ class TestPubSub(unittest.TestCase):
             },
             data={
                 "message": {
-                    "attributes": {
-                        "key": "value"
-                    },
+                    "attributes": {"key": "value"},
                     "data": "eyJ0ZXN0IjogInZhbHVlIn0=",
                     "message_id": "message-id-123",
                     "publish_time": "2023-03-11T13:25:37.403Z",
@@ -142,9 +138,7 @@ class TestPubSub(unittest.TestCase):
             },
             data={
                 "message": {
-                    "attributes": {
-                        "key": "value"
-                    },
+                    "attributes": {"key": "value"},
                     "data": "eyJ0ZXN0IjogInZhbHVlIn0=",
                     "message_id": "message-id-123",
                     "publish_time": time,
@@ -156,5 +150,4 @@ class TestPubSub(unittest.TestCase):
             _message_handler(lambda _: None, raw_event)
         # pylint: disable=broad-except
         except Exception:
-            self.fail(
-                "Datetime without microseconds should not throw an exception")
+            self.fail("Datetime without microseconds should not throw an exception")

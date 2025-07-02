@@ -14,11 +14,11 @@
 """Module for params that can make Cloud Functions codebases generic."""
 
 import abc as _abc
-import json as _json
 import dataclasses as _dataclasses
+import enum as _enum
+import json as _json
 import os as _os
 import re as _re
-import enum as _enum
 import typing as _typing
 
 _T = _typing.TypeVar("_T", str, int, float, bool, list)
@@ -47,13 +47,11 @@ class Expression(_abc.ABC, _typing.Generic[_T]):
 
 
 def _obj_cel_name(obj: _T) -> _T:
-    return obj if not isinstance(obj, Expression) else object.__getattribute__(
-        obj, "_cel_")
+    return obj if not isinstance(obj, Expression) else object.__getattribute__(obj, "_cel_")
 
 
 def _quote_if_string(literal: _T) -> _T:
-    return _obj_cel_name(literal) if not isinstance(literal,
-                                                    str) else f'"{literal}"'
+    return _obj_cel_name(literal) if not isinstance(literal, str) else f'"{literal}"'
 
 
 _params: dict[str, Expression] = {}
@@ -65,6 +63,7 @@ class TernaryExpression(Expression[_T], _typing.Generic[_T]):
     A CEL expression that evaluates to one of two values based on the value of
     another expression.
     """
+
     test: Expression[bool]
     if_true: _T
     if_false: _T
@@ -87,6 +86,7 @@ class CompareExpression(Expression[bool], _typing.Generic[_T]):
     A CEL expression that evaluates to boolean true or false based on a comparison
     between the value of another expression and a literal of that same type.
     """
+
     comparator: str
     left: Expression[_T]
     right: _T
@@ -141,7 +141,7 @@ class SelectInput(_typing.Generic[_T]):
 
 
 @_dataclasses.dataclass(frozen=True)
-class MultiSelectInput():
+class MultiSelectInput:
     """
     Specifies that a Param's value should be determined by having the user select
     a subset from a list of pre-canned options interactively at deploy-time.
@@ -179,6 +179,7 @@ class TextInput:
 
 class ResourceType(str, _enum.Enum):
     """The type of resource that a picker should pick."""
+
     STORAGE_BUCKET = "storage.googleapis.com/Bucket"
 
     def __str__(self) -> str:
@@ -231,8 +232,7 @@ class Param(Expression[_T]):
     deployments.
     """
 
-    input: TextInput | ResourceInput | SelectInput[
-        _T] | MultiSelectInput | None = None
+    input: TextInput | ResourceInput | SelectInput[_T] | MultiSelectInput | None = None
     """
     The type of input that is required for this param, e.g. TextInput.
     """
@@ -254,7 +254,8 @@ class Param(Expression[_T]):
         if not _re.match(r"^[A-Z0-9_]+$", self.name):
             raise ValueError(
                 "Parameter names must only use uppercase letters, numbers and "
-                "underscores, e.g. 'UPPER_SNAKE_CASE'.")
+                "underscores, e.g. 'UPPER_SNAKE_CASE'."
+            )
         if self.name in _params:
             raise ValueError(
                 f"Duplicate Parameter Error: The parameter '{self.name}' has already been declared."
@@ -294,7 +295,8 @@ class SecretParam(Expression[str]):
         if not _re.match(r"^[A-Z0-9_]+$", self.name):
             raise ValueError(
                 "Parameter names must only use uppercase letters, numbers and "
-                "underscores, e.g. 'UPPER_SNAKE_CASE'.")
+                "underscores, e.g. 'UPPER_SNAKE_CASE'."
+            )
         if self.name in _params:
             raise ValueError(
                 f"Duplicate Parameter Error: The parameter '{self.name}' has already been declared."
@@ -323,10 +325,9 @@ class StringParam(Param[str]):
             return _os.environ[self.name]
 
         if self.default is not None:
-            return self.default.value if isinstance(
-                self.default, Expression) else self.default
+            return self.default.value if isinstance(self.default, Expression) else self.default
 
-        return str()
+        return ""
 
 
 @_dataclasses.dataclass(frozen=True)
@@ -338,9 +339,8 @@ class IntParam(Param[int]):
         if _os.environ.get(self.name) is not None:
             return int(_os.environ[self.name])
         if self.default is not None:
-            return self.default.value if isinstance(
-                self.default, Expression) else self.default
-        return int()
+            return self.default.value if isinstance(self.default, Expression) else self.default
+        return 0
 
 
 @_dataclasses.dataclass(frozen=True)
@@ -356,9 +356,8 @@ class _FloatParam(Param[float]):
         if _os.environ.get(self.name) is not None:
             return float(_os.environ[self.name])
         if self.default is not None:
-            return self.default.value if isinstance(
-                self.default, Expression) else self.default
-        return float()
+            return self.default.value if isinstance(self.default, Expression) else self.default
+        return 0.0
 
 
 @_dataclasses.dataclass(frozen=True)
@@ -371,8 +370,7 @@ class BoolParam(Param[bool]):
         if env_value is not None:
             return env_value.lower() == "true"
         if self.default is not None:
-            return self.default.value if isinstance(
-                self.default, Expression) else self.default
+            return self.default.value if isinstance(self.default, Expression) else self.default
         return False
 
 
@@ -386,8 +384,7 @@ class ListParam(Param[list]):
             # If the environment variable starts with "[" and ends with "]",
             # then assume it is a JSON array and try to parse it.
             # (This is for Cloud Run (v2 Functions), the environment variable is a JSON array.)
-            if _os.environ[self.name].startswith("[") and _os.environ[
-                    self.name].endswith("]"):
+            if _os.environ[self.name].startswith("[") and _os.environ[self.name].endswith("]"):
                 try:
                     return _json.loads(_os.environ[self.name])
                 except _json.JSONDecodeError:
@@ -397,8 +394,7 @@ class ListParam(Param[list]):
             # variable is a comma-separated list.)
             return list(filter(len, _os.environ[self.name].split(",")))
         if self.default is not None:
-            return self.default.value if isinstance(
-                self.default, Expression) else self.default
+            return self.default.value if isinstance(self.default, Expression) else self.default
         return []
 
 

@@ -14,11 +14,13 @@
 """
 Functions to handle events from Google Cloud Storage.
 """
+
 # pylint: disable=protected-access
 import dataclasses as _dataclasses
 import datetime as _dt
 import functools as _functools
 import typing as _typing
+
 import cloudevents.http as _ce
 
 import firebase_functions.private.util as _util
@@ -235,10 +237,11 @@ def _message_handler(
         updated=data.get("updated"),
         # Custom type fields:
         customer_encryption=CustomerEncryption(
-            encryption_algorithm=data["customerEncryption"]
-            ["encryptionAlgorithm"],
+            encryption_algorithm=data["customerEncryption"]["encryptionAlgorithm"],
             key_sha256=data["customerEncryption"]["keySha256"],
-        ) if data.get("customerEncryption") is not None else None,
+        )
+        if data.get("customerEncryption") is not None
+        else None,
     )
 
     event: CloudEvent[StorageObjectData] = CloudEvent(
@@ -246,8 +249,7 @@ def _message_handler(
         id=event_attributes["id"],
         source=event_attributes["source"],
         specversion=event_attributes["specversion"],
-        subject=event_attributes["subject"]
-        if "subject" in event_attributes else None,
+        subject=event_attributes["subject"] if "subject" in event_attributes else None,
         time=_dt.datetime.strptime(
             event_attributes["time"],
             "%Y-%m-%dT%H:%M:%S.%f%z",
@@ -284,15 +286,13 @@ def on_object_archived(**kwargs) -> _typing.Callable[[_C1], _C1]:
     options = StorageOptions(**kwargs)
 
     def on_object_archived_inner_decorator(func: _C1):
-
         @_functools.wraps(func)
         def on_object_archived_wrapped(raw: _ce.CloudEvent):
             return _message_handler(func, raw)
 
         _util.set_func_endpoint_attr(
             on_object_archived_wrapped,
-            options._endpoint(func_name=func.__name__,
-                              event_type=_event_type_archived),
+            options._endpoint(func_name=func.__name__, event_type=_event_type_archived),
         )
         return on_object_archived_wrapped
 
@@ -326,15 +326,13 @@ def on_object_finalized(**kwargs) -> _typing.Callable[[_C1], _C1]:
     options = StorageOptions(**kwargs)
 
     def on_object_finalized_inner_decorator(func: _C1):
-
         @_functools.wraps(func)
         def on_object_finalized_wrapped(raw: _ce.CloudEvent):
             return _message_handler(func, raw)
 
         _util.set_func_endpoint_attr(
             on_object_finalized_wrapped,
-            options._endpoint(func_name=func.__name__,
-                              event_type=_event_type_finalized),
+            options._endpoint(func_name=func.__name__, event_type=_event_type_finalized),
         )
         return on_object_finalized_wrapped
 
@@ -369,15 +367,13 @@ def on_object_deleted(**kwargs) -> _typing.Callable[[_C1], _C1]:
     options = StorageOptions(**kwargs)
 
     def on_object_deleted_inner_decorator(func: _C1):
-
         @_functools.wraps(func)
         def on_object_deleted_wrapped(raw: _ce.CloudEvent):
             return _message_handler(func, raw)
 
         _util.set_func_endpoint_attr(
             on_object_deleted_wrapped,
-            options._endpoint(func_name=func.__name__,
-                              event_type=_event_type_deleted),
+            options._endpoint(func_name=func.__name__, event_type=_event_type_deleted),
         )
         return on_object_deleted_wrapped
 
@@ -408,15 +404,13 @@ def on_object_metadata_updated(**kwargs) -> _typing.Callable[[_C1], _C1]:
     options = StorageOptions(**kwargs)
 
     def on_object_metadata_updated_inner_decorator(func: _C1):
-
         @_functools.wraps(func)
         def on_object_metadata_updated_wrapped(raw: _ce.CloudEvent):
             return _message_handler(func, raw)
 
         _util.set_func_endpoint_attr(
             on_object_metadata_updated_wrapped,
-            options._endpoint(func_name=func.__name__,
-                              event_type=_event_type_metadata_updated),
+            options._endpoint(func_name=func.__name__, event_type=_event_type_metadata_updated),
         )
         return on_object_metadata_updated_wrapped
 

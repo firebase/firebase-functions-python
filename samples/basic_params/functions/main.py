@@ -1,8 +1,10 @@
 """
 Example Function params & inputs.
 """
-from firebase_functions import storage_fn, params
+
 from firebase_admin import initialize_app
+
+from firebase_functions import params, storage_fn
 
 initialize_app()
 
@@ -17,13 +19,11 @@ bucket = params.StringParam(
 output_path = params.StringParam(
     "OUTPUT_PATH",
     label="storage bucket output path",
-    description=
-    "The path of in the bucket where processed images will be stored.",
+    description="The path of in the bucket where processed images will be stored.",
     input=params.TextInput(
         example="/images/processed",
         validation_regex=r"^\/.*$",
-        validation_error_message=
-        "Must be a valid path starting with a forward slash",
+        validation_error_message="Must be a valid path starting with a forward slash",
     ),
     default="/images/processed",
 )
@@ -32,23 +32,26 @@ image_type = params.ListParam(
     "IMAGE_TYPE",
     label="convert image to preferred types",
     description="The image types you'd like your source image to convert to.",
-    input=params.MultiSelectInput([
-        params.SelectOption(value="jpeg", label="jpeg"),
-        params.SelectOption(value="png", label="png"),
-        params.SelectOption(value="webp", label="webp"),
-    ]),
+    input=params.MultiSelectInput(
+        [
+            params.SelectOption(value="jpeg", label="jpeg"),
+            params.SelectOption(value="png", label="png"),
+            params.SelectOption(value="webp", label="webp"),
+        ]
+    ),
     default=["jpeg", "png"],
 )
 
 delete_original = params.BoolParam(
     "DELETE_ORIGINAL_FILE",
     label="delete the original file",
-    description=
-    "Do you want to automatically delete the original file from the Cloud Storage?",
-    input=params.SelectInput([
-        params.SelectOption(value=True, label="Delete on any resize attempt"),
-        params.SelectOption(value=False, label="Don't delete"),
-    ],),
+    description="Do you want to automatically delete the original file from the Cloud Storage?",
+    input=params.SelectInput(
+        [
+            params.SelectOption(value=True, label="Delete on any resize attempt"),
+            params.SelectOption(value=False, label="Don't delete"),
+        ],
+    ),
     default=True,
 )
 

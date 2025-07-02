@@ -14,7 +14,8 @@
 """Path Pattern unit tests."""
 
 from unittest import TestCase
-from firebase_functions.private.path_pattern import path_parts, PathPattern, trim_param
+
+from firebase_functions.private.path_pattern import PathPattern, path_parts, trim_param
 
 
 class TestPathUtilities(TestCase):
@@ -77,8 +78,7 @@ class TestPathPattern(TestCase):
         # parse multi segment with params after
         pp = PathPattern("something/**/else/{a}/hello/{b}/world")
         self.assertEqual(
-            pp.extract_matches(
-                "something/is/a/thing/else/nothing/hello/user/world"),
+            pp.extract_matches("something/is/a/thing/else/nothing/hello/user/world"),
             {
                 "a": "nothing",
                 "b": "user",
@@ -88,8 +88,7 @@ class TestPathPattern(TestCase):
         # parse multi-capture segment with params after
         pp = PathPattern("something/{path=**}/else/{a}/hello/{b}/world")
         self.assertEqual(
-            pp.extract_matches(
-                "something/is/a/thing/else/nothing/hello/user/world"),
+            pp.extract_matches("something/is/a/thing/else/nothing/hello/user/world"),
             {
                 "path": "is/a/thing",
                 "a": "nothing",
@@ -100,8 +99,7 @@ class TestPathPattern(TestCase):
         # parse multi segment with params before
         pp = PathPattern("{a}/something/{b}/**/end")
         self.assertEqual(
-            pp.extract_matches(
-                "match_a/something/match_b/thing/else/nothing/hello/user/end"),
+            pp.extract_matches("match_a/something/match_b/thing/else/nothing/hello/user/end"),
             {
                 "a": "match_a",
                 "b": "match_b",
@@ -111,8 +109,7 @@ class TestPathPattern(TestCase):
         # parse multi-capture segment with params before
         pp = PathPattern("{a}/something/{b}/{path=**}/end")
         self.assertEqual(
-            pp.extract_matches(
-                "match_a/something/match_b/thing/else/nothing/hello/user/end"),
+            pp.extract_matches("match_a/something/match_b/thing/else/nothing/hello/user/end"),
             {
                 "a": "match_a",
                 "b": "match_b",
@@ -123,8 +120,7 @@ class TestPathPattern(TestCase):
         # parse multi segment with params before and after
         pp = PathPattern("{a}/something/**/{b}/end")
         self.assertEqual(
-            pp.extract_matches(
-                "match_a/something/thing/else/nothing/hello/user/match_b/end"),
+            pp.extract_matches("match_a/something/thing/else/nothing/hello/user/match_b/end"),
             {
                 "a": "match_a",
                 "b": "match_b",
@@ -134,8 +130,7 @@ class TestPathPattern(TestCase):
         # parse multi-capture segment with params before and after
         pp = PathPattern("{a}/something/{path=**}/{b}/end")
         self.assertEqual(
-            pp.extract_matches(
-                "match_a/something/thing/else/nothing/hello/user/match_b/end"),
+            pp.extract_matches("match_a/something/thing/else/nothing/hello/user/match_b/end"),
             {
                 "a": "match_a",
                 "b": "match_b",

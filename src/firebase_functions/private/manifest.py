@@ -19,11 +19,12 @@
 
 import dataclasses as _dataclasses
 import typing as _typing
+from enum import Enum as _Enum
+
 import typing_extensions as _typing_extensions
 
 import firebase_functions.params as _params
 import firebase_functions.private.util as _util
-from enum import Enum as _Enum
 
 
 class SecretEnvironmentVariable(_typing.TypedDict):
@@ -55,52 +56,57 @@ class EventTrigger(_typing.TypedDict):
     Trigger definitions for endpoints that listen to CloudEvents emitted by
     other systems (or legacy Google events for GCF gen 1)
     """
-    eventFilters: _typing_extensions.NotRequired[dict[str, str |
-                                                      _params.Expression[str]]]
-    eventFilterPathPatterns: _typing_extensions.NotRequired[dict[
-        str, str | _params.Expression[str]]]
+
+    eventFilters: _typing_extensions.NotRequired[dict[str, str | _params.Expression[str]]]
+    eventFilterPathPatterns: _typing_extensions.NotRequired[
+        dict[str, str | _params.Expression[str]]
+    ]
     channel: _typing_extensions.NotRequired[str]
     eventType: _typing_extensions.Required[str]
-    retry: _typing_extensions.Required[bool | _params.Expression[bool] |
-                                       _util.Sentinel]
+    retry: _typing_extensions.Required[bool | _params.Expression[bool] | _util.Sentinel]
 
 
 class RetryConfigBase(_typing.TypedDict):
     """
     Retry configuration for a endpoint.
     """
-    maxRetrySeconds: _typing_extensions.NotRequired[int |
-                                                    _params.Expression[int] |
-                                                    _util.Sentinel | None]
-    maxBackoffSeconds: _typing_extensions.NotRequired[int |
-                                                      _params.Expression[int] |
-                                                      _util.Sentinel | None]
-    maxDoublings: _typing_extensions.NotRequired[int | _params.Expression[int] |
-                                                 _util.Sentinel | None]
-    minBackoffSeconds: _typing_extensions.NotRequired[int |
-                                                      _params.Expression[int] |
-                                                      _util.Sentinel | None]
+
+    maxRetrySeconds: _typing_extensions.NotRequired[
+        int | _params.Expression[int] | _util.Sentinel | None
+    ]
+    maxBackoffSeconds: _typing_extensions.NotRequired[
+        int | _params.Expression[int] | _util.Sentinel | None
+    ]
+    maxDoublings: _typing_extensions.NotRequired[
+        int | _params.Expression[int] | _util.Sentinel | None
+    ]
+    minBackoffSeconds: _typing_extensions.NotRequired[
+        int | _params.Expression[int] | _util.Sentinel | None
+    ]
 
 
 class RetryConfigTasks(RetryConfigBase):
     """
     Retry configuration for a task.
     """
-    maxAttempts: _typing_extensions.NotRequired[int | _params.Expression[int] |
-                                                _util.Sentinel | None]
+
+    maxAttempts: _typing_extensions.NotRequired[
+        int | _params.Expression[int] | _util.Sentinel | None
+    ]
 
 
 class RetryConfigScheduler(RetryConfigBase):
     """
     Retry configuration for a schedule.
     """
-    retryCount: _typing_extensions.NotRequired[int | _params.Expression[int] |
-                                               _util.Sentinel | None]
+
+    retryCount: _typing_extensions.NotRequired[
+        int | _params.Expression[int] | _util.Sentinel | None
+    ]
 
 
 class RateLimits(_typing.TypedDict):
-    maxConcurrentDispatches: int | _params.Expression[
-        int] | _util.Sentinel | None
+    maxConcurrentDispatches: int | _params.Expression[int] | _util.Sentinel | None
 
     maxDispatchesPerSecond: int | _params.Expression[int] | _util.Sentinel | None
 
@@ -110,6 +116,7 @@ class TaskQueueTrigger(_typing.TypedDict):
     Trigger definitions for RPCs servers using the HTTP protocol defined at
     https://firebase.google.com/docs/functions/callable-reference
     """
+
     retryConfig: RetryConfigTasks | None
     rateLimits: RateLimits | None
 
@@ -143,8 +150,7 @@ class ManifestEndpoint:
     entryPoint: str | None = None
     region: list[str] | None = _dataclasses.field(default_factory=list[str])
     platform: str | None = "gcfv2"
-    availableMemoryMb: int | _params.Expression[
-        int] | _util.Sentinel | None = None
+    availableMemoryMb: int | _params.Expression[int] | _util.Sentinel | None = None
     maxInstances: int | _params.Expression[int] | _util.Sentinel | None = None
     minInstances: int | _params.Expression[int] | _util.Sentinel | None = None
     concurrency: int | _params.Expression[int] | _util.Sentinel | None = None
@@ -154,9 +160,9 @@ class ManifestEndpoint:
     vpc: VpcSettings | None = None
     labels: dict[str, str] | None = None
     ingressSettings: str | None | _util.Sentinel = None
-    secretEnvironmentVariables: list[
-        SecretEnvironmentVariable] | _util.Sentinel | None = _dataclasses.field(
-            default_factory=list[SecretEnvironmentVariable])
+    secretEnvironmentVariables: list[SecretEnvironmentVariable] | _util.Sentinel | None = (
+        _dataclasses.field(default_factory=list[SecretEnvironmentVariable])
+    )
     httpsTrigger: HttpsTrigger | None = None
     callableTrigger: CallableTrigger | None = None
     eventTrigger: EventTrigger | None = None
@@ -174,27 +180,28 @@ class ManifestRequiredApi(_typing.TypedDict):
 class ManifestStack:
     endpoints: dict[str, ManifestEndpoint]
     specVersion: str = "v1alpha1"
-    params: list[_typing.Any] | None = _dataclasses.field(
-        default_factory=list[_typing.Any])
+    params: list[_typing.Any] | None = _dataclasses.field(default_factory=list[_typing.Any])
     requiredAPIs: list[ManifestRequiredApi] = _dataclasses.field(
-        default_factory=list[ManifestRequiredApi])
+        default_factory=list[ManifestRequiredApi]
+    )
 
 
 def _param_input_to_spec(
-    param_input: _params.TextInput | _params.ResourceInput |
-    _params.SelectInput | _params.MultiSelectInput
+    param_input: _params.TextInput
+    | _params.ResourceInput
+    | _params.SelectInput
+    | _params.MultiSelectInput,
 ) -> dict[str, _typing.Any]:
     if isinstance(param_input, _params.TextInput):
         return {
             "text": {
-                key: value for key, value in {
-                    "example":
-                        param_input.example,
-                    "validationRegex":
-                        param_input.validation_regex,
-                    "validationErrorMessage":
-                        param_input.validation_error_message,
-                }.items() if value is not None
+                key: value
+                for key, value in {
+                    "example": param_input.example,
+                    "validationRegex": param_input.validation_regex,
+                    "validationErrorMessage": param_input.validation_error_message,
+                }.items()
+                if value is not None
             }
         }
 
@@ -205,25 +212,28 @@ def _param_input_to_spec(
             },
         }
 
-    if isinstance(param_input, (_params.MultiSelectInput, _params.SelectInput)):
-        key = "select" if isinstance(param_input,
-                                     _params.SelectInput) else "multiSelect"
+    if isinstance(param_input, _params.MultiSelectInput | _params.SelectInput):
+        key = "select" if isinstance(param_input, _params.SelectInput) else "multiSelect"
         return {
             key: {
-                "options": [{
-                    key: value for key, value in {
-                        "value": option.value,
-                        "label": option.label,
-                    }.items() if value is not None
-                } for option in param_input.options],
+                "options": [
+                    {
+                        key: value
+                        for key, value in {
+                            "value": option.value,
+                            "label": option.label,
+                        }.items()
+                        if value is not None
+                    }
+                    for option in param_input.options
+                ],
             },
         }
 
     return {}
 
 
-def _param_to_spec(
-        param: _params.Param | _params.SecretParam) -> dict[str, _typing.Any]:
+def _param_to_spec(param: _params.Param | _params.SecretParam) -> dict[str, _typing.Any]:
     spec_dict: dict[str, _typing.Any] = {
         "name": param.name,
         "label": param.label,
@@ -232,8 +242,9 @@ def _param_to_spec(
     }
 
     if isinstance(param, _params.Param):
-        spec_dict["default"] = f"{param.default}" if isinstance(
-            param.default, _params.Expression) else param.default
+        spec_dict["default"] = (
+            f"{param.default}" if isinstance(param.default, _params.Expression) else param.default
+        )
         if param.input:
             spec_dict["input"] = _param_input_to_spec(param.input)
 
@@ -270,7 +281,7 @@ def _object_to_spec(data) -> object:
         return data
 
 
-def _dict_factory(data: list[_typing.Tuple[str, _typing.Any]]) -> dict:
+def _dict_factory(data: list[tuple[str, _typing.Any]]) -> dict:
     out: dict = {}
     for key, value in data:
         if value is not None:

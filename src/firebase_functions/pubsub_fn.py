@@ -14,17 +14,18 @@
 """
 Functions to handle events from Google Cloud Pub/Sub.
 """
+
 # pylint: disable=protected-access
+import base64 as _base64
 import dataclasses as _dataclasses
 import datetime as _dt
 import functools as _functools
-import typing as _typing
 import json as _json
-import base64 as _base64
+import typing as _typing
+
 import cloudevents.http as _ce
 
 import firebase_functions.private.util as _util
-
 from firebase_functions.core import CloudEvent, T, _with_init
 from firebase_functions.options import PubSubOptions
 
@@ -68,9 +69,7 @@ class Message(_typing.Generic[T]):
             else:
                 return None
         except Exception as error:
-            raise ValueError(
-                f"Unable to parse Pub/Sub message data as JSON: {error}"
-            ) from error
+            raise ValueError(f"Unable to parse Pub/Sub message data as JSON: {error}") from error
 
 
 @_dataclasses.dataclass(frozen=True)
@@ -80,6 +79,7 @@ class MessagePublishedData(_typing.Generic[T]):
 
     'T' Type representing `Message.data`'s JSON format.
     """
+
     message: Message[T]
     """
     Google Cloud Pub/Sub message.
@@ -109,8 +109,7 @@ def _message_handler(
     if "." not in event_dict["time"]:
         event_dict["time"] = event_dict["time"].replace("Z", ".000000Z")
     if "." not in message_dict["publish_time"]:
-        message_dict["publish_time"] = message_dict["publish_time"].replace(
-            "Z", ".000000Z")
+        message_dict["publish_time"] = message_dict["publish_time"].replace("Z", ".000000Z")
 
     time = _dt.datetime.strptime(
         event_dict["time"],
@@ -185,7 +184,6 @@ def on_message_published(**kwargs) -> _typing.Callable[[_C1], _C1]:
     options = PubSubOptions(**kwargs)
 
     def on_message_published_inner_decorator(func: _C1):
-
         @_functools.wraps(func)
         def on_message_published_wrapped(raw: _ce.CloudEvent):
             return _message_handler(func, raw)

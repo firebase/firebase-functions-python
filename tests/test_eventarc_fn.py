@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Eventarc trigger function tests."""
+
 import unittest
 from unittest.mock import Mock
 
@@ -38,7 +39,7 @@ class TestEventarcFn(unittest.TestCase):
             event_type="firebase.extensions.storage-resize-images.v1.complete",
         )(func)
 
-        endpoint = getattr(decorated_func, "__firebase_endpoint__")
+        endpoint = decorated_func.__firebase_endpoint__
         self.assertIsNotNone(endpoint)
         self.assertIsNotNone(endpoint.eventTrigger)
         self.assertEqual(

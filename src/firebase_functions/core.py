@@ -14,6 +14,7 @@
 """
 Public code that is shared across modules.
 """
+
 import dataclasses as _dataclass
 import datetime as _datetime
 import typing as _typing
@@ -90,9 +91,9 @@ _init_callback: _typing.Callable[[], _typing.Any] | None = None
 
 def init(callback: _typing.Callable[[], _typing.Any]) -> None:
     """
-     Registers a function that should be run when in a production environment
-     before executing any functions code.
-     Calling this decorator more than once leads to undefined behavior.
+    Registers a function that should be run when in a production environment
+    before executing any functions code.
+    Calling this decorator more than once leads to undefined behavior.
     """
 
     global _did_init
@@ -107,9 +108,7 @@ def init(callback: _typing.Callable[[], _typing.Any]) -> None:
     _did_init = False
 
 
-def _with_init(
-    fn: _typing.Callable[...,
-                         _typing.Any]) -> _typing.Callable[..., _typing.Any]:
+def _with_init(fn: _typing.Callable[..., _typing.Any]) -> _typing.Callable[..., _typing.Any]:
     """
     A decorator that runs the init callback before running the decorated function.
     """

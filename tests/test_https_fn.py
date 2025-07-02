@@ -4,6 +4,7 @@ Tests for the https module.
 
 import unittest
 from unittest.mock import Mock
+
 from flask import Flask, Request
 from werkzeug.test import EnvironBuilder
 
@@ -31,9 +32,7 @@ class TestHttps(unittest.TestCase):
             environ = EnvironBuilder(
                 method="POST",
                 json={
-                    "data": {
-                        "test": "value"
-                    },
+                    "data": {"test": "value"},
                 },
             ).get_environ()
             request = Request(environ)
@@ -59,9 +58,7 @@ class TestHttps(unittest.TestCase):
             environ = EnvironBuilder(
                 method="POST",
                 json={
-                    "data": {
-                        "test": "value"
-                    },
+                    "data": {"test": "value"},
                 },
             ).get_environ()
             request = Request(environ)

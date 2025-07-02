@@ -13,8 +13,8 @@
 # limitations under the License.
 """Manifest unit tests."""
 
-import firebase_functions.private.manifest as _manifest
 import firebase_functions.params as _params
+import firebase_functions.private.manifest as _manifest
 
 full_endpoint = _manifest.ManifestEndpoint(
     platform="gcfv2",
@@ -33,9 +33,7 @@ full_endpoint = _manifest.ManifestEndpoint(
     labels={
         "hello": "world",
     },
-    secretEnvironmentVariables=[{
-        "key": "MY_SECRET"
-    }],
+    secretEnvironmentVariables=[{"key": "MY_SECRET"}],
 )
 
 full_endpoint_dict = {
@@ -55,9 +53,7 @@ full_endpoint_dict = {
     "labels": {
         "hello": "world",
     },
-    "secretEnvironmentVariables": [{
-        "key": "MY_SECRET"
-    }],
+    "secretEnvironmentVariables": [{"key": "MY_SECRET"}],
 }
 
 full_stack = _manifest.ManifestStack(
@@ -70,43 +66,29 @@ full_stack = _manifest.ManifestStack(
         _params.StringParam("STRING_TEST"),
         _params.ListParam("LIST_TEST", default=["1", "2", "3"]),
     ],
-    requiredAPIs=[{
-        "api": "test_api",
-        "reason": "testing"
-    }])
+    requiredAPIs=[{"api": "test_api", "reason": "testing"}],
+)
 
 full_stack_dict = {
     "specVersion": "v1alpha1",
-    "endpoints": {
-        "test": full_endpoint_dict
-    },
-    "params": [{
-        "name": "BOOL_TEST",
-        "type": "boolean",
-        "default": False,
-    }, {
-        "name": "INT_TEST",
-        "type": "int",
-        "description": "int_description"
-    }, {
-        "name": "FLOAT_TEST",
-        "type": "float",
-        "immutable": True,
-    }, {
-        "name": "SECRET_TEST",
-        "type": "secret"
-    }, {
-        "name": "STRING_TEST",
-        "type": "string"
-    }, {
-        "default": ["1", "2", "3"],
-        "name": "LIST_TEST",
-        "type": "list"
-    }],
-    "requiredAPIs": [{
-        "api": "test_api",
-        "reason": "testing"
-    }]
+    "endpoints": {"test": full_endpoint_dict},
+    "params": [
+        {
+            "name": "BOOL_TEST",
+            "type": "boolean",
+            "default": False,
+        },
+        {"name": "INT_TEST", "type": "int", "description": "int_description"},
+        {
+            "name": "FLOAT_TEST",
+            "type": "float",
+            "immutable": True,
+        },
+        {"name": "SECRET_TEST", "type": "secret"},
+        {"name": "STRING_TEST", "type": "string"},
+        {"default": ["1", "2", "3"], "name": "LIST_TEST", "type": "list"},
+    ],
+    "requiredAPIs": [{"api": "test_api", "reason": "testing"}],
 }
 
 
@@ -116,8 +98,9 @@ class TestManifestStack:
     def test_stack_to_dict(self):
         """Generic check that all ManifestStack values convert to dict."""
         stack_dict = _manifest.manifest_to_spec_dict(full_stack)
-        assert (stack_dict == full_stack_dict
-               ), "Generated manifest spec dict does not match expected dict."
+        assert stack_dict == full_stack_dict, (
+            "Generated manifest spec dict does not match expected dict."
+        )
 
 
 class TestManifestEndpoint:
@@ -127,38 +110,37 @@ class TestManifestEndpoint:
         """Generic check that all ManifestEndpoint values convert to dict."""
         # pylint: disable=protected-access
         endpoint_dict = _manifest._dataclass_to_spec(full_endpoint)
-        assert (endpoint_dict == full_endpoint_dict
-               ), "Generated endpoint spec dict does not match expected dict."
+        assert endpoint_dict == full_endpoint_dict, (
+            "Generated endpoint spec dict does not match expected dict."
+        )
 
     def test_endpoint_expressions(self):
         """Check Expression values convert to CEL strings."""
         max_param = _params.IntParam("MAX")
         expressions_test = _manifest.ManifestEndpoint(
-            availableMemoryMb=_params.TernaryExpression(
-                _params.BoolParam("LARGE_BOOL"), 1024, 256),
-            minInstances=_params.StringParam("LARGE_STR").equals("yes").then(
-                6, 1),
+            availableMemoryMb=_params.TernaryExpression(_params.BoolParam("LARGE_BOOL"), 1024, 256),
+            minInstances=_params.StringParam("LARGE_STR").equals("yes").then(6, 1),
             maxInstances=max_param.compare(">", 6).then(6, max_param),
             timeoutSeconds=_params.IntParam("WORLD"),
             concurrency=_params.IntParam("BAR"),
-            vpc={"connector": _params.SecretParam("SECRET")})
+            vpc={"connector": _params.SecretParam("SECRET")},
+        )
         expressions_expected_dict = {
             "platform": "gcfv2",
             "region": [],
             "secretEnvironmentVariables": [],
             "availableMemoryMb": "{{ params.LARGE_BOOL ? 1024 : 256 }}",
-            "minInstances": "{{ params.LARGE_STR == \"yes\" ? 6 : 1 }}",
+            "minInstances": '{{ params.LARGE_STR == "yes" ? 6 : 1 }}',
             "maxInstances": "{{ params.MAX > 6 ? 6 : params.MAX }}",
             "timeoutSeconds": "{{ params.WORLD }}",
             "concurrency": "{{ params.BAR }}",
-            "vpc": {
-                "connector": "{{ params.SECRET }}"
-            }
+            "vpc": {"connector": "{{ params.SECRET }}"},
         }
         # pylint: disable=protected-access
         expressions_actual_dict = _manifest._dataclass_to_spec(expressions_test)
-        assert (expressions_actual_dict == expressions_expected_dict
-               ), "Generated endpoint spec dict does not match expected dict."
+        assert expressions_actual_dict == expressions_expected_dict, (
+            "Generated endpoint spec dict does not match expected dict."
+        )
 
     def test_endpoint_nones(self):
         """Check all None values are removed."""
@@ -175,5 +157,6 @@ class TestManifestEndpoint:
         }
         # pylint: disable=protected-access
         expressions_actual_dict = _manifest._dataclass_to_spec(expressions_test)
-        assert (expressions_actual_dict == expressions_expected_dict
-               ), "Generated endpoint spec dict does not match expected dict."
+        assert expressions_actual_dict == expressions_expected_dict, (
+            "Generated endpoint spec dict does not match expected dict."
+        )

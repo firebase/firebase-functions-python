@@ -12,12 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Scheduler function tests."""
+
 import unittest
-from unittest.mock import Mock
 from datetime import datetime
-from flask import Request, Flask
+from unittest.mock import Mock
+
+from flask import Flask, Request
 from werkzeug.test import EnvironBuilder
-from firebase_functions import scheduler_fn, core
+
+from firebase_functions import core, scheduler_fn
 
 
 class TestScheduler(unittest.TestCase):
@@ -35,9 +38,9 @@ class TestScheduler(unittest.TestCase):
         tz = "America/Los_Angeles"
         example_func = Mock(__name__="example_func")
         decorated_func = scheduler_fn.on_schedule(
-            schedule="* * * * *",
-            timezone=scheduler_fn.Timezone(tz))(example_func)
-        endpoint = getattr(decorated_func, "__firebase_endpoint__")
+            schedule="* * * * *", timezone=scheduler_fn.Timezone(tz)
+        )(example_func)
+        endpoint = decorated_func.__firebase_endpoint__
 
         self.assertIsNotNone(endpoint)
         self.assertIsNotNone(endpoint.scheduleTrigger)
@@ -55,12 +58,12 @@ class TestScheduler(unittest.TestCase):
             environ = EnvironBuilder(
                 headers={
                     "X-CloudScheduler-JobName": "example-job",
-                    "X-CloudScheduler-ScheduleTime": "2023-04-13T12:00:00-07:00"
-                }).get_environ()
+                    "X-CloudScheduler-ScheduleTime": "2023-04-13T12:00:00-07:00",
+                }
+            ).get_environ()
             mock_request = Request(environ)
             example_func = Mock(__name__="example_func")
-            decorated_func = scheduler_fn.on_schedule(
-                schedule="* * * * *")(example_func)
+            decorated_func = scheduler_fn.on_schedule(schedule="* * * * *")(example_func)
             response = decorated_func(mock_request)
 
             self.assertEqual(response.status_code, 200)
@@ -75,7 +78,8 @@ class TestScheduler(unittest.TestCase):
                         0,
                         tzinfo=scheduler_fn.Timezone("America/Los_Angeles"),
                     ),
-                ))
+                )
+            )
 
     def test_on_schedule_call_with_no_headers(self):
         """
@@ -88,8 +92,7 @@ class TestScheduler(unittest.TestCase):
             environ = EnvironBuilder().get_environ()
             mock_request = Request(environ)
             example_func = Mock(__name__="example_func")
-            decorated_func = scheduler_fn.on_schedule(
-                schedule="* * * * *")(example_func)
+            decorated_func = scheduler_fn.on_schedule(schedule="* * * * *")(example_func)
             response = decorated_func(mock_request)
 
             self.assertEqual(response.status_code, 200)
@@ -107,13 +110,12 @@ class TestScheduler(unittest.TestCase):
             environ = EnvironBuilder(
                 headers={
                     "X-CloudScheduler-JobName": "example-job",
-                    "X-CloudScheduler-ScheduleTime": "2023-04-13T12:00:00-07:00"
-                }).get_environ()
+                    "X-CloudScheduler-ScheduleTime": "2023-04-13T12:00:00-07:00",
+                }
+            ).get_environ()
             mock_request = Request(environ)
-            example_func = Mock(__name__="example_func",
-                                side_effect=Exception("Test exception"))
-            decorated_func = scheduler_fn.on_schedule(
-                schedule="* * * * *")(example_func)
+            example_func = Mock(__name__="example_func", side_effect=Exception("Test exception"))
+            decorated_func = scheduler_fn.on_schedule(schedule="* * * * *")(example_func)
             response = decorated_func(mock_request)
 
             self.assertEqual(response.status_code, 500)
@@ -131,8 +133,7 @@ class TestScheduler(unittest.TestCase):
             environ = EnvironBuilder().get_environ()
             mock_request = Request(environ)
             example_func = Mock(__name__="example_func")
-            decorated_func = scheduler_fn.on_schedule(
-                schedule="* * * * *")(example_func)
+            decorated_func = scheduler_fn.on_schedule(schedule="* * * * *")(example_func)
             decorated_func(mock_request)
 
             self.assertEqual("world", hello)

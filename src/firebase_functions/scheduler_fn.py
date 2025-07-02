@@ -13,24 +13,29 @@
 # limitations under the License.
 """Cloud functions to handle Schedule triggers."""
 
-import typing as _typing
 import dataclasses as _dataclasses
 import datetime as _dt
 import functools as _functools
+import typing as _typing
+
+from flask import (
+    Request as _Request,
+)
+from flask import (
+    Response as _Response,
+)
+from flask import (
+    make_response as _make_response,
+)
+from functions_framework import logging as _logging
 
 import firebase_functions.options as _options
 import firebase_functions.private.util as _util
-from functions_framework import logging as _logging
-from flask import (
-    Request as _Request,
-    Response as _Response,
-    make_response as _make_response,
-)
-
 from firebase_functions.core import _with_init
-# Export for user convenience.
-# pylint: disable=unused-import
-from firebase_functions.options import Timezone
+
+# Re-export Timezone from options module so users can import it directly from scheduler_fn
+# This provides a more convenient API: from firebase_functions.scheduler_fn import Timezone
+from firebase_functions.options import Timezone  # noqa: F401
 
 
 @_dataclasses.dataclass(frozen=True)
@@ -91,12 +96,10 @@ def on_schedule(**kwargs) -> _typing.Callable[[_C], _Response]:
     options = _options.ScheduleOptions(**kwargs)
 
     def on_schedule_decorator(func: _C):
-
         @_functools.wraps(func)
         def on_schedule_wrapped(request: _Request) -> _Response:
             schedule_time: _dt.datetime
-            schedule_time_str = request.headers.get(
-                "X-CloudScheduler-ScheduleTime")
+            schedule_time_str = request.headers.get("X-CloudScheduler-ScheduleTime")
             if schedule_time_str is None:
                 schedule_time = _dt.datetime.utcnow()
             else:

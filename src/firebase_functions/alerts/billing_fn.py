@@ -15,15 +15,16 @@
 """
 Cloud functions to handle billing events from Firebase Alerts.
 """
+
 import dataclasses as _dataclasses
 import functools as _functools
 import typing as _typing
+
 import cloudevents.http as _ce
-from firebase_functions.alerts import FirebaseAlertData
 
 import firebase_functions.private.util as _util
-
-from firebase_functions.core import T, CloudEvent
+from firebase_functions.alerts import FirebaseAlertData
+from firebase_functions.core import CloudEvent, T
 from firebase_functions.options import BillingOptions
 
 
@@ -85,8 +86,7 @@ OnPlanUpdatePublishedCallable = _typing.Callable[[BillingPlanUpdateEvent], None]
 The type of the callable for 'on_plan_update_published' functions.
 """
 
-OnPlanAutomatedUpdatePublishedCallable = _typing.Callable[
-    [BillingPlanAutomatedUpdateEvent], None]
+OnPlanAutomatedUpdatePublishedCallable = _typing.Callable[[BillingPlanAutomatedUpdateEvent], None]
 """
 The type of the callable for 'on_plan_automated_update_published' functions.
 """
@@ -94,9 +94,8 @@ The type of the callable for 'on_plan_automated_update_published' functions.
 
 @_util.copy_func_kwargs(BillingOptions)
 def on_plan_update_published(
-    **kwargs
-) -> _typing.Callable[[OnPlanUpdatePublishedCallable],
-                      OnPlanUpdatePublishedCallable]:
+    **kwargs,
+) -> _typing.Callable[[OnPlanUpdatePublishedCallable], OnPlanUpdatePublishedCallable]:
     """
     Event handler which triggers when a Firebase Alerts billing event is published.
 
@@ -104,7 +103,7 @@ def on_plan_update_published(
 
     .. code-block:: python
 
-      import firebase_functions.alerts.billing_fn as billing_fn   
+      import firebase_functions.alerts.billing_fn as billing_fn
 
       @billing_fn.on_plan_update_published()
       def example(alert: billing_fn.BillingPlanUpdateEvent) -> None:
@@ -113,27 +112,26 @@ def on_plan_update_published(
     :param \\*\\*kwargs: Options.
     :type \\*\\*kwargs: as :exc:`firebase_functions.options.BillingOptions`
     :rtype: :exc:`typing.Callable`
-            \\[ 
-            \\[ :exc:`firebase_functions.alerts.billing_fn.BillingPlanUpdateEvent` \\], 
-            `None` 
+            \\[
+            \\[ :exc:`firebase_functions.alerts.billing_fn.BillingPlanUpdateEvent` \\],
+            `None`
             \\]
             A function that takes a BillingPlanUpdateEvent and returns None.
     """
     options = BillingOptions(**kwargs)
 
-    def on_plan_update_published_inner_decorator(
-            func: OnPlanUpdatePublishedCallable):
-
+    def on_plan_update_published_inner_decorator(func: OnPlanUpdatePublishedCallable):
         @_functools.wraps(func)
         def on_plan_update_published_wrapped(raw: _ce.CloudEvent):
             from firebase_functions.private._alerts_fn import billing_event_from_ce
+
             func(billing_event_from_ce(raw))
 
         _util.set_func_endpoint_attr(
             on_plan_update_published_wrapped,
             options._endpoint(
                 func_name=func.__name__,
-                alert_type='billing.planUpdate',
+                alert_type="billing.planUpdate",
             ),
         )
         return on_plan_update_published_wrapped
@@ -143,9 +141,10 @@ def on_plan_update_published(
 
 @_util.copy_func_kwargs(BillingOptions)
 def on_plan_automated_update_published(
-    **kwargs
-) -> _typing.Callable[[OnPlanAutomatedUpdatePublishedCallable],
-                      OnPlanAutomatedUpdatePublishedCallable]:
+    **kwargs,
+) -> _typing.Callable[
+    [OnPlanAutomatedUpdatePublishedCallable], OnPlanAutomatedUpdatePublishedCallable
+]:
     """
     Event handler which triggers when a Firebase Alerts billing event is published.
 
@@ -153,7 +152,7 @@ def on_plan_automated_update_published(
 
     .. code-block:: python
 
-      import firebase_functions.alerts.billing_fn as billing_fn   
+      import firebase_functions.alerts.billing_fn as billing_fn
 
       @billing_fn.on_plan_automated_update_published()
       def example(alert: billing_fn.BillingPlanAutomatedUpdateEvent) -> None:
@@ -162,27 +161,28 @@ def on_plan_automated_update_published(
     :param \\*\\*kwargs: Options.
     :type \\*\\*kwargs: as :exc:`firebase_functions.options.BillingOptions`
     :rtype: :exc:`typing.Callable`
-            \\[ 
-            \\[ :exc:`firebase_functions.alerts.billing_fn.BillingPlanAutomatedUpdateEvent` \\], 
-            `None` 
+            \\[
+            \\[ :exc:`firebase_functions.alerts.billing_fn.BillingPlanAutomatedUpdateEvent` \\],
+            `None`
             \\]
             A function that takes a BillingPlanUpdateEvent and returns None.
     """
     options = BillingOptions(**kwargs)
 
     def on_plan_automated_update_published_inner_decorator(
-            func: OnPlanAutomatedUpdatePublishedCallable):
-
+        func: OnPlanAutomatedUpdatePublishedCallable,
+    ):
         @_functools.wraps(func)
         def on_plan_automated_update_published_wrapped(raw: _ce.CloudEvent):
             from firebase_functions.private._alerts_fn import billing_event_from_ce
+
             func(billing_event_from_ce(raw))
 
         _util.set_func_endpoint_attr(
             on_plan_automated_update_published_wrapped,
             options._endpoint(
                 func_name=func.__name__,
-                alert_type='billing.planAutomatedUpdate',
+                alert_type="billing.planAutomatedUpdate",
             ),
         )
         return on_plan_automated_update_published_wrapped

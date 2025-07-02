@@ -1,15 +1,14 @@
 {
-  "python.linting.enabled": true,
-  "python.linting.pylintEnabled": false,
-  "python.formatting.provider": "yapf",
-  "python.formatting.yapfArgs": [
-    "--style",
-    "{based_on_style: google, indent_width: 4}"
-  ],
-  "python.linting.pylintPath": "pylint",
+  "[python]": {
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": {
+      "source.organizeImports": "explicit"
+    },
+    "editor.defaultFormatter": "charliermarsh.ruff"
+  },
+  "ruff.lint.enable": true,
+  "ruff.format.enable": true,
   "python.envFile": "${workspaceFolder}/venv",
-  "editor.formatOnSave": true,
-  "python.linting.lintOnSave": true,
   "python.linting.mypyEnabled": true,
   "mypy.dmypyExecutable": "${workspaceFolder}/venv/bin/dmypy",
   "files.autoSave": "afterDelay",

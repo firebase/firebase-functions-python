@@ -15,15 +15,16 @@
 """
 Cloud functions to handle Test Lab events.
 """
+
 import dataclasses as _dataclasses
-import functools as _functools
 import datetime as _dt
-import typing as _typing
-import cloudevents.http as _ce
 import enum as _enum
+import functools as _functools
+import typing as _typing
+
+import cloudevents.http as _ce
 
 import firebase_functions.private.util as _util
-
 from firebase_functions.core import CloudEvent, _with_init
 from firebase_functions.options import EventHandlerOptions
 
@@ -213,18 +214,15 @@ def _event_handler(func: _C1, raw: _ce.CloudEvent) -> None:
     event_dict = {**event_data, **event_attributes}
 
     test_lab_data = TestMatrixCompletedData(
-        create_time=_dt.datetime.strptime(event_data["createTime"],
-                                          "%Y-%m-%dT%H:%M:%S.%f%z"),
+        create_time=_dt.datetime.strptime(event_data["createTime"], "%Y-%m-%dT%H:%M:%S.%f%z"),
         state=TestState(event_data["state"]),
         invalid_matrix_details=event_data.get("invalidMatrixDetails"),
         outcome_summary=OutcomeSummary(event_data["outcomeSummary"]),
         result_storage=ResultStorage(
-            tool_results_history=event_data["resultStorage"]
-            ["toolResultsHistory"],
+            tool_results_history=event_data["resultStorage"]["toolResultsHistory"],
             results_uri=event_data["resultStorage"]["resultsUri"],
             gcs_path=event_data["resultStorage"]["gcsPath"],
-            tool_results_execution=event_data["resultStorage"].get(
-                "toolResultsExecution"),
+            tool_results_execution=event_data["resultStorage"].get("toolResultsExecution"),
         ),
         client_info=ClientInfo(
             client=event_data["clientInfo"]["client"],
@@ -273,7 +271,6 @@ def on_test_matrix_completed(**kwargs) -> _typing.Callable[[_C1], _C1]:
     options = EventHandlerOptions(**kwargs)
 
     def on_test_matrix_completed_inner_decorator(func: _C1):
-
         @_functools.wraps(func)
         def on_test_matrix_completed_wrapped(raw: _ce.CloudEvent):
             return _event_handler(func, raw)
@@ -283,7 +280,8 @@ def on_test_matrix_completed(**kwargs) -> _typing.Callable[[_C1], _C1]:
             options._endpoint(
                 func_name=func.__name__,
                 event_filters={},
-                event_type="google.firebase.testlab.testMatrix.v1.completed"),
+                event_type="google.firebase.testlab.testMatrix.v1.completed",
+            ),
         )
         return on_test_matrix_completed_wrapped
 

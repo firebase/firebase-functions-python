@@ -15,23 +15,25 @@
 Module for options that can be used to configure Cloud Functions
 deployments.
 """
+
 # pylint: disable=protected-access
-import enum as _enum
 import dataclasses as _dataclasses
+import enum as _enum
 import re as _re
 import typing as _typing
 from zoneinfo import ZoneInfo as _ZoneInfo
 
 import firebase_functions.private.manifest as _manifest
-import firebase_functions.private.util as _util
 import firebase_functions.private.path_pattern as _path_pattern
-from firebase_functions.params import SecretParam, Expression
+import firebase_functions.private.util as _util
+from firebase_functions.params import Expression, SecretParam
 
 Timezone = _ZoneInfo
 """An alias of the zoneinfo.ZoneInfo for convenience."""
 
 RESET_VALUE = _util.Sentinel(
-    "Special configuration value to reset configuration to platform default.")
+    "Special configuration value to reset configuration to platform default."
+)
 """Special configuration value to reset configuration to platform default."""
 
 
@@ -134,19 +136,18 @@ class SupportedRegion(str, _enum.Enum):
 
 
 @_dataclasses.dataclass(frozen=True)
-class RateLimits():
+class RateLimits:
     """
     How congestion control should be applied to the function.
     """
-    max_concurrent_dispatches: int | Expression[
-        int] | _util.Sentinel | None = None
+
+    max_concurrent_dispatches: int | Expression[int] | _util.Sentinel | None = None
     """
     The maximum number of requests that can be outstanding at a time.
     If left unspecified, defaults to 1000.
     """
 
-    max_dispatches_per_second: int | Expression[
-        int] | _util.Sentinel | None = None
+    max_dispatches_per_second: int | Expression[int] | _util.Sentinel | None = None
     """
     The maximum number of requests that can be invoked per second.
     If left unspecified, defaults to 500.
@@ -154,7 +155,7 @@ class RateLimits():
 
 
 @_dataclasses.dataclass(frozen=True)
-class RetryConfig():
+class RetryConfig:
     """
     How a task should be retried in the event of a non-2xx return.
     """
@@ -352,8 +353,7 @@ class RuntimeOptions:
                     secret_value = secret.name
                 return secret_value
 
-            merged_options["secrets"] = list(
-                map(convert_secret, _typing.cast(list, self.secrets)))
+            merged_options["secrets"] = list(map(convert_secret, _typing.cast(list, self.secrets)))
         # _util.Sentinel values are converted to `None` in ManifestEndpoint generation
         # after other None values are removed - so as to keep them in the generated
         # YAML output as 'null' values.
@@ -363,17 +363,14 @@ class RuntimeOptions:
         assert kwargs["func_name"] is not None
         options_dict = self._asdict_with_global_options()
         options = self.__class__(**options_dict)
-        secret_envs: list[
-            _manifest.SecretEnvironmentVariable] | _util.Sentinel = []
+        secret_envs: list[_manifest.SecretEnvironmentVariable] | _util.Sentinel = []
         if options.secrets is not None:
             if isinstance(options.secrets, list):
 
-                def convert_secret(
-                        secret) -> _manifest.SecretEnvironmentVariable:
+                def convert_secret(secret) -> _manifest.SecretEnvironmentVariable:
                     return {"key": secret}
 
-                secret_envs = list(
-                    map(convert_secret, _typing.cast(list, options.secrets)))
+                secret_envs = list(map(convert_secret, _typing.cast(list, options.secrets)))
             elif options.secrets is _util.Sentinel:
                 secret_envs = _typing.cast(_util.Sentinel, options.secrets)
 
@@ -385,16 +382,16 @@ class RuntimeOptions:
 
         vpc: _manifest.VpcSettings | None = None
         if isinstance(options.vpc_connector, str):
-            vpc = ({
-                "connector":
-                    options.vpc_connector,
-                "egressSettings":
-                    options.vpc_connector_egress_settings.value if isinstance(
-                        options.vpc_connector_egress_settings, VpcEgressSetting)
-                    else options.vpc_connector_egress_settings
-            } if options.vpc_connector_egress_settings is not None else {
-                "connector": options.vpc_connector
-            })
+            vpc = (
+                {
+                    "connector": options.vpc_connector,
+                    "egressSettings": options.vpc_connector_egress_settings.value
+                    if isinstance(options.vpc_connector_egress_settings, VpcEgressSetting)
+                    else options.vpc_connector_egress_settings,
+                }
+                if options.vpc_connector_egress_settings is not None
+                else {"connector": options.vpc_connector}
+            )
 
         endpoint = _manifest.ManifestEndpoint(
             entryPoint=kwargs["func_name"],
@@ -445,29 +442,35 @@ class TaskQueueOptions(RuntimeOptions):
         self,
         **kwargs,
     ) -> _manifest.ManifestEndpoint:
-        rate_limits: _manifest.RateLimits | None = _manifest.RateLimits(
-            maxConcurrentDispatches=self.rate_limits.max_concurrent_dispatches,
-            maxDispatchesPerSecond=self.rate_limits.max_dispatches_per_second,
-        ) if self.rate_limits is not None else None
+        rate_limits: _manifest.RateLimits | None = (
+            _manifest.RateLimits(
+                maxConcurrentDispatches=self.rate_limits.max_concurrent_dispatches,
+                maxDispatchesPerSecond=self.rate_limits.max_dispatches_per_second,
+            )
+            if self.rate_limits is not None
+            else None
+        )
 
-        retry_config: _manifest.RetryConfigTasks | None = _manifest.RetryConfigTasks(
-            maxAttempts=self.retry_config.max_attempts,
-            maxRetrySeconds=self.retry_config.max_retry_seconds,
-            maxBackoffSeconds=self.retry_config.max_backoff_seconds,
-            maxDoublings=self.retry_config.max_doublings,
-            minBackoffSeconds=self.retry_config.min_backoff_seconds,
-        ) if self.retry_config is not None else None
+        retry_config: _manifest.RetryConfigTasks | None = (
+            _manifest.RetryConfigTasks(
+                maxAttempts=self.retry_config.max_attempts,
+                maxRetrySeconds=self.retry_config.max_retry_seconds,
+                maxBackoffSeconds=self.retry_config.max_backoff_seconds,
+                maxDoublings=self.retry_config.max_doublings,
+                minBackoffSeconds=self.retry_config.min_backoff_seconds,
+            )
+            if self.retry_config is not None
+            else None
+        )
 
         kwargs_merged = {
             **_dataclasses.asdict(super()._endpoint(**kwargs)),
-            "taskQueueTrigger":
-                _manifest.TaskQueueTrigger(
-                    rateLimits=rate_limits,
-                    retryConfig=retry_config,
-                ),
+            "taskQueueTrigger": _manifest.TaskQueueTrigger(
+                rateLimits=rate_limits,
+                retryConfig=retry_config,
+            ),
         }
-        return _manifest.ManifestEndpoint(
-            **_typing.cast(_typing.Dict, kwargs_merged))
+        return _manifest.ManifestEndpoint(**_typing.cast(dict, kwargs_merged))
 
     def _required_apis(self) -> list[_manifest.ManifestRequiredApi]:
         return [
@@ -506,11 +509,9 @@ class EventHandlerOptions(RuntimeOptions):
 
         kwargs_merged = {
             **_dataclasses.asdict(super()._endpoint(**kwargs)),
-            "eventTrigger":
-                event_trigger,
+            "eventTrigger": event_trigger,
         }
-        return _manifest.ManifestEndpoint(
-            **_typing.cast(_typing.Dict, kwargs_merged))
+        return _manifest.ManifestEndpoint(**_typing.cast(dict, kwargs_merged))
 
 
 @_dataclasses.dataclass(frozen=True, kw_only=True)
@@ -533,10 +534,14 @@ class PubSubOptions(EventHandlerOptions):
             "topic": self.topic,
         }
         event_type = "google.cloud.pubsub.topic.v1.messagePublished"
-        return _manifest.ManifestEndpoint(**_typing.cast(
-            _typing.Dict,
-            _dataclasses.asdict(super()._endpoint(
-                **kwargs, event_filters=event_filters, event_type=event_type))))
+        return _manifest.ManifestEndpoint(
+            **_typing.cast(
+                dict,
+                _dataclasses.asdict(
+                    super()._endpoint(**kwargs, event_filters=event_filters, event_type=event_type)
+                ),
+            )
+        )
 
 
 class AlertType(str, _enum.Enum):
@@ -633,13 +638,18 @@ class FirebaseAlertOptions(EventHandlerOptions):
             event_filters["appid"] = self.app_id
 
         event_type = "google.firebase.firebasealerts.alerts.v1.published"
-        return _manifest.ManifestEndpoint(**_typing.cast(
-            _typing.Dict,
-            _dataclasses.asdict(super()._endpoint(
-                **kwargs,
-                event_filters=event_filters,
-                event_type=event_type,
-            ))))
+        return _manifest.ManifestEndpoint(
+            **_typing.cast(
+                dict,
+                _dataclasses.asdict(
+                    super()._endpoint(
+                        **kwargs,
+                        event_filters=event_filters,
+                        event_type=event_type,
+                    )
+                ),
+            )
+        )
 
 
 @_dataclasses.dataclass(frozen=True, kw_only=True)
@@ -724,7 +734,8 @@ class BillingOptions(EventHandlerOptions):
     ) -> _manifest.ManifestEndpoint:
         assert kwargs["alert_type"] is not None
         return FirebaseAlertOptions(
-            alert_type=kwargs["alert_type"],)._endpoint(**kwargs)
+            alert_type=kwargs["alert_type"],
+        )._endpoint(**kwargs)
 
 
 @_dataclasses.dataclass(frozen=True, kw_only=True)
@@ -765,16 +776,22 @@ class EventarcTriggerOptions(EventHandlerOptions):
         **kwargs,
     ) -> _manifest.ManifestEndpoint:
         event_filters = {} if self.filters is None else self.filters
-        endpoint = _manifest.ManifestEndpoint(**_typing.cast(
-            _typing.Dict,
-            _dataclasses.asdict(super()._endpoint(
-                **kwargs,
-                event_filters=event_filters,
-                event_type=self.event_type,
-            ))))
+        endpoint = _manifest.ManifestEndpoint(
+            **_typing.cast(
+                dict,
+                _dataclasses.asdict(
+                    super()._endpoint(
+                        **kwargs,
+                        event_filters=event_filters,
+                        event_type=self.event_type,
+                    )
+                ),
+            )
+        )
         assert endpoint.eventTrigger is not None
-        channel = (self.channel if self.channel is not None else
-                   "locations/us-central1/channels/firebase")
+        channel = (
+            self.channel if self.channel is not None else "locations/us-central1/channels/firebase"
+        )
         endpoint.eventTrigger["channel"] = channel
         return endpoint
 
@@ -848,15 +865,13 @@ class ScheduleOptions(RuntimeOptions):
 
         kwargs_merged = {
             **_dataclasses.asdict(super()._endpoint(**kwargs)),
-            "scheduleTrigger":
-                _manifest.ScheduleTrigger(
-                    schedule=self.schedule,
-                    timeZone=time_zone,
-                    retryConfig=retry_config,
-                ),
+            "scheduleTrigger": _manifest.ScheduleTrigger(
+                schedule=self.schedule,
+                timeZone=time_zone,
+                retryConfig=retry_config,
+            ),
         }
-        return _manifest.ManifestEndpoint(
-            **_typing.cast(_typing.Dict, kwargs_merged))
+        return _manifest.ManifestEndpoint(**_typing.cast(dict, kwargs_merged))
 
     def _required_apis(self) -> list[_manifest.ManifestRequiredApi]:
         return [
@@ -893,7 +908,8 @@ class StorageOptions(RuntimeOptions):
             raise ValueError(
                 "Missing bucket name. If you are unit testing, please specify a bucket name"
                 " by providing a bucket name directly to the event handler or by setting the"
-                " FIREBASE_CONFIG environment variable.")
+                " FIREBASE_CONFIG environment variable."
+            )
         event_filters: _typing.Any = {
             "bucket": bucket,
         }
@@ -905,11 +921,9 @@ class StorageOptions(RuntimeOptions):
 
         kwargs_merged = {
             **_dataclasses.asdict(super()._endpoint(**kwargs)),
-            "eventTrigger":
-                event_trigger,
+            "eventTrigger": event_trigger,
         }
-        return _manifest.ManifestEndpoint(
-            **_typing.cast(_typing.Dict, kwargs_merged))
+        return _manifest.ManifestEndpoint(**_typing.cast(dict, kwargs_merged))
 
 
 @_dataclasses.dataclass(frozen=True, kw_only=True)
@@ -961,11 +975,9 @@ class DatabaseOptions(RuntimeOptions):
 
         kwargs_merged = {
             **_dataclasses.asdict(super()._endpoint(**kwargs)),
-            "eventTrigger":
-                event_trigger,
+            "eventTrigger": event_trigger,
         }
-        return _manifest.ManifestEndpoint(
-            **_typing.cast(_typing.Dict, kwargs_merged))
+        return _manifest.ManifestEndpoint(**_typing.cast(dict, kwargs_merged))
 
 
 @_dataclasses.dataclass(frozen=True, kw_only=True)
@@ -1000,20 +1012,16 @@ class BlockingOptions(RuntimeOptions):
             eventType=kwargs["event_type"],
             options=_manifest.BlockingTriggerOptions(
                 idToken=self.id_token if self.id_token is not None else False,
-                accessToken=self.access_token
-                if self.access_token is not None else False,
-                refreshToken=self.refresh_token
-                if self.refresh_token is not None else False,
+                accessToken=self.access_token if self.access_token is not None else False,
+                refreshToken=self.refresh_token if self.refresh_token is not None else False,
             ),
         )
 
         kwargs_merged = {
             **_dataclasses.asdict(super()._endpoint(**kwargs)),
-            "blockingTrigger":
-                blocking_trigger,
+            "blockingTrigger": blocking_trigger,
         }
-        return _manifest.ManifestEndpoint(
-            **_typing.cast(_typing.Dict, kwargs_merged))
+        return _manifest.ManifestEndpoint(**_typing.cast(dict, kwargs_merged))
 
     def _required_apis(self) -> list[_manifest.ManifestRequiredApi]:
         return [
@@ -1057,10 +1065,8 @@ class FirestoreOptions(RuntimeOptions):
         document_pattern: _path_pattern.PathPattern = kwargs["document_pattern"]
         event_filter_document = document_pattern.value
         event_filters: _typing.Any = {
-            "database":
-                self.database if self.database is not None else "(default)",
-            "namespace":
-                self.namespace if self.namespace is not None else "(default)",
+            "database": self.database if self.database is not None else "(default)",
+            "namespace": self.namespace if self.namespace is not None else "(default)",
         }
         event_filters_path_patterns: _typing.Any = {}
         if document_pattern.has_wildcards:
@@ -1076,11 +1082,9 @@ class FirestoreOptions(RuntimeOptions):
 
         kwargs_merged = {
             **_dataclasses.asdict(super()._endpoint(**kwargs)),
-            "eventTrigger":
-                event_trigger,
+            "eventTrigger": event_trigger,
         }
-        return _manifest.ManifestEndpoint(
-            **_typing.cast(_typing.Dict, kwargs_merged))
+        return _manifest.ManifestEndpoint(**_typing.cast(dict, kwargs_merged))
 
 
 @_dataclasses.dataclass(frozen=True, kw_only=True)
@@ -1090,8 +1094,7 @@ class HttpsOptions(RuntimeOptions):
     Internal use only.
     """
 
-    invoker: str | list[str] | _typing.Literal["public",
-                                               "private"] | None = None
+    invoker: str | list[str] | _typing.Literal["public", "private"] | None = None
     """
     Invoker to set access control on HTTP functions.
     """
@@ -1132,9 +1135,9 @@ class HttpsOptions(RuntimeOptions):
                 invoker = self.invoker
                 if isinstance(invoker, str):
                     invoker = [invoker]
-                assert len(
-                    invoker
-                ) >= 1, "HttpsOptions: Invalid option for invoker - must be a non-empty list."
+                assert len(invoker) >= 1, (
+                    "HttpsOptions: Invalid option for invoker - must be a non-empty list."
+                )
                 assert "" not in invoker, (
                     "HttpsOptions: Invalid option for invoker - must be a non-empty string."
                 )
@@ -1146,8 +1149,7 @@ class HttpsOptions(RuntimeOptions):
                 https_trigger["invoker"] = invoker
             kwargs_merged["httpsTrigger"] = https_trigger
 
-        return _manifest.ManifestEndpoint(
-            **_typing.cast(_typing.Dict, kwargs_merged))
+        return _manifest.ManifestEndpoint(**_typing.cast(dict, kwargs_merged))
 
 
 _GLOBAL_OPTIONS = RuntimeOptions()

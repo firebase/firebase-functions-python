@@ -19,12 +19,12 @@ Cloud functions to handle Firebase Performance Monitoring events from Firebase A
 import dataclasses as _dataclasses
 import functools as _functools
 import typing as _typing
+
 import cloudevents.http as _ce
-from firebase_functions.alerts import FirebaseAlertData
 
 import firebase_functions.private.util as _util
-
-from firebase_functions.core import T, CloudEvent
+from firebase_functions.alerts import FirebaseAlertData
+from firebase_functions.core import CloudEvent, T
 from firebase_functions.options import PerformanceOptions
 
 
@@ -37,19 +37,19 @@ class ThresholdAlertPayload:
 
     event_name: str
     """
-    Name of the trace or network request this alert is for 
+    Name of the trace or network request this alert is for
     (e.g. my_custom_trace, firebase.com/api/123).
     """
 
     event_type: str
     """
-    The resource type this alert is for (i.e. trace, network request, 
+    The resource type this alert is for (i.e. trace, network request,
     screen rendering, etc.).
     """
 
     metric_type: str
     """
-    The metric type this alert is for (i.e. success rate, 
+    The metric type this alert is for (i.e. success rate,
     response time, duration, etc.).
     """
 
@@ -85,15 +85,15 @@ class ThresholdAlertPayload:
 
     condition_percentile: float | int | None = None
     """
-    The percentile of the alert condition, can be 0 if percentile 
+    The percentile of the alert condition, can be 0 if percentile
     is not applicable to the alert condition and omitted;
     range: [1, 100].
     """
 
     app_version: str | None = None
     """
-    The app version this alert was triggered for, can be omitted 
-    if the alert is for a network request (because the alert was 
+    The app version this alert was triggered for, can be omitted
+    if the alert is for a network request (because the alert was
     checked against data from all versions of app) or a web app
     (where the app is versionless).
     """
@@ -121,8 +121,7 @@ PerformanceThresholdAlertEvent = PerformanceEvent[ThresholdAlertPayload]
 The type of the event for 'on_threshold_alert_published' functions.
 """
 
-OnThresholdAlertPublishedCallable = _typing.Callable[
-    [PerformanceThresholdAlertEvent], None]
+OnThresholdAlertPublishedCallable = _typing.Callable[[PerformanceThresholdAlertEvent], None]
 """
 The type of the callable for 'on_threshold_alert_published' functions.
 """
@@ -130,9 +129,8 @@ The type of the callable for 'on_threshold_alert_published' functions.
 
 @_util.copy_func_kwargs(PerformanceOptions)
 def on_threshold_alert_published(
-    **kwargs
-) -> _typing.Callable[[OnThresholdAlertPublishedCallable],
-                      OnThresholdAlertPublishedCallable]:
+    **kwargs,
+) -> _typing.Callable[[OnThresholdAlertPublishedCallable], OnThresholdAlertPublishedCallable]:
     """
     Event handler which runs every time a threshold alert is received.
 
@@ -140,7 +138,7 @@ def on_threshold_alert_published(
 
     .. code-block:: python
 
-      import firebase_functions.alerts.performance_fn as performance_fn   
+      import firebase_functions.alerts.performance_fn as performance_fn
 
       @performance_fn.on_threshold_alert_published()
       def example(alert: performance_fn.PerformanceThresholdAlertEvent) -> None:
@@ -149,27 +147,26 @@ def on_threshold_alert_published(
     :param \\*\\*kwargs: Options.
     :type \\*\\*kwargs: as :exc:`firebase_functions.options.PerformanceOptions`
     :rtype: :exc:`typing.Callable`
-            \\[ 
-            \\[ :exc:`firebase_functions.alerts.performance_fn.PerformanceThresholdAlertEvent` \\], 
-            `None` 
+            \\[
+            \\[ :exc:`firebase_functions.alerts.performance_fn.PerformanceThresholdAlertEvent` \\],
+            `None`
             \\]
             A function that takes a PerformanceThresholdAlertEvent and returns None.
     """
     options = PerformanceOptions(**kwargs)
 
-    def on_threshold_alert_published_inner_decorator(
-            func: OnThresholdAlertPublishedCallable):
-
+    def on_threshold_alert_published_inner_decorator(func: OnThresholdAlertPublishedCallable):
         @_functools.wraps(func)
         def on_threshold_alert_published_wrapped(raw: _ce.CloudEvent):
             from firebase_functions.private._alerts_fn import performance_event_from_ce
+
             func(performance_event_from_ce(raw))
 
         _util.set_func_endpoint_attr(
             on_threshold_alert_published_wrapped,
             options._endpoint(
                 func_name=func.__name__,
-                alert_type='performance.threshold',
+                alert_type="performance.threshold",
             ),
         )
         return on_threshold_alert_published_wrapped

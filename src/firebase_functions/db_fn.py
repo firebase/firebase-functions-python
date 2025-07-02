@@ -14,18 +14,20 @@
 """
 Module for Cloud Functions that are triggered by the Firebase Realtime Database.
 """
+
 # pylint: disable=protected-access
 import dataclasses as _dataclass
+import datetime as _dt
 import functools as _functools
 import typing as _typing
-import datetime as _dt
-import firebase_functions.private.util as _util
-import firebase_functions.private.path_pattern as _path_pattern
-import firebase_functions.core as _core
+
 import cloudevents.http as _ce
 
-from firebase_functions.options import DatabaseOptions
+import firebase_functions.core as _core
+import firebase_functions.private.path_pattern as _path_pattern
+import firebase_functions.private.util as _util
 from firebase_functions.core import Change, T
+from firebase_functions.options import DatabaseOptions
 
 _event_type_written = "google.firebase.database.ref.v1.written"
 _event_type_created = "google.firebase.database.ref.v1.created"
@@ -147,7 +149,8 @@ def on_value_written(**kwargs) -> _typing.Callable[[_C1], _C1]:
     def on_value_written_inner_decorator(func: _C1):
         ref_pattern = _path_pattern.PathPattern(options.reference)
         instance_pattern = _path_pattern.PathPattern(
-            options.instance if options.instance is not None else "*")
+            options.instance if options.instance is not None else "*"
+        )
 
         @_functools.wraps(func)
         def on_value_written_wrapped(raw: _ce.CloudEvent):
@@ -197,7 +200,8 @@ def on_value_updated(**kwargs) -> _typing.Callable[[_C1], _C1]:
     def on_value_updated_inner_decorator(func: _C1):
         ref_pattern = _path_pattern.PathPattern(options.reference)
         instance_pattern = _path_pattern.PathPattern(
-            options.instance if options.instance is not None else "*")
+            options.instance if options.instance is not None else "*"
+        )
 
         @_functools.wraps(func)
         def on_value_updated_wrapped(raw: _ce.CloudEvent):
@@ -247,7 +251,8 @@ def on_value_created(**kwargs) -> _typing.Callable[[_C2], _C2]:
     def on_value_created_inner_decorator(func: _C2):
         ref_pattern = _path_pattern.PathPattern(options.reference)
         instance_pattern = _path_pattern.PathPattern(
-            options.instance if options.instance is not None else "*")
+            options.instance if options.instance is not None else "*"
+        )
 
         @_functools.wraps(func)
         def on_value_created_wrapped(raw: _ce.CloudEvent):
@@ -297,7 +302,8 @@ def on_value_deleted(**kwargs) -> _typing.Callable[[_C2], _C2]:
     def on_value_deleted_inner_decorator(func: _C2):
         ref_pattern = _path_pattern.PathPattern(options.reference)
         instance_pattern = _path_pattern.PathPattern(
-            options.instance if options.instance is not None else "*")
+            options.instance if options.instance is not None else "*"
+        )
 
         @_functools.wraps(func)
         def on_value_deleted_wrapped(raw: _ce.CloudEvent):

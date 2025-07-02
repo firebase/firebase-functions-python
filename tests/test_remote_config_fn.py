@@ -12,18 +12,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Remote Config function tests."""
+
 import unittest
 from unittest.mock import MagicMock
+
 from cloudevents.http import CloudEvent as _CloudEvent
 
 from firebase_functions.remote_config_fn import (
     CloudEvent,
-    ConfigUser,
     ConfigUpdateData,
     ConfigUpdateOrigin,
     ConfigUpdateType,
-    on_config_updated,
+    ConfigUser,
     _config_handler,
+    on_config_updated,
 )
 
 
@@ -40,7 +42,7 @@ class TestRemoteConfig(unittest.TestCase):
         func = MagicMock()
         func.__name__ = "testfn"
         decorated_func = on_config_updated()(func)
-        endpoint = getattr(decorated_func, "__firebase_endpoint__")
+        endpoint = decorated_func.__firebase_endpoint__
         self.assertIsNotNone(endpoint)
         self.assertIsNotNone(endpoint.eventTrigger)
         self.assertIsNotNone(endpoint.eventTrigger["eventType"])
@@ -66,13 +68,14 @@ class TestRemoteConfig(unittest.TestCase):
                 "updateUser": {
                     "name": "John Doe",
                     "email": "johndoe@example.com",
-                    "imageUrl": "https://example.com/image.jpg"
+                    "imageUrl": "https://example.com/image.jpg",
                 },
                 "description": "Test update",
                 "updateOrigin": "CONSOLE",
                 "updateType": "INCREMENTAL_UPDATE",
-                "rollbackSource": 41
-            })
+                "rollbackSource": 41,
+            },
+        )
 
         _config_handler(func, raw_event)
 
@@ -83,8 +86,6 @@ class TestRemoteConfig(unittest.TestCase):
         self.assertIsInstance(event_arg.data, ConfigUpdateData)
         self.assertIsInstance(event_arg.data.update_user, ConfigUser)
         self.assertEqual(event_arg.data.version_number, 42)
-        self.assertEqual(event_arg.data.update_origin,
-                         ConfigUpdateOrigin.CONSOLE)
-        self.assertEqual(event_arg.data.update_type,
-                         ConfigUpdateType.INCREMENTAL_UPDATE)
+        self.assertEqual(event_arg.data.update_origin, ConfigUpdateOrigin.CONSOLE)
+        self.assertEqual(event_arg.data.update_type, ConfigUpdateType.INCREMENTAL_UPDATE)
         self.assertEqual(event_arg.data.rollback_source, 41)

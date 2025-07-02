@@ -6,6 +6,7 @@ import enum as _enum
 import json as _json
 import sys as _sys
 import typing as _typing
+
 import typing_extensions as _typing_extensions
 
 # If encoding is not 'utf-8', change it to 'utf-8'.
@@ -49,25 +50,28 @@ def _entry_from_args(severity: LogSeverity, *args, **kwargs) -> LogEntry:
     Creates a `LogEntry` from the given arguments.
     """
 
-    message: str = " ".join([
-        value if isinstance(value, str) else _json.dumps(
-            _remove_circular(value), ensure_ascii=False) for value in args
-    ])
+    message: str = " ".join(
+        [
+            value
+            if isinstance(value, str)
+            else _json.dumps(_remove_circular(value), ensure_ascii=False)
+            for value in args
+        ]
+    )
 
-    other: _typing.Dict[str, _typing.Any] = {
+    other: dict[str, _typing.Any] = {
         key: value if isinstance(value, str) else _remove_circular(value)
         for key, value in kwargs.items()
     }
 
-    entry: _typing.Dict[str, _typing.Any] = {"severity": severity, **other}
+    entry: dict[str, _typing.Any] = {"severity": severity, **other}
     if message:
         entry["message"] = message
 
     return _typing.cast(LogEntry, entry)
 
 
-def _remove_circular(obj: _typing.Any,
-                     refs: _typing.Set[_typing.Any] | None = None):
+def _remove_circular(obj: _typing.Any, refs: set[_typing.Any] | None = None):
     """
     Removes circular references from the given object and replaces them with "[CIRCULAR]".
     """
@@ -80,15 +84,13 @@ def _remove_circular(obj: _typing.Any,
         return "[CIRCULAR]"
 
     # For non-primitive objects, add the current object's id to the recursion stack
-    if not isinstance(obj, (str, int, float, bool, type(None))):
+    if not isinstance(obj, str | int | float | bool | type(None)):
         refs.add(id(obj))
 
     # Recursively process the object based on its type
     result: _typing.Any
     if isinstance(obj, dict):
-        result = {
-            key: _remove_circular(value, refs) for key, value in obj.items()
-        }
+        result = {key: _remove_circular(value, refs) for key, value in obj.items()}
     elif isinstance(obj, list):
         result = [_remove_circular(item, refs) for item in obj]
     elif isinstance(obj, tuple):
@@ -97,7 +99,7 @@ def _remove_circular(obj: _typing.Any,
         result = obj
 
     # Remove the object's id from the recursion stack after processing
-    if not isinstance(obj, (str, int, float, bool, type(None))):
+    if not isinstance(obj, str | int | float | bool | type(None)):
         refs.remove(id(obj))
 
     return result
@@ -111,8 +113,7 @@ def _get_write_file(severity: LogSeverity) -> _typing.TextIO:
 
 def write(entry: LogEntry) -> None:
     write_file = _get_write_file(entry["severity"])
-    print(_json.dumps(_remove_circular(entry), ensure_ascii=False),
-          file=write_file)
+    print(_json.dumps(_remove_circular(entry), ensure_ascii=False), file=write_file)
 
 
 def debug(*args, **kwargs) -> None:

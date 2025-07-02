@@ -14,18 +14,21 @@
 """Cloud functions to handle Eventarc events."""
 
 # pylint: disable=protected-access,cyclic-import
-import typing as _typing
-import functools as _functools
-import datetime as _dt
 import dataclasses as _dataclasses
+import datetime as _dt
+import functools as _functools
+import typing as _typing
 from enum import Enum
+
+from flask import (
+    Request as _Request,
+)
+from flask import (
+    Response as _Response,
+)
 
 import firebase_functions.options as _options
 import firebase_functions.private.util as _util
-from flask import (
-    Request as _Request,
-    Response as _Response,
-)
 
 
 @_dataclasses.dataclass(frozen=True)
@@ -33,6 +36,7 @@ class AuthUserInfo:
     """
     User info that is part of the AuthUserRecord.
     """
+
     uid: str
     """The user identifier for the linked provider."""
 
@@ -57,10 +61,11 @@ class AuthUserMetadata:
     """
     Additional metadata about the user.
     """
+
     creation_time: _dt.datetime
     """The date the user was created."""
 
-    last_sign_in_time: _typing.Optional[_dt.datetime]
+    last_sign_in_time: _dt.datetime | None
     """The date the user last signed in."""
 
 
@@ -348,14 +353,12 @@ class BeforeSignInResponse(BeforeCreateResponse, total=False):
     """The user's session claims object if available."""
 
 
-BeforeUserCreatedCallable = _typing.Callable[[AuthBlockingEvent],
-                                             BeforeCreateResponse | None]
+BeforeUserCreatedCallable = _typing.Callable[[AuthBlockingEvent], BeforeCreateResponse | None]
 """
 The type of the callable for 'before_user_created' blocking events.
 """
 
-BeforeUserSignedInCallable = _typing.Callable[[AuthBlockingEvent],
-                                              BeforeSignInResponse | None]
+BeforeUserSignedInCallable = _typing.Callable[[AuthBlockingEvent], BeforeSignInResponse | None]
 """
 The type of the callable for 'before_user_signed_in' blocking events.
 """
@@ -393,6 +396,7 @@ def before_user_signed_in(
         @_functools.wraps(func)
         def before_user_signed_in_wrapped(request: _Request) -> _Response:
             from firebase_functions.private._identity_fn import before_operation_handler
+
             return before_operation_handler(
                 func,
                 event_type_before_sign_in,
@@ -447,6 +451,7 @@ def before_user_created(
         @_functools.wraps(func)
         def before_user_created_wrapped(request: _Request) -> _Response:
             from firebase_functions.private._identity_fn import before_operation_handler
+
             return before_operation_handler(
                 func,
                 event_type_before_create,
