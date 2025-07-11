@@ -114,6 +114,48 @@ class TestManifestEndpoint:
             "Generated endpoint spec dict does not match expected dict."
         )
 
+    def test_endpoint_with_asgi_field(self):
+        """Check that asgi field is included in manifest when set."""
+        # Create an endpoint with asgi=True
+        async_endpoint = _manifest.ManifestEndpoint(
+            entryPoint="async_func",
+            platform="gcfv2",
+            region=["us-central1"],
+            asgi=True,
+            httpsTrigger={},
+        )
+
+        # Convert to dict
+        # pylint: disable=protected-access
+        endpoint_dict = _manifest._dataclass_to_spec(async_endpoint)
+
+        # Check that asgi field is present and True
+        assert "asgi" in endpoint_dict, "asgi field should be present in manifest"
+        assert endpoint_dict["asgi"] is True, "asgi field should be True"
+
+        # Check other fields are preserved
+        assert endpoint_dict["entryPoint"] == "async_func"
+        assert endpoint_dict["platform"] == "gcfv2"
+        assert endpoint_dict["region"] == ["us-central1"]
+        assert endpoint_dict["httpsTrigger"] == {}
+
+    def test_endpoint_without_asgi_field(self):
+        """Check that asgi field is not included when None."""
+        # Create an endpoint without asgi (default None)
+        sync_endpoint = _manifest.ManifestEndpoint(
+            entryPoint="sync_func",
+            platform="gcfv2",
+            region=["us-central1"],
+            httpsTrigger={},
+        )
+
+        # Convert to dict
+        # pylint: disable=protected-access
+        endpoint_dict = _manifest._dataclass_to_spec(sync_endpoint)
+
+        # Check that asgi field is not present
+        assert "asgi" not in endpoint_dict, "asgi field should not be present when None"
+
     def test_endpoint_expressions(self):
         """Check Expression values convert to CEL strings."""
         max_param = _params.IntParam("MAX")

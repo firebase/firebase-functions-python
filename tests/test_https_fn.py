@@ -60,6 +60,7 @@ class TestHttps(unittest.TestCase):
                 json={
                     "data": {"test": "value"},
                 },
+                content_type="application/json",
             ).get_environ()
             request = Request(environ)
             decorated_func = https_fn.on_call()(func)

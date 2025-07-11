@@ -1149,6 +1149,9 @@ class HttpsOptions(RuntimeOptions):
                 https_trigger["invoker"] = invoker
             kwargs_merged["httpsTrigger"] = https_trigger
 
+        if "asgi" in kwargs and kwargs["asgi"] is True:
+            kwargs_merged["asgi"] = True
+
         return _manifest.ManifestEndpoint(**_typing.cast(dict, kwargs_merged))
 
 

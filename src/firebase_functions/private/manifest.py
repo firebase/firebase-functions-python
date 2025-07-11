@@ -169,6 +169,7 @@ class ManifestEndpoint:
     scheduleTrigger: ScheduleTrigger | None = None
     blockingTrigger: BlockingTrigger | None = None
     taskQueueTrigger: TaskQueueTrigger | None = None
+    asgi: bool | None = None
 
 
 class ManifestRequiredApi(_typing.TypedDict):

@@ -31,7 +31,7 @@ from functions_framework import logging as _logging
 
 import firebase_functions.core as _core
 import firebase_functions.private.util as _util
-from firebase_functions.options import _GLOBAL_OPTIONS, HttpsOptions
+from firebase_functions.options import _GLOBAL_OPTIONS, CorsOptions, HttpsOptions
 
 
 class FunctionsErrorCode(str, _enum.Enum):
@@ -351,62 +351,249 @@ _C1 = _typing.Callable[[Request], Response]
 _C2 = _typing.Callable[[CallableRequest[_typing.Any]], _typing.Any]
 
 
-def _on_call_handler(func: _C2, request: Request, enforce_app_check: bool) -> Response:
+def _validate_on_call_request_headers(method: str, headers: dict) -> None:
+    """Validate method and headers for on_call requests."""
+    if method != "POST":
+        _logging.warning("Request has invalid method. %s", method)
+        raise HttpsError(FunctionsErrorCode.INVALID_ARGUMENT, "Bad Request")
+
+    # Try both lowercase and capitalized versions for compatibility
+    content_type = headers.get("content-type", "") or headers.get("Content-Type", "")
+    if not content_type.startswith("application/json"):
+        _logging.warning("Request has invalid content type. %s", content_type)
+        raise HttpsError(FunctionsErrorCode.INVALID_ARGUMENT, "Bad Request")
+
+
+def _process_on_call_request_body(
+    raw_request: _typing.Any,
+    body_bytes: bytes,
+    headers: dict,
+    method: str,
+    enforce_app_check: bool,
+) -> CallableRequest:
+    """Process on_call request after body is read. Shared between sync/async."""
+    # Validate headers/method
+    _validate_on_call_request_headers(method, headers)
+
+    # Parse and validate JSON
     try:
-        if not _util.valid_on_call_request(request):
-            _logging.error("Invalid request, unable to process.")
-            raise HttpsError(FunctionsErrorCode.INVALID_ARGUMENT, "Bad Request")
-        context: CallableRequest = CallableRequest(
-            raw_request=request,
-            data=_json.loads(request.data)["data"],
+        json_data = _json.loads(body_bytes)
+    except _json.JSONDecodeError:
+        _logging.error("Request body is not valid JSON")
+        raise HttpsError(FunctionsErrorCode.INVALID_ARGUMENT, "Bad Request") from None
+
+    if "data" not in json_data:
+        _logging.warning("Request body is missing data.")
+        raise HttpsError(FunctionsErrorCode.INVALID_ARGUMENT, "Bad Request")
+
+    # Create mock request for token checking
+    class HeadersAdapter:
+        def __init__(self, headers):
+            self.headers = headers
+
+    mock_request = HeadersAdapter(headers)
+    token_status = _util.on_call_check_tokens(mock_request)  # type: ignore
+
+    # Validate tokens
+    if token_status.auth == _util.OnCallTokenState.INVALID:
+        raise HttpsError(FunctionsErrorCode.UNAUTHENTICATED, "Unauthenticated")
+
+    if enforce_app_check and token_status.app in (
+        _util.OnCallTokenState.MISSING,
+        _util.OnCallTokenState.INVALID,
+    ):
+        raise HttpsError(FunctionsErrorCode.UNAUTHENTICATED, "Unauthenticated")
+
+    # Build context
+    context = CallableRequest(raw_request=raw_request, data=json_data["data"])
+
+    # Add app check data
+    if token_status.app == _util.OnCallTokenState.VALID and token_status.app_token is not None:
+        context = _dataclasses.replace(
+            context,
+            app=AppCheckData(token_status.app_token["sub"], token_status.app_token),
         )
 
-        token_status = _util.on_call_check_tokens(request)
+    # Add auth data
+    if token_status.auth_token is not None:
+        context = _dataclasses.replace(
+            context,
+            auth=AuthData(
+                token_status.auth_token["uid"] if "uid" in token_status.auth_token else None,
+                token_status.auth_token,
+            ),
+        )
 
-        if token_status.auth == _util.OnCallTokenState.INVALID:
-            raise HttpsError(FunctionsErrorCode.UNAUTHENTICATED, "Unauthenticated")
+    # Add instance ID (try both cases)
+    instance_id = headers.get("firebase-instance-id-token") or headers.get("Firebase-Instance-ID-Token")
+    if instance_id is not None:
+        context = _dataclasses.replace(context, instance_id_token=instance_id)
 
-        if enforce_app_check and token_status.app in (
-            _util.OnCallTokenState.MISSING,
-            _util.OnCallTokenState.INVALID,
-        ):
-            raise HttpsError(FunctionsErrorCode.UNAUTHENTICATED, "Unauthenticated")
-        if token_status.app == _util.OnCallTokenState.VALID and token_status.app_token is not None:
-            context = _dataclasses.replace(
-                context,
-                app=AppCheckData(token_status.app_token["sub"], token_status.app_token),
-            )
+    return context
 
-        if token_status.auth_token is not None:
-            context = _dataclasses.replace(
-                context,
-                auth=AuthData(
-                    token_status.auth_token["uid"] if "uid" in token_status.auth_token else None,
-                    token_status.auth_token,
-                ),
-            )
 
-        instance_id = request.headers.get("Firebase-Instance-ID-Token")
-        if instance_id is not None:
-            # Validating the token requires an http request, so we don't do it.
-            # If the user wants to use it for something, it will be validated then.
-            # Currently, the only real use case for this token is for sending
-            # pushes with FCM. In that case, the FCM APIs will validate the token.
-            context = _dataclasses.replace(
-                context,
-                instance_id_token=request.headers.get("Firebase-Instance-ID-Token"),
-            )
+def _format_on_call_response(result: _typing.Any) -> dict:
+    """Format the result for on_call response."""
+    return {"result": result}
+
+
+def _format_on_call_error(err: Exception) -> tuple[dict, int]:
+    """Format error for on_call response."""
+    if not isinstance(err, HttpsError):
+        _logging.error("Unhandled error: %s", err)
+        err = HttpsError(FunctionsErrorCode.INTERNAL, "INTERNAL")
+
+    return {"error": err._as_dict()}, err._http_error_code.status
+
+
+def _add_cors_headers_to_response(
+    response,  # Can be Flask Response or Starlette Response
+    cors_options: CorsOptions | None,
+    allowed_methods: list[str] | None = None,
+) -> None:
+    """Add CORS headers to any response object with headers dict."""
+    if not cors_options:
+        return
+
+    origins = cors_options.cors_origins or "*"
+    if isinstance(origins, list):
+        origins = ", ".join(origins)
+
+    methods = allowed_methods or cors_options.cors_methods or ["*"]
+    if isinstance(methods, list):
+        methods = ", ".join(methods)
+
+    response.headers["Access-Control-Allow-Origin"] = origins
+    response.headers["Access-Control-Allow-Methods"] = methods
+    response.headers["Access-Control-Allow-Headers"] = (
+        "Content-Type, Authorization, Firebase-Instance-ID-Token, "
+        "Firebase-AppCheck, X-Firebase-AppCheck"
+    )
+
+    if origins != "*":
+        response.headers["Vary"] = "Origin"
+        response.headers["Access-Control-Allow-Credentials"] = "true"
+
+
+def _on_call_handler(func: _C2, request: Request, enforce_app_check: bool) -> Response:
+    """Sync on_call handler using shared logic."""
+    try:
+        # Use shared processing
+        context = _process_on_call_request_body(
+            raw_request=request,
+            body_bytes=request.data,
+            headers=dict(request.headers),
+            method=request.method,
+            enforce_app_check=enforce_app_check,
+        )
+
+        # Call function
         result = _core._with_init(func)(context)
-        return _jsonify(result=result)
+
+        # Format response
+        return _jsonify(_format_on_call_response(result))
+
     # Disable broad exceptions lint since we want to handle all exceptions here
     # and wrap as an HttpsError.
     # pylint: disable=broad-except
     except Exception as err:
-        if not isinstance(err, HttpsError):
-            _logging.error("Unhandled error: %s", err)
-            err = HttpsError(FunctionsErrorCode.INTERNAL, "INTERNAL")
-        status = err._http_error_code.status
-        return _make_response(_jsonify(error=err._as_dict()), status)
+        error_dict, status = _format_on_call_error(err)
+        return _make_response(_jsonify(error_dict), status)
+
+
+async def _on_call_handler_async(func: _C2, request, enforce_app_check: bool):
+    """Async on_call handler using shared logic."""
+    # Import here to avoid runtime dependency when not using async
+    from starlette.responses import JSONResponse
+
+    try:
+        # Read body (only async-specific part)
+        body_bytes = await request.body()
+
+        # Use shared processing
+        context = _process_on_call_request_body(
+            raw_request=request,
+            body_bytes=body_bytes,
+            headers=dict(request.headers),
+            method=request.method,
+            enforce_app_check=enforce_app_check,
+        )
+
+        # Call async function
+        result = await _core._with_init(func)(context)
+
+        # Format response
+        return JSONResponse(_format_on_call_response(result))
+
+    # Disable broad exceptions lint since we want to handle all exceptions here
+    # and wrap as an HttpsError.
+    # pylint: disable=broad-except
+    except Exception as err:
+        error_dict, status = _format_on_call_error(err)
+        return JSONResponse(content=error_dict, status_code=status)
+
+
+@_typing.overload
+def _create_on_request_decorator(func: _C1, options: HttpsOptions, asgi: _typing.Literal[False] = False) -> _C1:
+    ...
+
+@_typing.overload
+def _create_on_request_decorator(func: _typing.Callable[..., _typing.Awaitable[_typing.Any]], options: HttpsOptions, asgi: _typing.Literal[True]) -> _typing.Callable[..., _typing.Awaitable[_typing.Any]]:
+    ...
+
+def _create_on_request_decorator(func: _typing.Union[_C1, _typing.Callable[..., _typing.Awaitable[_typing.Any]]], options: HttpsOptions, asgi: bool = False) -> _typing.Union[_C1, _typing.Callable[..., _typing.Awaitable[_typing.Any]]]:
+    """
+    Internal helper to create the on_request decorator wrapper.
+    This shared implementation is used by both sync and async versions.
+    """
+    if asgi:
+        # For async functions, we need an async wrapper
+        @_functools.wraps(func)
+        async def async_wrapper(request):  # Will receive Starlette Request
+            # Import here to avoid runtime dependency when not using async
+            from starlette.responses import JSONResponse
+            from starlette.responses import Response as StarletteResponse
+
+            # Handle OPTIONS preflight
+            if request.method == "OPTIONS" and options.cors:
+                response = StarletteResponse(status_code=200)
+                _add_cors_headers_to_response(response, options.cors)
+                return response
+
+            # Call the function
+            result = await _core._with_init(func)(request)
+
+            # Convert to response
+            if isinstance(result, dict):
+                response = JSONResponse(result)
+            elif hasattr(result, "headers"):  # Already a response
+                response = result
+            else:
+                response = StarletteResponse(content=str(result))
+
+            # Add CORS headers
+            _add_cors_headers_to_response(response, options.cors)
+            return response
+
+        wrapper = async_wrapper
+    else:
+        # For sync functions, use the existing logic
+        @_functools.wraps(func)
+        def sync_wrapper(request: Request) -> Response:
+            if options.cors is not None:
+                return _cross_origin(
+                    methods=options.cors.cors_methods,
+                    origins=options.cors.cors_origins,
+                )(func)(request)
+            return _core._with_init(func)(request)
+
+        wrapper = sync_wrapper
+
+    _util.set_func_endpoint_attr(
+        wrapper,
+        options._endpoint(func_name=func.__name__, asgi=asgi),
+    )
+    return _typing.cast(_C1, wrapper)
 
 
 @_util.copy_func_kwargs(HttpsOptions)
@@ -432,22 +619,79 @@ def on_request(**kwargs) -> _typing.Callable[[_C1], _C1]:
     options = HttpsOptions(**kwargs)
 
     def on_request_inner_decorator(func: _C1):
-        @_functools.wraps(func)
-        def on_request_wrapped(request: Request) -> Response:
-            if options.cors is not None:
-                return _cross_origin(
-                    methods=options.cors.cors_methods,
-                    origins=options.cors.cors_origins,
-                )(func)(request)
-            return _core._with_init(func)(request)
-
-        _util.set_func_endpoint_attr(
-            on_request_wrapped,
-            options._endpoint(func_name=func.__name__),
-        )
-        return on_request_wrapped
+        return _create_on_request_decorator(func, options, asgi=False)
 
     return on_request_inner_decorator
+
+
+@_typing.overload
+def _create_on_call_decorator(func: _C2, options: HttpsOptions, asgi: _typing.Literal[False] = False) -> _C2:
+    ...
+
+@_typing.overload
+def _create_on_call_decorator(func: _typing.Callable[..., _typing.Awaitable[_typing.Any]], options: HttpsOptions, asgi: _typing.Literal[True]) -> _typing.Callable[..., _typing.Awaitable[_typing.Any]]:
+    ...
+
+def _create_on_call_decorator(func: _typing.Union[_C2, _typing.Callable[..., _typing.Awaitable[_typing.Any]]], options: HttpsOptions, asgi: bool = False) -> _typing.Union[_C2, _typing.Callable[..., _typing.Awaitable[_typing.Any]]]:
+    """
+    Internal helper to create the on_call decorator wrapper.
+    This shared implementation is used by both sync and async versions.
+    """
+    origins: _typing.Any = "*"
+    if options.cors is not None and options.cors.cors_origins is not None:
+        origins = options.cors.cors_origins
+
+    # Default to False.
+    enforce_app_check = False
+    # If the global option is set, use that.
+    if options.enforce_app_check is None and _GLOBAL_OPTIONS.enforce_app_check is not None:
+        enforce_app_check = _GLOBAL_OPTIONS.enforce_app_check
+    # If the global option is not set, use the local option.
+    elif options.enforce_app_check is not None:
+        enforce_app_check = options.enforce_app_check
+
+    if asgi:
+        # For async callable functions
+        @_functools.wraps(func)
+        async def async_wrapper(request):  # Will receive Starlette Request
+            # Import here to avoid runtime dependency when not using async
+            from starlette.responses import Response as StarletteResponse
+
+            # Handle OPTIONS preflight
+            if request.method == "OPTIONS" and options.cors:
+                response = StarletteResponse(status_code=200)
+                _add_cors_headers_to_response(response, options.cors, ["POST"])
+                return response
+
+            # Use async handler
+            response = await _on_call_handler_async(func, request, enforce_app_check)
+
+            # Add CORS headers
+            _add_cors_headers_to_response(response, options.cors, ["POST"])
+            return response
+
+        wrapper = async_wrapper
+    else:
+        # For sync callable functions
+        @_cross_origin(
+            methods="POST",
+            origins=origins,
+        )
+        @_functools.wraps(func)
+        def sync_wrapper(request: Request):
+            return _on_call_handler(
+                func,
+                request,
+                enforce_app_check,
+            )
+
+        wrapper = sync_wrapper
+
+    _util.set_func_endpoint_attr(
+        wrapper,
+        options._endpoint(func_name=func.__name__, callable=True, asgi=asgi),
+    )
+    return _typing.cast(_C2, wrapper)
 
 
 @_util.copy_func_kwargs(HttpsOptions)
@@ -474,35 +718,6 @@ def on_call(**kwargs) -> _typing.Callable[[_C2], _C2]:
     options = HttpsOptions(**kwargs)
 
     def on_call_inner_decorator(func: _C2):
-        origins: _typing.Any = "*"
-        if options.cors is not None and options.cors.cors_origins is not None:
-            origins = options.cors.cors_origins
-
-        # Default to False.
-        enforce_app_check = False
-        # If the global option is set, use that.
-        if options.enforce_app_check is None and _GLOBAL_OPTIONS.enforce_app_check is not None:
-            enforce_app_check = _GLOBAL_OPTIONS.enforce_app_check
-        # If the global option is not set, use the local option.
-        elif options.enforce_app_check is not None:
-            enforce_app_check = options.enforce_app_check
-
-        @_cross_origin(
-            methods="POST",
-            origins=origins,
-        )
-        @_functools.wraps(func)
-        def on_call_wrapped(request: Request):
-            return _on_call_handler(
-                func,
-                request,
-                enforce_app_check,
-            )
-
-        _util.set_func_endpoint_attr(
-            on_call_wrapped,
-            options._endpoint(func_name=func.__name__, callable=True),
-        )
-        return on_call_wrapped
+        return _create_on_call_decorator(func, options, asgi=False)
 
     return on_call_inner_decorator

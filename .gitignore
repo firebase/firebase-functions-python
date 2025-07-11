@@ -139,3 +139,6 @@ doc/dist
 .idea
 .vscode/*
 !.vscode/settings.json
+
+# local configuration files
+*.local.*
