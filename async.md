@@ -23,7 +23,7 @@ async def hello_async(request):  # Starlette.Request
 2. **Backward compatibility** - All existing sync functions must continue to work
 3. **Unified API** - Users shouldn't need different decorators for sync vs async
 4. **Type safety** - Proper typing for both sync and async cases
-5. **Automatic detection** - The system should automatically detect and handle async functions
+5. **Flexibility** - The aio namespace accepts both sync and async functions
 6. **Universal support** - Async should work for ALL function types, not just HTTP
 
 ## Function Types to Support
@@ -106,39 +106,21 @@ Firebase Functions Python supports multiple trigger types that all need async su
 
 ### Phase 2: Decorator Updates
 
-#### 2.1 Universal Decorator Pattern
-Each decorator should follow this pattern:
+#### 2.1 Namespace-based Approach
+Instead of modifying existing decorators, we created a new `aio` namespace:
+- `firebase_functions.aio.https_fn` for async HTTP functions
+- The aio decorators accept both sync and async functions
+- ASGI runtime handles sync functions by running them in a thread pool
 
-```python
-def on_some_event(**kwargs):
-    def decorator(func):
-        is_async = inspect.iscoroutinefunction(func)
-        
-        if is_async:
-            # Set up async wrapper
-            @functools.wraps(func)
-            async def async_wrapper(*args, **kwargs):
-                # Any necessary async setup
-                return await func(*args, **kwargs)
-            
-            wrapped = async_wrapper
-            runtime_mode = "async"
-        else:
-            # Use existing sync wrapper
-            wrapped = existing_sync_wrapper(func)
-            runtime_mode = "sync"
-        
-        # Set metadata
-        endpoint = create_endpoint(
-            # ... existing endpoint config ...
-            runtime_mode=runtime_mode
-        )
-        _util.set_func_endpoint_attr(wrapped, endpoint)
-        
-        return wrapped
-    
-    return decorator
-```
+#### 2.2 Shared Implementation
+To avoid code duplication, we extracted shared business logic:
+- `_validate_on_call_request_headers()` - Validates headers and method
+- `_process_on_call_request_body()` - Processes request body after reading
+- `_format_on_call_response()` - Formats successful responses
+- `_format_on_call_error()` - Formats error responses
+- `_add_cors_headers_to_response()` - Adds CORS headers to any response
+
+The decorators use a shared implementation with an `asgi` parameter to differentiate between sync and async modes.
 
 #### 2.2 HTTP Functions Special Handling
 HTTP functions need special care because the request type changes:
@@ -176,16 +158,25 @@ We'll need to handle this in the type system and potentially in request processi
 
 ### HTTP Functions
 ```python
+from firebase_functions import https_fn
+from firebase_functions.aio import https_fn as async_https_fn
+
 # Sync (existing)
 @https_fn.on_request()
 def sync_http(request: Request) -> Response:
     return Response("Hello sync")
 
 # Async (new)
-@https_fn.on_request()
+@async_https_fn.on_request()
 async def async_http(request) -> Response:  # Will be Starlette Request
     result = await some_async_api_call()
     return Response(f"Hello async: {result}")
+
+# Sync function in aio namespace (also supported)
+@async_https_fn.on_request()
+def sync_in_async_http(request) -> Response:
+    # This sync function will run in ASGI's thread pool
+    return Response("Hello from sync in async")
 ```
 
 ### Firestore Functions
@@ -232,12 +223,26 @@ async def async_process_message(event: CloudEvent[MessagePublishedData]) -> None
 3. Update documentation and examples
 4. Release as minor version update (backward compatible)
 
+## Implementation Status
+
+### Completed (Phase 1)
+- ✅ HTTP functions (on_request and on_call) with async support
+- ✅ Shared business logic to avoid code duplication
+- ✅ CORS handling for async functions
+- ✅ Type safety with overloads
+- ✅ Support for both sync and async functions in aio namespace
+- ✅ Comprehensive tests
+
+### Remaining Work
+- Event-triggered functions (Firestore, Database, Storage, etc.)
+- Documentation and examples
+- Integration with Firebase CLI for deployment
+
 ## Open Questions
 
 1. Should we support both Flask and Starlette response types for async HTTP functions?
 2. How should we handle async context managers and cleanup?
 3. Should we provide async versions of Firebase Admin SDK operations?
-4. What's the best way to handle errors in async functions?
 
 ## Next Steps
 
