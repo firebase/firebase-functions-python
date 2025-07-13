@@ -70,12 +70,7 @@ def on_request(**kwargs) -> _typing.Callable[[_AsyncC1], _AsyncC1]:
     options = HttpsOptions(**kwargs)
 
     def on_request_inner_decorator(func: _AsyncC1) -> _AsyncC1:
-        if not _inspect.iscoroutinefunction(func):
-            raise TypeError(
-                f"aio.https_fn.on_request() requires an async function, "
-                f"but {func.__name__} is not async. "
-                f"Use @https_fn.on_request() for synchronous functions."
-            )
+        # Allow both sync and async functions - ASGI can handle both
         return _typing.cast(_AsyncC1, _create_on_request_decorator(func, options, asgi=True))
 
     return on_request_inner_decorator
@@ -108,12 +103,7 @@ def on_call(**kwargs) -> _typing.Callable[[_AsyncC2], _AsyncC2]:
     options = HttpsOptions(**kwargs)
 
     def on_call_inner_decorator(func: _AsyncC2) -> _AsyncC2:
-        if not _inspect.iscoroutinefunction(func):
-            raise TypeError(
-                f"aio.https_fn.on_call() requires an async function, "
-                f"but {func.__name__} is not async. "
-                f"Use @https_fn.on_call() for synchronous functions."
-            )
+        # Allow both sync and async functions - ASGI can handle both
         return _typing.cast(_AsyncC2, _create_on_call_decorator(func, options, asgi=True))
 
     return on_call_inner_decorator

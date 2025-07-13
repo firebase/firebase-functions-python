@@ -32,29 +32,32 @@ class TestAsyncHttps(unittest.TestCase):
     Tests for the async http module.
     """
 
-    def test_on_request_decorator_validates_async_function(self):
-        """Test that on_request requires an async function."""
-        # Should raise TypeError for non-async function
-        with self.assertRaises(TypeError) as cm:
+    def test_on_request_decorator_accepts_sync_function(self):
+        """Test that on_request accepts sync functions in ASGI mode."""
+        # Should not raise for sync function (ASGI can handle both)
+        @https_fn.on_request()
+        def sync_func(request):
+            return {"message": "sync"}
 
-            @https_fn.on_request()
-            def sync_func(request):
-                return "sync"
+        # Check that the function is decorated properly
+        self.assertTrue(hasattr(sync_func, "__firebase_endpoint__"))
+        endpoint = sync_func.__firebase_endpoint__
+        self.assertEqual(endpoint.asgi, True)
+        self.assertEqual(endpoint.entryPoint, "sync_func")
 
-        self.assertIn("requires an async function", str(cm.exception))
-        self.assertIn("sync_func is not async", str(cm.exception))
+    def test_on_call_decorator_accepts_sync_function(self):
+        """Test that on_call accepts sync functions in ASGI mode."""
+        # Should not raise for sync function (ASGI can handle both)
+        @https_fn.on_call()
+        def sync_func(request):
+            return {"message": "sync"}
 
-    def test_on_call_decorator_validates_async_function(self):
-        """Test that on_call requires an async function."""
-        # Should raise TypeError for non-async function
-        with self.assertRaises(TypeError) as cm:
-
-            @https_fn.on_call()
-            def sync_func(request):
-                return "sync"
-
-        self.assertIn("requires an async function", str(cm.exception))
-        self.assertIn("sync_func is not async", str(cm.exception))
+        # Check that the function is decorated properly
+        self.assertTrue(hasattr(sync_func, "__firebase_endpoint__"))
+        endpoint = sync_func.__firebase_endpoint__
+        self.assertEqual(endpoint.asgi, True)
+        self.assertEqual(endpoint.entryPoint, "sync_func")
+        self.assertIsNotNone(endpoint.callableTrigger)
 
     def test_on_request_decorator_accepts_async_function(self):
         """Test that on_request accepts async functions."""
@@ -270,6 +273,30 @@ class TestAsyncHttps(unittest.TestCase):
         self.assertEqual(https_fn.HttpsError, HttpsError)
         self.assertEqual(https_fn.FunctionsErrorCode, FunctionsErrorCode)
         self.assertEqual(https_fn.CallableRequest, CallableRequest)
+
+    def test_sync_on_request_in_aio_namespace(self):
+        """Test that sync functions work in aio namespace."""
+        
+        with patch.dict(sys.modules, {
+            'starlette': Mock(),
+            'starlette.responses': Mock(Response=MockStarletteResponse, JSONResponse=MockJSONResponse)
+        }):
+            @https_fn.on_request()
+            def sync_func(request):
+                # This is a sync function in the aio namespace
+                return {"message": "Hello from sync"}
+
+            # Create a mock request
+            mock_request = Mock()
+
+            # Run the function (even though it's sync, the wrapper is async)
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            try:
+                response = loop.run_until_complete(sync_func(mock_request))
+                self.assertEqual(response.status_code, 200)
+            finally:
+                loop.close()
 
     def test_multiple_async_functions_in_same_module(self):
         """Test that multiple async functions can be defined in the same module."""

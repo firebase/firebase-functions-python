@@ -19,6 +19,7 @@ These can be raw web requests and Callable RPCs.
 import dataclasses as _dataclasses
 import enum as _enum
 import functools as _functools
+import inspect as _inspect
 import json as _json
 import typing as _typing
 
@@ -519,8 +520,11 @@ async def _on_call_handler_async(func: _C2, request, enforce_app_check: bool):
             enforce_app_check=enforce_app_check,
         )
 
-        # Call async function
-        result = await _core._with_init(func)(context)
+        # Call function (check if it's async or sync)
+        if _inspect.iscoroutinefunction(func):
+            result = await _core._with_init(func)(context)
+        else:
+            result = _core._with_init(func)(context)
 
         # Format response
         return JSONResponse(_format_on_call_response(result))
@@ -560,8 +564,11 @@ def _create_on_request_decorator(func: _typing.Union[_C1, _typing.Callable[..., 
                 _add_cors_headers_to_response(response, options.cors)
                 return response
 
-            # Call the function
-            result = await _core._with_init(func)(request)
+            # Call the function (check if it's async or sync)
+            if _inspect.iscoroutinefunction(func):
+                result = await _core._with_init(func)(request)
+            else:
+                result = _core._with_init(func)(request)
 
             # Convert to response
             if isinstance(result, dict):
