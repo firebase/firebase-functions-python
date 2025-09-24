@@ -700,11 +700,27 @@ class TestRunner {
   /**
    * Clean up existing test resources before running
    */
-  async cleanupExistingResources() {
+  async cleanupExistingResources(suiteNames = []) {
     this.log("🧹 Checking for existing test functions...", "warn");
 
     const { v1ProjectId, v2ProjectId } = this.getProjectIds();
-    const projects = [v1ProjectId, v2ProjectId];
+
+    // Determine which project to clean based on suite names
+    const projects = new Set();
+    if (suiteNames.length === 0) {
+      // If no suites specified, clean both (for --cleanup-orphaned flag)
+      projects.add(v1ProjectId);
+      projects.add(v2ProjectId);
+    } else {
+      // Only clean the project(s) for the suite(s) being run
+      for (const suiteName of suiteNames) {
+        if (suiteName.startsWith('v1_')) {
+          projects.add(v1ProjectId);
+        } else if (suiteName.startsWith('v2_')) {
+          projects.add(v2ProjectId);
+        }
+      }
+    }
 
     for (const projectId of projects) {
       this.log(`   Checking project: ${projectId}`, "warn");
@@ -781,8 +797,8 @@ class TestRunner {
       }
     }
 
-    // Clean up orphaned Cloud Tasks queues
-    await this.cleanupOrphanedCloudTasksQueues();
+    // Clean up orphaned Cloud Tasks queues (only for relevant projects)
+    await this.cleanupOrphanedCloudTasksQueues(suiteNames);
 
     // Clean up generated directory
     if (existsSync(GENERATED_DIR)) {
@@ -794,11 +810,28 @@ class TestRunner {
   /**
    * Clean up orphaned Cloud Tasks queues from previous test runs
    */
-  async cleanupOrphanedCloudTasksQueues() {
+  async cleanupOrphanedCloudTasksQueues(suiteNames = []) {
     this.log("   Checking for orphaned Cloud Tasks queues...", "warn");
 
     const { v1ProjectId, v2ProjectId } = this.getProjectIds();
-    const projects = [v1ProjectId, v2ProjectId];
+
+    // Determine which project to clean based on suite names
+    const projects = new Set();
+    if (suiteNames.length === 0) {
+      // If no suites specified, clean both (for --cleanup-orphaned flag)
+      projects.add(v1ProjectId);
+      projects.add(v2ProjectId);
+    } else {
+      // Only clean the project(s) for the suite(s) being run
+      for (const suiteName of suiteNames) {
+        if (suiteName.startsWith('v1_')) {
+          projects.add(v1ProjectId);
+        } else if (suiteName.startsWith('v2_')) {
+          projects.add(v2ProjectId);
+        }
+      }
+    }
+
     const region = DEFAULT_REGION;
 
     for (const projectId of projects) {
@@ -912,9 +945,9 @@ class TestRunner {
     }
     this.log("");
 
-    // Clean up existing resources unless skipped
+    // Clean up existing resources unless skipped (only for relevant projects)
     if (!this.skipCleanup) {
-      await this.cleanupExistingResources();
+      await this.cleanupExistingResources(suiteNames);
     }
 
     // SDK should be pre-packed (by Cloud Build or manually)
