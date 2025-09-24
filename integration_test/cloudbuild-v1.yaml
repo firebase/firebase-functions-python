@@ -1,0 +1,88 @@
+# Cloud Build configuration for Firebase Functions V1 Integration Tests (Python)
+# Runs V1 test suites on functions-integration-tests project
+
+options:
+  machineType: 'E2_HIGHCPU_8'
+  logging: CLOUD_LOGGING_ONLY
+
+timeout: '3600s'
+
+substitutions:
+  _PROJECT_ID: 'functions-integration-tests'  # V1 project
+
+steps:
+  # Build Python SDK and run V1 test suites
+  - name: 'python:3.11'
+    id: 'build-python-sdk'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        # Install uv for Python package management
+        echo "Installing uv..."
+        pip install uv
+
+        # Step 1: Build the firebase-functions Python SDK from source
+        echo "Building firebase-functions Python SDK from source..."
+        uv build
+
+        # Move the wheel to where integration tests expect it
+        cp dist/*.whl integration_test/firebase-functions-python-local.whl
+        echo "Python SDK built and packaged successfully"
+
+  - name: 'node:20'
+    id: 'run-v1-tests'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        cd integration_test
+
+        # Install test dependencies
+        echo "Installing test dependencies..."
+        npm ci
+
+        # Install firebase-tools globally
+        npm install -g firebase-tools
+
+        # Verify firebase is installed
+        firebase --version
+
+        # Set project for V1 tests
+        export PROJECT_ID=${_PROJECT_ID}
+        echo "Running V1 tests on project: ${PROJECT_ID}"
+
+        # Generate V1 functions
+        echo "Generating V1 Python functions..."
+        node scripts/generate.js 'v1_*'
+
+        # Deploy functions
+        echo "Deploying V1 functions to ${PROJECT_ID}..."
+        cd generated/functions
+
+        # Create virtual environment and install dependencies
+        python3 -m venv venv
+        source venv/bin/activate
+        pip install -r requirements.txt
+
+        # Deploy to Firebase
+        firebase deploy --only functions --project ${PROJECT_ID}
+
+        # Return to test directory
+        cd ../..
+
+        # Run V1 tests sequentially
+        echo "Running V1 integration tests..."
+        npm run test:v1:all:sequential
+
+        # Clean up deployed functions
+        echo "Cleaning up deployed functions..."
+        ./scripts/cleanup-suite.sh --project ${PROJECT_ID}
+
+# Artifacts to store
+artifacts:
+  objects:
+    location: 'gs://${_PROJECT_ID}-test-results/${BUILD_ID}'
+    paths:
+      - 'integration_test/logs/**/*.log'
+      - 'integration_test/generated/.metadata.json'

@@ -1,0 +1,21 @@
+"""
+Firebase Functions Integration Tests - Generated Functions
+Project ID: {{projectId}}
+Test Run ID: {{testRunId}}
+"""
+
+import os
+from firebase_admin import initialize_app
+
+# Initialize admin SDK
+project_id = os.environ.get('PROJECT_ID') or os.environ.get('GCLOUD_PROJECT') or "{{projectId}}"
+
+try:
+    initialize_app()
+except Exception as error:
+    print(f"Admin SDK initialization skipped: {error}")
+
+# Import all generated test suites
+{{#each suites}}
+from .{{this.version}}.{{this.service}}_tests import *  # {{this.name}}
+{{/each}}

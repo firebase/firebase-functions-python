@@ -1,0 +1,36 @@
+"""
+Utility functions for Firebase Functions integration tests
+"""
+
+from typing import Any, Dict
+
+
+def sanitize_data(context: Any) -> Dict[str, Any]:
+    """
+    Sanitize context data for storage in Firestore.
+    Removes non-serializable fields and structures data appropriately.
+    """
+    result = {}
+
+    # Extract basic context fields
+    if hasattr(context, 'event_id'):
+        result['eventId'] = context.event_id
+    if hasattr(context, 'timestamp'):
+        result['timestamp'] = context.timestamp
+    if hasattr(context, 'event_type'):
+        result['eventType'] = context.event_type
+    if hasattr(context, 'resource'):
+        result['resource'] = {'name': context.resource}
+
+    # Add params if available
+    if hasattr(context, 'params'):
+        result['params'] = dict(context.params) if context.params else {}
+
+    # Add auth context if available
+    if hasattr(context, 'auth') and context.auth:
+        result['auth'] = {
+            'uid': context.auth.uid if hasattr(context.auth, 'uid') else None,
+            'token': context.auth.token if hasattr(context.auth, 'token') else None
+        }
+
+    return result
