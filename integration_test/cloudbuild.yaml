@@ -118,8 +118,7 @@ steps:
         echo "Running tests on project: ${PROJECT_ID}"
 
         # Use unified test runner (handles generate, deploy, test, cleanup automatically)
-        # Testing only v1_firestore (the only template that currently exists)
-        echo "Running v1_firestore integration tests..."
+        echo "Running integration tests..."
 
         # Find the actual wheel filename
         WHEEL_FILE=$$(ls firebase*.whl 2>/dev/null | head -n 1)
@@ -131,7 +130,7 @@ steps:
 
         node scripts/run-tests.js \
           --sequential \
-          v1_firestore \
+          v2_firestore v2_database \
           --use-published-sdk=file:$$WHEEL_FILE
 
 # Artifacts to store

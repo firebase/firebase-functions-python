@@ -1,5 +1,5 @@
 """
-Realtime Database trigger tests for v1
+Realtime Database trigger tests for v2
 Test Run ID: {{testRunId}}
 """
 
@@ -17,7 +17,7 @@ REGION = "{{region}}"
     region=REGION,
     timeout_sec={{timeout}}
 )
-def {{name}}_{{../testRunId}}(event: {{#if (or (eq trigger "onUpdate") (eq trigger "onWrite"))}}db_fn.Event[Change[Any | None]]{{else}}db_fn.Event[Any | None]{{/if}}) -> None:
+def {{name}}_{{../testRunId}}(event: {{#if (or (eq trigger "onValueUpdated") (eq trigger "onValueWritten"))}}db_fn.Event[Change[Any | None]]{{else}}db_fn.Event[Any | None]{{/if}}) -> None:
     """
     Test function: {{name}}
     Trigger: {{trigger}}
@@ -25,8 +25,8 @@ def {{name}}_{{../testRunId}}(event: {{#if (or (eq trigger "onUpdate") (eq trigg
     """
     test_id = event.params.get("testId")
 
-    {{#if (eq trigger "onWrite")}}
-    # For onWrite trigger, check if it's a delete (cleanup event)
+    {{#if (eq trigger "onValueWritten")}}
+    # For onValueWritten trigger, check if it's a delete (cleanup event)
     if isinstance(event.data, Change) and event.data.after is None:
         print(f"Event for {test_id} is null; presuming data cleanup, so skipping.")
         return
@@ -34,9 +34,10 @@ def {{name}}_{{../testRunId}}(event: {{#if (or (eq trigger "onUpdate") (eq trigg
     {{/if}}
     # Prepare context data for storage
     context_data = {
-        "eventId": event.id,
-        "timestamp": event.time,
-        "eventType": f"google.firebase.database.ref.v1.{{pythonTrigger trigger}}",
+        "id": event.id,
+        "time": event.time,
+        "type": f"google.firebase.database.ref.v1.{{pythonTrigger trigger}}",
+        "source": event.source,
         "resource": {
             "name": event.reference
         },
@@ -44,8 +45,8 @@ def {{name}}_{{../testRunId}}(event: {{#if (or (eq trigger "onUpdate") (eq trigg
         "url": event.reference
     }
 
-    {{#if (eq trigger "onUpdate")}}
-    # For onUpdate trigger, add the updated data
+    {{#if (eq trigger "onValueUpdated")}}
+    # For onValueUpdated trigger, add the updated data
     if isinstance(event.data, Change) and event.data.after is not None:
         context_data["data"] = json.dumps(event.data.after) if event.data.after else None
     {{/if}}

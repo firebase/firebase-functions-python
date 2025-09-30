@@ -36,14 +36,11 @@ The integration test framework:
 ```bash
 cd integration_test
 
-# Generate all v1 suites
-npm run generate:v1
-
-# Generate all v2 suites
-npm run generate:v2
+# Generate all suites
+npm run generate
 
 # Generate specific test suite
-node scripts/generate.js v1_firestore
+node scripts/generate.js v2_firestore
 
 # List available suites
 node scripts/generate.js --list
@@ -121,14 +118,14 @@ defaults:
   devDependencies: {}
 
 suites:
-  - name: v1_firestore
-    description: "V1 Firestore trigger tests"
-    version: v1
+  - name: v2_firestore
+    description: "V2 Firestore trigger tests for Python"
+    version: v2
     service: firestore
     functions:
-      - name: firestoreDocumentOnCreateTests
-        trigger: onCreate
-        document: "tests/{testId}"
+      - name: firestoreOnDocumentCreated
+        trigger: onDocumentCreated
+        document: "v2tests/{testId}"
 ```
 
 ## How It Works

@@ -431,9 +431,6 @@ class TestRunner {
     const version = suiteName.split("_")[0];
 
     // Special cases
-    if (suiteName.startsWith("v1_auth")) {
-      return "tests/v1/auth.test.ts";
-    }
     if (suiteName === "v2_alerts") {
       return null; // Deployment only, no tests
     }
@@ -476,13 +473,9 @@ class TestRunner {
     let deployedFunctions = [];
 
     for (const suiteName of suiteNames) {
-      // Track deployed auth functions
-      if (suiteName === "v1_auth_nonblocking") {
-        deployedFunctions.push("onCreate", "onDelete");
-      } else if (suiteName === "v1_auth_before_create") {
-        deployedFunctions.push("beforeCreate");
-      } else if (suiteName === "v1_auth_before_signin") {
-        deployedFunctions.push("beforeSignIn");
+      // Track deployed identity/auth functions
+      if (suiteName === "v2_identity") {
+        deployedFunctions.push("beforeUserCreated", "beforeUserSignedIn");
       }
 
       const testFile = this.getTestFile(suiteName);
@@ -965,8 +958,8 @@ class TestRunner {
       await this.deployFunctions();
 
       // Wait for functions to become fully available
-      this.log("⏳ Waiting 20 seconds for functions to become fully available...", "info");
-      await new Promise(resolve => setTimeout(resolve, 20000));
+      this.log("⏳ Waiting 30 seconds for functions to become fully available...", "info");
+      await new Promise(resolve => setTimeout(resolve, 30000));
 
       // Run tests
       await this.runTests([suiteName]);
@@ -1073,8 +1066,8 @@ class TestRunner {
           await this.deployFunctions();
 
           // Wait for functions to become fully available
-          this.log("⏳ Waiting 20 seconds for functions to become fully available...", "info");
-          await new Promise(resolve => setTimeout(resolve, 20000));
+          this.log("⏳ Waiting 30 seconds for functions to become fully available...", "info");
+          await new Promise(resolve => setTimeout(resolve, 30000));
 
           // Run tests for this project's suites
           await this.runTests(projectSuites);
@@ -1098,8 +1091,8 @@ class TestRunner {
         await this.deployFunctions();
 
         // Wait for functions to become fully available
-        this.log("⏳ Waiting 20 seconds for functions to become fully available...", "info");
-        await new Promise(resolve => setTimeout(resolve, 20000));
+        this.log("⏳ Waiting 30 seconds for functions to become fully available...", "info");
+        await new Promise(resolve => setTimeout(resolve, 30000));
 
         // Run tests
         await this.runTests(suiteNames);
@@ -1194,11 +1187,11 @@ async function main() {
     console.log(chalk.blue("Usage: node run-tests.js [suites...] [options]"));
     console.log("");
     console.log("Examples:");
-    console.log("  node run-tests.js v1_firestore                    # Single suite");
-    console.log("  node run-tests.js v1_firestore v2_database       # Multiple suites");
-    console.log('  node run-tests.js "v1_*"                         # All v1 suites (pattern)');
+    console.log("  node run-tests.js v2_firestore                    # Single suite");
+    console.log("  node run-tests.js v2_firestore v2_database       # Multiple suites");
+    console.log('  node run-tests.js "v2_*"                         # All v2 suites (pattern)');
     console.log('  node run-tests.js --sequential "v2_*"            # Sequential execution');
-    console.log("  node run-tests.js --filter=v2 --exclude=auth     # Filter suites");
+    console.log("  node run-tests.js --filter=firestore             # Filter suites");
     console.log("  node run-tests.js --list                         # List available suites");
     console.log("");
     console.log("Options:");

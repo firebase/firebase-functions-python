@@ -26,15 +26,20 @@ Handlebars.registerHelper("unless", function (conditional, options) {
 });
 
 // Python-specific trigger name mapping
-const pythonTriggerMap = {
-  "onCreate": "created",
-  "onDelete": "deleted",
-  "onUpdate": "updated",
-  "onWrite": "written"
-};
-
+// Converts trigger names like "onDocumentCreated" or "onCreate" to "created"
 Handlebars.registerHelper("pythonTrigger", function(trigger) {
-  return pythonTriggerMap[trigger] || trigger.replace(/^on/, "").toLowerCase();
+  // Extract the action verb (last camelCase component after "on")
+  // Examples:
+  //   onDocumentCreated -> Created -> created
+  //   onValueDeleted -> Deleted -> deleted
+  //   onObjectFinalized -> Finalized -> finalized
+  //   beforeUserCreated -> Created -> created
+  const match = trigger.match(/(?:on|before)[A-Z][a-z]*([A-Z][a-z]+(?:ed|n))$/);
+  if (match) {
+    return match[1].toLowerCase();
+  }
+  // Fallback: just remove "on" and lowercase
+  return trigger.replace(/^on/, "").toLowerCase();
 });
 
 /**
@@ -347,12 +352,11 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   if (args.length === 0 || args.includes("--help") || args.includes("-h")) {
     console.log("Usage: node generate.js <suite-names...> [options]");
     console.log("\nExamples:");
-    console.log("  node generate.js v1_firestore                     # Single suite");
-    console.log("  node generate.js v1_firestore v1_database         # Multiple suites");
-    console.log("  node generate.js 'v1_*'                          # All v1 suites (pattern)");
+    console.log("  node generate.js v2_firestore                     # Single suite");
+    console.log("  node generate.js v2_firestore v2_database         # Multiple suites");
     console.log("  node generate.js 'v2_*'                          # All v2 suites (pattern)");
     console.log("  node generate.js --list                          # List available suites");
-    console.log("  node generate.js --config config/suites.yaml v1_firestore");
+    console.log("  node generate.js --config config/suites.yaml v2_firestore");
     console.log("\nOptions:");
     console.log("  --config <path>    Path to configuration file (default: auto-detect)");
     console.log("  --list            List all available suites");

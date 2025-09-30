@@ -107,8 +107,8 @@
           "name": {
             "type": "string",
             "description": "Unique identifier for the test suite",
-            "pattern": "^v[12]_[a-z0-9_]+$",
-            "examples": ["v1_firestore", "v2_database", "v1_auth_nonblocking"]
+            "pattern": "^v2_[a-z0-9_]+$",
+            "examples": ["v2_firestore", "v2_database", "v2_identity"]
           },
           "projectId": {
             "type": "string",
@@ -153,8 +153,8 @@
           },
           "version": {
             "type": "string",
-            "description": "Firebase Functions SDK version",
-            "enum": ["v1", "v2"]
+            "description": "Firebase Functions API version (Python SDK only supports v2)",
+            "enum": ["v2"]
           },
           "service": {
             "type": "string",
