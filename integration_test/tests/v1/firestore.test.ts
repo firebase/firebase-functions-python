@@ -78,7 +78,7 @@ describe("Cloud Firestore (v1)", () => {
 
     it("should have the correct eventType", () => {
       expect(loggedContext?.eventType).toEqual(
-        "google.firestore.document.create"
+        "google.firestore.document.created"
       );
     });
 
@@ -136,7 +136,7 @@ describe("Cloud Firestore (v1)", () => {
 
     it("should have the correct eventType", () => {
       expect(loggedContext?.eventType).toEqual(
-        "google.firestore.document.delete"
+        "google.firestore.document.deleted"
       );
     });
 
@@ -194,7 +194,7 @@ describe("Cloud Firestore (v1)", () => {
 
     it("should have the correct eventType", () => {
       expect(loggedContext?.eventType).toEqual(
-        "google.firestore.document.update"
+        "google.firestore.document.updated"
       );
     });
 
@@ -252,7 +252,7 @@ describe("Cloud Firestore (v1)", () => {
 
     it("should have the correct eventType", () => {
       expect(loggedContext?.eventType).toEqual(
-        "google.firestore.document.write"
+        "google.firestore.document.written"
       );
     });
 
