@@ -76,32 +76,16 @@ export async function generateFunctions(suitePatterns, options = {}) {
 
       // Check if it's a pattern (contains * or ?)
       if (pattern.includes("*") || pattern.includes("?")) {
-        // If no config path specified, try to auto-detect based on pattern
+        // Use unified config file (Python only supports 2nd gen)
         if (!configPath) {
-          if (pattern.startsWith("v1")) {
-            configPath = join(ROOT_DIR, "config", "v1", "suites.yaml");
-          } else if (pattern.startsWith("v2")) {
-            configPath = join(ROOT_DIR, "config", "v2", "suites.yaml");
-          } else {
-            throw new Error(
-              `Cannot auto-detect config file for pattern '${pattern}'. Use --config option.`
-            );
-          }
+          configPath = join(ROOT_DIR, "config", "suites.yaml");
         }
         suitesToAdd = getSuitesByPattern(pattern, configPath);
       } else {
         // Single suite name
         if (!configPath) {
-          // Auto-detect config based on suite name
-          if (pattern.startsWith("v1_")) {
-            configPath = join(ROOT_DIR, "config", "v1", "suites.yaml");
-          } else if (pattern.startsWith("v2_")) {
-            configPath = join(ROOT_DIR, "config", "v2", "suites.yaml");
-          } else {
-            throw new Error(
-              `Cannot auto-detect config file for suite '${pattern}'. Use --config option.`
-            );
-          }
+          // Use unified config file (Python only supports 2nd gen)
+          configPath = join(ROOT_DIR, "config", "suites.yaml");
         }
         suitesToAdd = [getSuiteConfig(pattern, configPath)];
       }
@@ -233,8 +217,7 @@ export async function generateFunctions(suitePatterns, options = {}) {
       testRunId,
       sdkPackage,
       timestamp: new Date().toISOString(),
-      v1ProjectId: "functions-integration-tests",
-      v2ProjectId: "functions-integration-tests-v2",
+      projectId: "functions-integration-tests-v2",
     };
 
     // Generate the test file for this suite
@@ -369,7 +352,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     console.log("  node generate.js 'v1_*'                          # All v1 suites (pattern)");
     console.log("  node generate.js 'v2_*'                          # All v2 suites (pattern)");
     console.log("  node generate.js --list                          # List available suites");
-    console.log("  node generate.js --config config/v1/suites.yaml v1_firestore");
+    console.log("  node generate.js --config config/suites.yaml v1_firestore");
     console.log("\nOptions:");
     console.log("  --config <path>    Path to configuration file (default: auto-detect)");
     console.log("  --list            List all available suites");
@@ -384,22 +367,16 @@ if (import.meta.url === `file://${process.argv[1]}`) {
 
   // Handle --list option
   if (args.includes("--list")) {
-    // Determine config path - check both v1 and v2
-    const v1ConfigPath = join(ROOT_DIR, "config", "v1", "suites.yaml");
-    const v2ConfigPath = join(ROOT_DIR, "config", "v2", "suites.yaml");
+    const configPath = join(ROOT_DIR, "config", "suites.yaml");
 
     console.log("\nAvailable test suites:");
 
-    if (existsSync(v1ConfigPath)) {
-      console.log("\n📁 V1 Suites (config/v1/suites.yaml):");
-      const v1Suites = listAvailableSuites(v1ConfigPath);
-      v1Suites.forEach((suite) => console.log(`  - ${suite}`));
-    }
-
-    if (existsSync(v2ConfigPath)) {
-      console.log("\n📁 V2 Suites (config/v2/suites.yaml):");
-      const v2Suites = listAvailableSuites(v2ConfigPath);
-      v2Suites.forEach((suite) => console.log(`  - ${suite}`));
+    if (existsSync(configPath)) {
+      console.log("\n📁 All Suites (config/suites.yaml):");
+      const suites = listAvailableSuites(configPath);
+      suites.forEach((suite) => console.log(`  - ${suite}`));
+    } else {
+      console.error("❌ Config file not found:", configPath);
     }
 
     process.exit(0);

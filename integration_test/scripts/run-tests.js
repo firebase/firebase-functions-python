@@ -777,17 +777,13 @@ class TestRunner {
   /**
    * Get project IDs from configuration (YAML files are source of truth)
    */
-  getProjectIds() {
-    // Project IDs are read from the YAML configuration files
-    // V1 tests use functions-integration-tests
-    // V2 tests use functions-integration-tests-v2
-    const v1ProjectId = "functions-integration-tests";
-    const v2ProjectId = "functions-integration-tests-v2";
+  getProjectId() {
+    // Python SDK only supports 2nd gen functions - all tests use functions-integration-tests-v2
+    const projectId = "functions-integration-tests-v2";
 
-    this.log(`Using V1 Project ID: ${v1ProjectId}`, "info");
-    this.log(`Using V2 Project ID: ${v2ProjectId}`, "info");
+    this.log(`Using Project ID: ${projectId}`, "info");
 
-    return { v1ProjectId, v2ProjectId };
+    return projectId;
   }
 
   /**
@@ -796,103 +792,86 @@ class TestRunner {
   async cleanupExistingResources(suiteNames = []) {
     this.log("🧹 Checking for existing test functions...", "warn");
 
-    const { v1ProjectId, v2ProjectId } = this.getProjectIds();
+    const projectId = this.getProjectId();
 
-    // Determine which project to clean based on suite names
-    const projects = new Set();
-    if (suiteNames.length === 0) {
-      // If no suites specified, clean both (for --cleanup-orphaned flag)
-      projects.add(v1ProjectId);
-      projects.add(v2ProjectId);
-    } else {
-      // Only clean the project(s) for the suite(s) being run
-      for (const suiteName of suiteNames) {
-        if (suiteName.startsWith('v1_')) {
-          projects.add(v1ProjectId);
-        } else if (suiteName.startsWith('v2_')) {
-          projects.add(v2ProjectId);
-        }
-      }
-    }
+    // Python SDK only uses one project - clean it
+    this.log(`   Checking project: ${projectId}`, "warn");
 
-    for (const projectId of projects) {
-      this.log(`   Checking project: ${projectId}`, "warn");
+    try {
+      // List functions and find test functions
+      const result = await this.exec(`firebase functions:list --project ${projectId}`, {
+        silent: true,
+      });
 
-      try {
-        // List functions and find test functions
-        const result = await this.exec(`firebase functions:list --project ${projectId}`, {
-          silent: true,
-        });
+      // Parse the table output from firebase functions:list
+      const lines = result.stdout.split("\n");
+      const testFunctions = [];
 
-        // Parse the table output from firebase functions:list
-        const lines = result.stdout.split("\n");
-        const testFunctions = [];
-
-        for (const line of lines) {
-          // Look for table rows with function names (containing │)
-          // Skip header rows and empty lines
-          if (line.includes("│") && !line.includes("Function") && !line.includes("────")) {
-            const parts = line.split("│");
-            if (parts.length >= 2) {
-              const functionName = parts[1].trim();
-              // Add ALL functions for cleanup (not just test functions)
-              // This ensures a clean slate for testing
-              if (functionName && functionName.length > 0) {
-                testFunctions.push(functionName);
-              }
+      for (const line of lines) {
+        // Look for table rows with function names (containing │)
+        // Skip header rows and empty lines
+        if (line.includes("│") && !line.includes("Function") && !line.includes("────")) {
+          const parts = line.split("│");
+          if (parts.length >= 2) {
+            const functionName = parts[1].trim();
+            // Add ALL functions for cleanup (not just test functions)
+            // This ensures a clean slate for testing
+            if (functionName && functionName.length > 0) {
+              testFunctions.push(functionName);
             }
           }
         }
+      }
 
-        if (testFunctions.length > 0) {
-          this.log(
-            `   Found ${testFunctions.length} function(s) in ${projectId}. Cleaning up ALL functions...`,
-            "warn"
-          );
+      if (testFunctions.length > 0) {
+        this.log(
+          `   Found ${testFunctions.length} function(s) in ${projectId}. Cleaning up ALL functions...`,
+          "warn"
+        );
 
-          for (const func of testFunctions) {
+        for (const func of testFunctions) {
+          try {
+            // Function names from firebase functions:list are just the name, no region suffix
+            const functionName = func.trim();
+            const region = DEFAULT_REGION;
+
+            this.log(`   Deleting function: ${functionName} in region: ${region}`, "warn");
+
+            // Try Firebase CLI first
             try {
-              // Function names from firebase functions:list are just the name, no region suffix
-              const functionName = func.trim();
-              const region = DEFAULT_REGION;
-
-              this.log(`   Deleting function: ${functionName} in region: ${region}`, "warn");
-
-              // Try Firebase CLI first
+              await this.exec(
+                `firebase functions:delete ${functionName} --project ${projectId} --region ${region} --force`,
+                { silent: true }
+              );
+              this.log(`   ✅ Deleted via Firebase CLI: ${functionName}`);
+            } catch (firebaseError) {
+              // If Firebase CLI fails, try gcloud as fallback
+              this.log(`   Firebase CLI failed, trying gcloud for: ${functionName}`, "warn");
               try {
                 await this.exec(
-                  `firebase functions:delete ${functionName} --project ${projectId} --region ${region} --force`,
+                  `gcloud functions delete ${functionName} --region=${region} --project=${projectId} --quiet`,
                   { silent: true }
                 );
-                this.log(`   ✅ Deleted via Firebase CLI: ${functionName}`);
-              } catch (firebaseError) {
-                // If Firebase CLI fails, try gcloud as fallback
-                this.log(`   Firebase CLI failed, trying gcloud for: ${functionName}`, "warn");
-                try {
-                  await this.exec(
-                    `gcloud functions delete ${functionName} --region=${region} --project=${projectId} --quiet`,
-                    { silent: true }
-                  );
-                  this.log(`   ✅ Deleted via gcloud: ${functionName}`);
-                } catch (gcloudError) {
-                  this.log(`   ❌ Failed to delete: ${functionName}`, "error");
-                  this.log(`   Firebase error: ${firebaseError.message}`, "error");
-                  this.log(`   Gcloud error: ${gcloudError.message}`, "error");
-                }
+                this.log(`   ✅ Deleted via gcloud: ${functionName}`);
+              } catch (gcloudError) {
+                this.log(`   ❌ Failed to delete: ${functionName}`, "error");
+                this.log(`   Firebase error: ${firebaseError.message}`, "error");
+                this.log(`   Gcloud error: ${gcloudError.message}`, "error");
               }
-            } catch (e) {
-              this.log(`   ❌ Unexpected error deleting ${func}: ${e.message}`, "error");
             }
+          } catch (e) {
+            this.log(`   ❌ Unexpected error deleting ${func}: ${e.message}`, "error");
           }
-        } else {
-          this.log(`   ✅ No functions found in ${projectId}`, "success");
         }
-      } catch (e) {
-        // Project might not be accessible
+      } else {
+        this.log(`   ✅ No functions found in ${projectId}`, "success");
       }
+    } catch (e) {
+      // Project might not be accessible
+      this.log(`   ⚠️  Could not list functions in ${projectId}: ${e.message}`, "warn");
     }
 
-    // Clean up orphaned Cloud Tasks queues (only for relevant projects)
+    // Clean up orphaned Cloud Tasks queues
     await this.cleanupOrphanedCloudTasksQueues(suiteNames);
 
     // Clean up generated directory
@@ -908,75 +887,54 @@ class TestRunner {
   async cleanupOrphanedCloudTasksQueues(suiteNames = []) {
     this.log("   Checking for orphaned Cloud Tasks queues...", "warn");
 
-    const { v1ProjectId, v2ProjectId } = this.getProjectIds();
-
-    // Determine which project to clean based on suite names
-    const projects = new Set();
-    if (suiteNames.length === 0) {
-      // If no suites specified, clean both (for --cleanup-orphaned flag)
-      projects.add(v1ProjectId);
-      projects.add(v2ProjectId);
-    } else {
-      // Only clean the project(s) for the suite(s) being run
-      for (const suiteName of suiteNames) {
-        if (suiteName.startsWith('v1_')) {
-          projects.add(v1ProjectId);
-        } else if (suiteName.startsWith('v2_')) {
-          projects.add(v2ProjectId);
-        }
-      }
-    }
-
+    const projectId = this.getProjectId();
     const region = DEFAULT_REGION;
+    this.log(`   Checking Cloud Tasks queues in project: ${projectId}`, "warn");
 
-    for (const projectId of projects) {
-      this.log(`   Checking Cloud Tasks queues in project: ${projectId}`, "warn");
+    try {
+      // List all queues in the project
+      const result = await this.exec(
+        `gcloud tasks queues list --location=${region} --project=${projectId} --format="value(name)"`,
+        { silent: true }
+      );
 
-      try {
-        // List all queues in the project
-        const result = await this.exec(
-          `gcloud tasks queues list --location=${region} --project=${projectId} --format="value(name)"`,
-          { silent: true }
+      const queueNames = result.stdout
+        .split("\n")
+        .map((line) => line.trim())
+        .filter((line) => line.length > 0);
+
+      // Find test queues (containing "Tests" and test run ID pattern)
+      const testQueues = queueNames.filter((queueName) => {
+        const queueId = queueName.split("/").pop(); // Extract queue ID from full path
+        return queueId && queueId.match(/Tests.*t[a-z0-9]{7,10}/);
+      });
+
+      if (testQueues.length > 0) {
+        this.log(
+          `   Found ${testQueues.length} orphaned test queue(s) in ${projectId}. Cleaning up...`,
+          "warn"
         );
 
-        const queueNames = result.stdout
-          .split("\n")
-          .map((line) => line.trim())
-          .filter((line) => line.length > 0);
+        for (const queuePath of testQueues) {
+          try {
+            const queueId = queuePath.split("/").pop();
+            this.log(`   Deleting orphaned queue: ${queueId}`, "warn");
 
-        // Find test queues (containing "Tests" and test run ID pattern)
-        const testQueues = queueNames.filter((queueName) => {
-          const queueId = queueName.split("/").pop(); // Extract queue ID from full path
-          return queueId && queueId.match(/Tests.*t[a-z0-9]{7,10}/);
-        });
-
-        if (testQueues.length > 0) {
-          this.log(
-            `   Found ${testQueues.length} orphaned test queue(s) in ${projectId}. Cleaning up...`,
-            "warn"
-          );
-
-          for (const queuePath of testQueues) {
-            try {
-              const queueId = queuePath.split("/").pop();
-              this.log(`   Deleting orphaned queue: ${queueId}`, "warn");
-
-              await this.exec(
-                `gcloud tasks queues delete ${queueId} --location=${region} --project=${projectId} --quiet`,
-                { silent: true }
-              );
-              this.log(`   ✅ Deleted orphaned queue: ${queueId}`);
-            } catch (error) {
-              this.log(`   ⚠️  Could not delete queue ${queuePath}: ${error.message}`, "warn");
-            }
+            await this.exec(
+              `gcloud tasks queues delete ${queueId} --location=${region} --project=${projectId} --quiet`,
+              { silent: true }
+            );
+            this.log(`   ✅ Deleted orphaned queue: ${queueId}`);
+          } catch (error) {
+            this.log(`   ⚠️  Could not delete queue ${queuePath}: ${error.message}`, "warn");
           }
-        } else {
-          this.log(`   ✅ No orphaned test queues found in ${projectId}`, "success");
         }
-      } catch (e) {
-        // Project might not be accessible or Cloud Tasks API not enabled
-        this.log(`   ⚠️  Could not check queues in ${projectId}: ${e.message}`, "warn");
+      } else {
+        this.log(`   ✅ No orphaned test queues found in ${projectId}`, "success");
       }
+    } catch (e) {
+      // Project might not be accessible or Cloud Tasks API not enabled
+      this.log(`   ⚠️  Could not check queues in ${projectId}: ${e.message}`, "warn");
     }
   }
 

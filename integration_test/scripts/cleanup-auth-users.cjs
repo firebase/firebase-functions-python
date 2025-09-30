@@ -8,7 +8,7 @@
 const admin = require("firebase-admin");
 
 const testRunId = process.argv[2];
-const projectId = process.env.PROJECT_ID || "functions-integration-tests";
+const projectId = process.env.PROJECT_ID || "functions-integration-tests-v2";
 
 if (!testRunId) {
   console.error("Usage: node cleanup-auth-users.js <TEST_RUN_ID>");

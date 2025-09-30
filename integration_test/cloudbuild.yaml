@@ -1,6 +1,6 @@
-# Cloud Build configuration for Firebase Functions V1 Integration Tests (Python)
-# Runs V1 test suites on functions-integration-tests project
-# Following the same pattern as JS SDK for reliability
+# Cloud Build configuration for Firebase Functions Integration Tests (Python)
+# Python SDK only supports 2nd gen functions
+# Runs test suites on functions-integration-tests-v2 project
 
 options:
   machineType: 'E2_HIGHCPU_8'
@@ -9,7 +9,7 @@ options:
 timeout: '3600s'
 
 substitutions:
-  _PROJECT_ID: 'functions-integration-tests'  # V1 project
+  _PROJECT_ID: 'functions-integration-tests-v2'
 
 steps:
   # Create storage bucket for test results if it doesn't exist
@@ -67,9 +67,9 @@ steps:
 
         echo "Python SDK built and packaged successfully"
 
-  # Step 2: Run V1 integration tests using unified test runner
+  # Step 2: Run integration tests using unified test runner
   - name: 'node:20'
-    id: 'run-v1-tests'
+    id: 'run-tests'
     entrypoint: 'bash'
     args:
       - '-c'
@@ -113,13 +113,9 @@ steps:
         # Create logs directory
         mkdir -p logs
 
-        # Set project ID for V1 tests
+        # Set project ID for tests
         export PROJECT_ID=${_PROJECT_ID}
-        echo "Running V1 tests on project: ${PROJECT_ID}"
-
-        # Debug: Check if wheel file exists in /workspace
-        echo "Checking for wheel file..."
-        ls -lh firebase-functions-python-local.whl || echo "❌ Wheel not found in /workspace"
+        echo "Running tests on project: ${PROJECT_ID}"
 
         # Use unified test runner (handles generate, deploy, test, cleanup automatically)
         # Testing only v1_firestore (the only template that currently exists)

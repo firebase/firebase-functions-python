@@ -3,7 +3,7 @@ import { retry } from "../utils";
 import { initializeFirebase } from "../firebaseSetup";
 
 describe("Firebase Remote Config (v1)", () => {
-  const projectId = process.env.PROJECT_ID || "functions-integration-tests";
+  const projectId = process.env.PROJECT_ID || "functions-integration-tests-v2";
   const testId = process.env.TEST_RUN_ID;
 
   if (!testId) {

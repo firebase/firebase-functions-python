@@ -19,7 +19,7 @@
           "pattern": "^[a-z0-9-]+$",
           "minLength": 6,
           "maxLength": 30,
-          "default": "functions-integration-tests"
+          "default": "functions-integration-tests-v2"
         },
         "region": {
           "type": "string",

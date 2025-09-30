@@ -1,0 +1,288 @@
+# Firebase Functions Python Integration Test Suites Configuration
+# Python SDK only supports 2nd gen functions - all tests deploy to functions-integration-tests-v2
+# Contains both V1 and V2 API suites (refers to Firebase service API versions, not Cloud Functions generations)
+
+defaults:
+  projectId: functions-integration-tests-v2
+  region: us-central1
+  timeout: 540
+  dependencies:
+    firebase-admin: "^6.0.1"
+    firebase-functions: "{{sdkTarball}}"
+  devDependencies: {}
+
+suites:
+  # ============================================================================
+  # V1 API Suites (Firebase service V1 APIs as 2nd gen Cloud Functions)
+  # ============================================================================
+
+  # Firestore triggers
+  - name: v1_firestore
+    description: "V1 Firestore trigger tests for Python"
+    version: v1
+    service: firestore
+    functions:
+      - name: firestoreDocumentOnCreateTests
+        trigger: onCreate
+        document: "tests/{testId}"
+      - name: firestoreDocumentOnDeleteTests
+        trigger: onDelete
+        document: "tests/{testId}"
+      - name: firestoreDocumentOnUpdateTests
+        trigger: onUpdate
+        document: "tests/{testId}"
+      - name: firestoreDocumentOnWriteTests
+        trigger: onWrite
+        document: "tests/{testId}"
+
+  # Realtime Database triggers
+  - name: v1_database
+    description: "V1 Realtime Database trigger tests for Python"
+    version: v1
+    service: database
+    functions:
+      - name: databaseRefOnCreateTests
+        trigger: onCreate
+        path: "dbTests/{testId}/start"
+      - name: databaseRefOnDeleteTests
+        trigger: onDelete
+        path: "dbTests/{testId}/start"
+      - name: databaseRefOnUpdateTests
+        trigger: onUpdate
+        path: "dbTests/{testId}/start"
+      - name: databaseRefOnWriteTests
+        trigger: onWrite
+        path: "dbTests/{testId}/start"
+
+  # Pub/Sub triggers
+  - name: v1_pubsub
+    description: "V1 Pub/Sub trigger tests for Python"
+    version: v1
+    service: pubsub
+    functions:
+      - name: pubsubOnPublish
+        trigger: onPublish
+        topic: "firebase-functions-pubsub-test"
+      - name: pubsubOnPublishBinary
+        trigger: onPublish
+        topic: "firebase-functions-pubsub-test-binary"
+      - name: pubsubOnMessagePublished
+        trigger: onMessagePublished
+        topic: "firebase-functions-pubsub-message"
+
+  # Storage triggers
+  - name: v1_storage
+    description: "V1 Storage trigger tests for Python"
+    version: v1
+    service: storage
+    functions:
+      - name: storageOnObjectArchive
+        trigger: onArchive
+        bucket: "{{projectId}}.appspot.com"
+      - name: storageOnObjectDelete
+        trigger: onDelete
+        bucket: "{{projectId}}.appspot.com"
+      - name: storageOnObjectFinalize
+        trigger: onFinalize
+        bucket: "{{projectId}}.appspot.com"
+      - name: storageOnObjectMetadataUpdate
+        trigger: onMetadataUpdate
+        bucket: "{{projectId}}.appspot.com"
+
+  # Auth triggers
+  - name: v1_auth_nonblocking
+    description: "V1 Auth non-blocking trigger tests for Python"
+    version: v1
+    service: auth
+    functions:
+      - name: authOnCreate
+        trigger: onCreate
+      - name: authOnDelete
+        trigger: onDelete
+
+  # Auth blocking triggers
+  # Commented out due to Cloud Tasks integration issues
+  # - name: v1_auth_before_create
+  #   description: "V1 Auth beforeCreate blocking trigger tests for Python"
+  #   version: v1
+  #   service: auth
+  #   functions:
+  #     - name: authBeforeCreate
+  #       trigger: beforeCreate
+
+  # - name: v1_auth_before_signin
+  #   description: "V1 Auth beforeSignIn blocking trigger tests for Python"
+  #   version: v1
+  #   service: auth
+  #   functions:
+  #     - name: authBeforeSignIn
+  #       trigger: beforeSignIn
+
+  # Remote Config triggers
+  - name: v1_remoteconfig
+    description: "V1 Remote Config trigger tests for Python"
+    version: v1
+    service: remoteconfig
+    functions:
+      - name: remoteConfigOnUpdate
+        trigger: onUpdate
+
+  # Test Lab triggers
+  - name: v1_testlab
+    description: "V1 Test Lab trigger tests for Python"
+    version: v1
+    service: testlab
+    functions:
+      - name: testLabOnComplete
+        trigger: onComplete
+
+  # Task Queue functions
+  # Commented out due to authentication/permission issues
+  # - name: v1_tasks
+  #   description: "V1 Task Queue function tests for Python"
+  #   version: v1
+  #   service: tasks
+  #   functions:
+  #     - name: taskQueueFunction
+  #       trigger: onDispatch
+  #       queueName: "test-queue"
+
+  # ============================================================================
+  # V2 API Suites (Firebase service V2 APIs as 2nd gen Cloud Functions)
+  # ============================================================================
+
+  # V2 Firestore triggers
+  - name: v2_firestore
+    description: "V2 Firestore trigger tests for Python"
+    version: v2
+    service: firestore
+    functions:
+      - name: firestoreOnDocumentCreated
+        trigger: onDocumentCreated
+        document: "v2tests/{testId}"
+      - name: firestoreOnDocumentDeleted
+        trigger: onDocumentDeleted
+        document: "v2tests/{testId}"
+      - name: firestoreOnDocumentUpdated
+        trigger: onDocumentUpdated
+        document: "v2tests/{testId}"
+      - name: firestoreOnDocumentWritten
+        trigger: onDocumentWritten
+        document: "v2tests/{testId}"
+
+  # V2 Realtime Database triggers
+  - name: v2_database
+    description: "V2 Realtime Database trigger tests for Python"
+    version: v2
+    service: database
+    functions:
+      - name: databaseOnValueCreated
+        trigger: onValueCreated
+        path: "v2tests/{testId}/start"
+      - name: databaseOnValueDeleted
+        trigger: onValueDeleted
+        path: "v2tests/{testId}/start"
+      - name: databaseOnValueUpdated
+        trigger: onValueUpdated
+        path: "v2tests/{testId}/start"
+      - name: databaseOnValueWritten
+        trigger: onValueWritten
+        path: "v2tests/{testId}/start"
+
+  # V2 Pub/Sub triggers
+  - name: v2_pubsub
+    description: "V2 Pub/Sub trigger tests for Python"
+    version: v2
+    service: pubsub
+    functions:
+      - name: pubsubOnMessagePublished
+        trigger: onMessagePublished
+        topic: "firebase-functions-pubsub-v2"
+
+  # V2 Storage triggers
+  - name: v2_storage
+    description: "V2 Storage trigger tests for Python"
+    version: v2
+    service: storage
+    functions:
+      - name: storageOnObjectArchived
+        trigger: onObjectArchived
+        bucket: "{{projectId}}.appspot.com"
+      - name: storageOnObjectDeleted
+        trigger: onObjectDeleted
+        bucket: "{{projectId}}.appspot.com"
+      - name: storageOnObjectFinalized
+        trigger: onObjectFinalized
+        bucket: "{{projectId}}.appspot.com"
+      - name: storageOnObjectMetadataUpdated
+        trigger: onObjectMetadataUpdated
+        bucket: "{{projectId}}.appspot.com"
+
+  # V2 Scheduler triggers
+  - name: v2_scheduler
+    description: "V2 Scheduled function tests for Python"
+    version: v2
+    service: scheduler
+    functions:
+      - name: schedulerOnSchedule
+        trigger: onSchedule
+        schedule: "every 1 minutes"
+
+  # V2 Task Queue functions
+  - name: v2_tasks
+    description: "V2 Task Queue function tests for Python"
+    version: v2
+    service: tasks
+    functions:
+      - name: taskQueueOnEnqueue
+        trigger: onTaskDispatched
+        queueName: "v2-test-queue"
+
+  # V2 Identity triggers
+  - name: v2_identity
+    description: "V2 Identity trigger tests for Python"
+    version: v2
+    service: identity
+    functions:
+      - name: identityBeforeUserCreated
+        trigger: beforeUserCreated
+      - name: identityBeforeUserSignedIn
+        trigger: beforeUserSignedIn
+
+  # V2 Eventarc triggers
+  - name: v2_eventarc
+    description: "V2 Eventarc trigger tests for Python"
+    version: v2
+    service: eventarc
+    functions:
+      - name: eventarcOnCustomEventPublished
+        trigger: onCustomEventPublished
+        eventType: "test.event.v1"
+
+  # V2 Alerts triggers
+  - name: v2_alerts
+    description: "V2 Alerts trigger tests for Python"
+    version: v2
+    service: alerts
+    functions:
+      - name: alertsOnAlertPublished
+        trigger: onAlertPublished
+        alertType: "billing.planAutomatedUpdatePublished"
+
+  # V2 Test Lab triggers
+  - name: v2_testlab
+    description: "V2 Test Lab trigger tests for Python"
+    version: v2
+    service: testlab
+    functions:
+      - name: testLabOnTestMatrixCompleted
+        trigger: onTestMatrixCompleted
+
+  # V2 Remote Config triggers
+  - name: v2_remoteconfig
+    description: "V2 Remote Config trigger tests for Python"
+    version: v2
+    service: remoteconfig
+    functions:
+      - name: remoteConfigOnConfigUpdated
+        trigger: onConfigUpdated

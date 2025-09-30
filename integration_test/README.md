@@ -19,11 +19,9 @@ The integration test framework:
    ```
    This creates `integration_test/firebase-functions-python-local.whl`
 
-2. **Firebase Projects**: V1 and V2 tests run on separate Firebase projects:
-   - **V1 functions**: `functions-integration-tests`
-   - **V2 functions**: `functions-integration-tests-v2`
-
-   These projects are completely isolated from each other.
+2. **Firebase Project**: Python SDK only supports 2nd gen Cloud Functions:
+   - **All tests**: `functions-integration-tests-v2`
+   - **Note**: V1/V2 in suite names refers to Firebase service API versions, not Cloud Functions generations
 
 3. **Dependencies**:
    - Node.js 18+ (for test runner and generation scripts)
@@ -53,17 +51,8 @@ node scripts/generate.js --list
 
 ### 2. Deploy Functions
 
-**For V1 Tests:**
 ```bash
-npm run deploy:v1
-# OR manually:
-cd generated/functions
-firebase deploy --only functions --project functions-integration-tests
-```
-
-**For V2 Tests:**
-```bash
-npm run deploy:v2
+npm run deploy
 # OR manually:
 cd generated/functions
 firebase deploy --only functions --project functions-integration-tests-v2
@@ -71,35 +60,22 @@ firebase deploy --only functions --project functions-integration-tests-v2
 
 ### 3. Run Tests
 
-**V1 Tests (uses functions-integration-tests project):**
 ```bash
-# Run all V1 tests
-npm run test:v1:all
+# Run all tests sequentially
+npm run test:all
 
-# Run specific V1 test
-npm run test:v1:firestore
+# Run specific test suite
+npm run test:firestore
 
-# Run V1 tests in parallel
-npm run test:v1:all:parallel
-```
-
-**V2 Tests (uses functions-integration-tests-v2 project):**
-```bash
-# Run all V2 tests
-npm run test:v2:all
-
-# Run V2 tests in parallel
-npm run test:v2:all:parallel
+# Run tests in parallel (faster but harder to debug)
+npm run test:all:parallel
 ```
 
 ### 4. Cleanup
 
 ```bash
-# Clean up V1 deployed functions
-npm run cleanup:v1
-
-# Clean up V2 deployed functions
-npm run cleanup:v2
+# Clean up deployed functions
+npm run cleanup
 
 # Remove generated files
 npm run clean
@@ -110,8 +86,7 @@ npm run clean
 ```
 integration_test/
 ├── config/
-│   ├── v1/suites.yaml           # V1 test suite configuration
-│   └── v2/suites.yaml           # V2 test suite configuration
+│   └── suites.yaml              # Unified test suite configuration
 ├── templates/
 │   └── functions/               # Python function templates
 │       ├── firebase.json.hbs
@@ -133,11 +108,11 @@ integration_test/
 
 ## Configuration
 
-### Suite Configuration (`config/v[1|2]/suites.yaml`)
+### Suite Configuration (`config/suites.yaml`)
 
 ```yaml
 defaults:
-  projectId: functions-integration-tests
+  projectId: functions-integration-tests-v2
   region: us-central1
   timeout: 540
   dependencies:
@@ -201,7 +176,7 @@ To add support for a new trigger type:
      }
    }
    ```
-3. **Add Configuration**: Update `config/v1/suites.yaml`
+3. **Add Configuration**: Update `config/suites.yaml`
 4. **Add Tests**: Create Jest test file in `tests/v1/[service].test.ts`
 
 ## Environment Variables
@@ -265,45 +240,33 @@ gsutil ls gs://functions-integration-tests-v2-test-results/
 
 If functions aren't cleaned up properly:
 ```bash
-# For V1 project
-firebase functions:delete --project functions-integration-tests --force
+# Delete functions
+firebase functions:delete --project functions-integration-tests-v2 --force
 
-# For V2 project
+# Or use cleanup script
 firebase functions:delete --project functions-integration-tests-v2 --force
 ```
 
 ## Cloud Build Integration
 
-The integration tests are run via Cloud Build with complete project separation. V1 and V2 tests run on different Firebase projects to ensure isolation.
+The integration tests are run via Cloud Build. Python SDK only supports 2nd gen functions, so all tests deploy to the same project.
 
-### Available Configurations
+### Configuration
 
-#### 1. `cloudbuild-v1.yaml` - V1 Tests Only
-- **Project**: `functions-integration-tests`
-- **What it does**:
-  - Builds the Python SDK wheel
-  - Generates all V1 Python functions
-  - Deploys to V1 project
-  - Runs all V1 integration tests
-  - Cleans up deployed functions
-
-**Usage** (from repository root):
-```bash
-gcloud builds submit --config=integration_test/cloudbuild-v1.yaml .
-```
-
-#### 2. `cloudbuild-v2.yaml` - V2 Tests Only
+#### `cloudbuild.yaml`
 - **Project**: `functions-integration-tests-v2`
 - **What it does**:
   - Builds the Python SDK wheel
-  - Generates all V2 Python functions
-  - Deploys to V2 project
-  - Runs all V2 integration tests
+  - Generates Python functions (both v1 and v2 API suites)
+  - Deploys to functions-integration-tests-v2
+  - Runs integration tests
   - Cleans up deployed functions
 
 **Usage** (from repository root):
 ```bash
-gcloud builds submit --config=integration_test/cloudbuild-v2.yaml .
+gcloud builds submit --config=integration_test/cloudbuild.yaml --project=functions-integration-tests-v2 .
+# Or use npm script:
+npm run cloudbuild
 ```
 
 ### Configuration Details
@@ -342,44 +305,31 @@ Artifacts are uploaded to:
 ### Automated Triggers
 
 You can set up Cloud Build triggers to run on:
-- **Pull requests**: Use `cloudbuild-v1.yaml` for quick feedback
-- **Merges to main**: Run both `cloudbuild-v1.yaml` and `cloudbuild-v2.yaml` separately
-- **Nightly builds**: Run both configurations for full regression testing
+- **Pull requests**: Use `cloudbuild.yaml` for quick feedback on v1 API tests
+- **Merges to main**: Run full test suite with `cloudbuild.yaml`
+- **Nightly builds**: Run comprehensive tests across all suites
 
 ### Manual CI/CD Steps
 
-For custom CI/CD pipelines, run V1 and V2 tests separately:
+For custom CI/CD pipelines:
 
-#### V1 Tests
 ```bash
 # Build SDK
 ./scripts/pack-for-integration-tests.sh
 
-# Generate, deploy, and test V1 functions
+# Generate functions (v1 and/or v2 API suites)
 cd integration_test
-node scripts/generate.js 'v1_*'
-cd generated/functions
-pip install -r requirements.txt
-firebase deploy --project functions-integration-tests --token $FIREBASE_TOKEN
-cd ../..
-npm run test:v1:all:sequential
-npm run cleanup:v1
-```
+node scripts/generate.js 'v1_*'  # Or 'v2_*' or specific suites
 
-#### V2 Tests
-```bash
-# Build SDK
-./scripts/pack-for-integration-tests.sh
-
-# Generate, deploy, and test V2 functions
-cd integration_test
-node scripts/generate.js 'v2_*'
+# Deploy and test
 cd generated/functions
+python3.11 -m venv venv
+source venv/bin/activate
 pip install -r requirements.txt
 firebase deploy --project functions-integration-tests-v2 --token $FIREBASE_TOKEN
 cd ../..
-npm run test:v2:all:sequential
-npm run cleanup:v2
+npm run test:all:sequential
+npm run cleanup
 ```
 
 ## Contributing

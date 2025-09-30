@@ -1,0 +1,58 @@
+"""
+Realtime Database trigger tests for v1
+Test Run ID: {{testRunId}}
+"""
+
+import json
+from firebase_admin import firestore
+from firebase_functions import db_fn
+from firebase_functions.core import Change
+from typing import Any
+
+REGION = "{{region}}"
+
+{{#each functions}}
+@db_fn.on_value_{{pythonTrigger trigger}}(
+    reference="{{path}}",
+    region=REGION,
+    timeout_sec={{timeout}}
+)
+def {{name}}_{{../testRunId}}(event: {{#if (or (eq trigger "onUpdate") (eq trigger "onWrite"))}}db_fn.Event[Change[Any | None]]{{else}}db_fn.Event[Any | None]{{/if}}) -> None:
+    """
+    Test function: {{name}}
+    Trigger: {{trigger}}
+    Path: {{path}}
+    """
+    test_id = event.params.get("testId")
+
+    {{#if (eq trigger "onWrite")}}
+    # For onWrite trigger, check if it's a delete (cleanup event)
+    if isinstance(event.data, Change) and event.data.after is None:
+        print(f"Event for {test_id} is null; presuming data cleanup, so skipping.")
+        return
+
+    {{/if}}
+    # Prepare context data for storage
+    context_data = {
+        "eventId": event.id,
+        "timestamp": event.time,
+        "eventType": f"google.firebase.database.ref.v1.{{pythonTrigger trigger}}",
+        "resource": {
+            "name": event.reference
+        },
+        "params": dict(event.params) if event.params else {},
+        "url": event.reference
+    }
+
+    {{#if (eq trigger "onUpdate")}}
+    # For onUpdate trigger, add the updated data
+    if isinstance(event.data, Change) and event.data.after is not None:
+        context_data["data"] = json.dumps(event.data.after) if event.data.after else None
+    {{/if}}
+
+    # Store context in Firestore for verification
+    db = firestore.client()
+    collection_name = "{{#if collection}}{{collection}}{{else}}{{name}}{{/if}}"
+    db.collection(collection_name).document(test_id).set(context_data)
+
+{{/each}}

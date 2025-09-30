@@ -3,7 +3,7 @@ import { retry, startTestRun } from "../utils";
 import { initializeFirebase } from "../firebaseSetup";
 
 describe.skip("TestLab (v1)", () => {
-  const projectId = process.env.PROJECT_ID || "functions-integration-tests";
+  const projectId = process.env.PROJECT_ID || "functions-integration-tests-v2";
   const testId = process.env.TEST_RUN_ID || "skipped-test";
 
   beforeAll(() => {

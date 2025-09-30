@@ -24,7 +24,7 @@ describe("Firebase Tasks (v1)", () => {
     beforeAll(async () => {
       // Function name becomes the queue name in v1, no separators needed
       const queueName = `tasksOnDispatchTests${testId}`;
-      const projectId = process.env.GCLOUD_PROJECT || "functions-integration-tests";
+      const projectId = process.env.GCLOUD_PROJECT || "functions-integration-tests-v2";
       const region = "us-central1";
       const url = `https://${region}-${projectId}.cloudfunctions.net/${queueName}`;
 

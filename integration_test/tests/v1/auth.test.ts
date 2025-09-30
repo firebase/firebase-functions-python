@@ -12,7 +12,7 @@ import { getFirebaseClientConfig } from "../firebaseClientConfig";
 
 describe("Firebase Auth (v1)", () => {
   const userIds: string[] = [];
-  const projectId = process.env.PROJECT_ID || "functions-integration-tests";
+  const projectId = process.env.PROJECT_ID || "functions-integration-tests-v2";
   const testId = process.env.TEST_RUN_ID;
   const deployedFunctions = process.env.DEPLOYED_FUNCTIONS?.split(",") || [];
 

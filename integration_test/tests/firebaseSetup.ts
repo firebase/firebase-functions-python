@@ -6,25 +6,13 @@ import * as admin from "firebase-admin";
 export function initializeFirebase(): admin.app.App {
   if (admin.apps.length === 0) {
     try {
-      const projectId = process.env.PROJECT_ID || "functions-integration-tests";
+      const projectId = process.env.PROJECT_ID || "functions-integration-tests-v2";
 
-      // Set project-specific URLs based on projectId
-      let databaseURL;
-      let storageBucket;
-
-      if (projectId === "functions-integration-tests-v2") {
-        // Configuration for v2 project
-        databaseURL = process.env.DATABASE_URL ||
-          "https://functions-integration-tests-v2-default-rtdb.firebaseio.com/";
-        storageBucket = process.env.STORAGE_BUCKET ||
-          "gs://functions-integration-tests-v2.firebasestorage.app";
-      } else {
-        // Default configuration for main project
-        databaseURL = process.env.DATABASE_URL ||
-          "https://functions-integration-tests-default-rtdb.firebaseio.com/";
-        storageBucket = process.env.STORAGE_BUCKET ||
-          "gs://functions-integration-tests.firebasestorage.app";
-      }
+      // Python SDK only supports 2nd gen functions - use v2 project
+      const databaseURL = process.env.DATABASE_URL ||
+        "https://functions-integration-tests-v2-default-rtdb.firebaseio.com/";
+      const storageBucket = process.env.STORAGE_BUCKET ||
+        "gs://functions-integration-tests-v2.firebasestorage.app";
 
       // Check if we're in Cloud Build (ADC available) or local (need service account file)
       let credential;
