@@ -238,7 +238,7 @@ export async function generateFunctions(suitePatterns, options = {}) {
     };
 
     // Generate the test file for this suite
-    const outputPath = `functions/src/${version}/${service}_tests.py`;
+    const outputPath = `functions/${version}/${service}_tests.py`;
 
     if (generateFromTemplate(templatePath, outputPath, context)) {
       // Collect dependencies
@@ -273,15 +273,15 @@ export async function generateFunctions(suitePatterns, options = {}) {
   };
 
   // Create __init__ files for packages
-  mkdirSync(join(ROOT_DIR, "generated", "functions", "src", "v1"), { recursive: true });
-  mkdirSync(join(ROOT_DIR, "generated", "functions", "src", "v2"), { recursive: true });
+  mkdirSync(join(ROOT_DIR, "generated", "functions", "v1"), { recursive: true });
+  mkdirSync(join(ROOT_DIR, "generated", "functions", "v2"), { recursive: true });
 
-  writeFileSync(join(ROOT_DIR, "generated", "functions", "src", "__init__.py"), "");
-  writeFileSync(join(ROOT_DIR, "generated", "functions", "src", "v1", "__init__.py"), "");
-  writeFileSync(join(ROOT_DIR, "generated", "functions", "src", "v2", "__init__.py"), "");
+  writeFileSync(join(ROOT_DIR, "generated", "functions", "__init__.py"), "");
+  writeFileSync(join(ROOT_DIR, "generated", "functions", "v1", "__init__.py"), "");
+  writeFileSync(join(ROOT_DIR, "generated", "functions", "v2", "__init__.py"), "");
 
   // Generate utils.py
-  generateFromTemplate("functions/src/utils.py.hbs", "functions/src/utils.py", sharedContext);
+  generateFromTemplate("functions/src/utils.py.hbs", "functions/utils.py", sharedContext);
 
   // Generate main.py with all suites
   const mainContext = {
@@ -294,7 +294,7 @@ export async function generateFunctions(suitePatterns, options = {}) {
     })),
   };
 
-  generateFromTemplate("functions/src/main.py.hbs", "functions/src/main.py", mainContext);
+  generateFromTemplate("functions/src/main.py.hbs", "functions/main.py", mainContext);
 
   // Generate requirements.txt
   const requirementsContext = {

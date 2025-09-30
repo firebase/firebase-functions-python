@@ -15,10 +15,26 @@ describe("Cloud Firestore (v1)", () => {
   });
 
   afterAll(async () => {
-    await admin.firestore().collection("firestoreDocumentOnCreateTests").doc(testId).delete();
-    await admin.firestore().collection("firestoreDocumentOnDeleteTests").doc(testId).delete();
-    await admin.firestore().collection("firestoreDocumentOnUpdateTests").doc(testId).delete();
-    await admin.firestore().collection("firestoreDocumentOnWriteTests").doc(testId).delete();
+    await admin
+      .firestore()
+      .collection("firestoreDocumentOnCreateTests")
+      .doc(testId)
+      .delete();
+    await admin
+      .firestore()
+      .collection("firestoreDocumentOnDeleteTests")
+      .doc(testId)
+      .delete();
+    await admin
+      .firestore()
+      .collection("firestoreDocumentOnUpdateTests")
+      .doc(testId)
+      .delete();
+    await admin
+      .firestore()
+      .collection("firestoreDocumentOnWriteTests")
+      .doc(testId)
+      .delete();
   });
 
   describe("Document onCreate trigger", () => {
@@ -61,7 +77,9 @@ describe("Cloud Firestore (v1)", () => {
     });
 
     it("should have the correct eventType", () => {
-      expect(loggedContext?.eventType).toEqual("google.firestore.document.create");
+      expect(loggedContext?.eventType).toEqual(
+        "google.firestore.document.create"
+      );
     });
 
     it("should have an eventId", () => {
@@ -117,7 +135,9 @@ describe("Cloud Firestore (v1)", () => {
     });
 
     it("should have the correct eventType", () => {
-      expect(loggedContext?.eventType).toEqual("google.firestore.document.delete");
+      expect(loggedContext?.eventType).toEqual(
+        "google.firestore.document.delete"
+      );
     });
 
     it("should have an eventId", () => {
@@ -173,7 +193,9 @@ describe("Cloud Firestore (v1)", () => {
     });
 
     it("should have the correct eventType", () => {
-      expect(loggedContext?.eventType).toEqual("google.firestore.document.update");
+      expect(loggedContext?.eventType).toEqual(
+        "google.firestore.document.update"
+      );
     });
 
     it("should have an eventId", () => {
@@ -229,7 +251,9 @@ describe("Cloud Firestore (v1)", () => {
     });
 
     it("should have the correct eventType", () => {
-      expect(loggedContext?.eventType).toEqual("google.firestore.document.write");
+      expect(loggedContext?.eventType).toEqual(
+        "google.firestore.document.write"
+      );
     });
 
     it("should have an eventId", () => {

@@ -11,6 +11,8 @@
     "run-tests": "node scripts/run-tests.js",
     "deploy:v1": "cd generated/functions && firebase deploy --only functions --project functions-integration-tests",
     "deploy:v2": "cd generated/functions && firebase deploy --only functions --project functions-integration-tests-v2",
+    "cloudbuild:v1": "cd .. && gcloud builds submit --config=integration_test/cloudbuild-v1.yaml --project=functions-integration-tests .",
+    "cloudbuild:v2": "cd .. && gcloud builds submit --config=integration_test/cloudbuild-v2.yaml --project=functions-integration-tests-v2 .",
     "test:v1:firestore": "PROJECT_ID=functions-integration-tests node scripts/run-tests.js v1_firestore",
     "test:v1:all": "PROJECT_ID=functions-integration-tests node scripts/run-tests.js --sequential 'v1_*'",
     "test:v1:all:sequential": "PROJECT_ID=functions-integration-tests node scripts/run-tests.js --sequential 'v1_*'",

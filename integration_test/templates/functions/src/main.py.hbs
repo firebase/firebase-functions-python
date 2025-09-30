@@ -17,5 +17,5 @@ except Exception as error:
 
 # Import all generated test suites
 {{#each suites}}
-from .{{this.version}}.{{this.service}}_tests import *  # {{this.name}}
+from {{this.version}}.{{this.service}}_tests import *  # {{this.name}}
 {{/each}}

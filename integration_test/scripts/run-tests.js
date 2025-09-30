@@ -28,9 +28,9 @@ const SA_JSON_PATH = join(ROOT_DIR, "sa.json");
 
 // Default configurations
 const DEFAULT_REGION = "us-central1";
-const MAX_DEPLOY_ATTEMPTS = 3;
-const DEFAULT_BASE_DELAY = 5000; // Base delay in ms (5 seconds)
-const DEFAULT_MAX_DELAY = 60000; // Max delay in ms (60 seconds)
+const MAX_DEPLOY_ATTEMPTS = 5;
+const DEFAULT_BASE_DELAY = 30000; // Base delay in ms (30 seconds)
+const DEFAULT_MAX_DELAY = 120000; // Max delay in ms (120 seconds/2 minutes)
 
 class TestRunner {
   constructor(options = {}) {
@@ -273,7 +273,8 @@ class TestRunner {
 
     // Apply exclusions
     if (this.exclude) {
-      suites = suites.filter((suite) => !suite.match(new RegExp(this.exclude)));
+      // Use simple string matching instead of regex to avoid injection
+      suites = suites.filter((suite) => !suite.includes(this.exclude));
     }
 
     return suites;
@@ -300,7 +301,7 @@ class TestRunner {
       // Call the generate function directly instead of spawning subprocess
       const metadata = await generateFunctions(suiteNames, {
         testRunId: this.testRunId,
-        sdkTarball: sdkTarball,
+        sdkPackage: sdkTarball,  // Note: variable name is sdkTarball but param is sdkPackage
         quiet: true, // Suppress console output since we have our own logging
       });
 
@@ -312,6 +313,18 @@ class TestRunner {
         `✓ Generated ${suiteNames.length} suite(s) for project: ${this.projectId}`,
         "success"
       );
+
+      // Debug: Verify wheel was copied to generated/functions
+      if (sdkTarball.startsWith("file:")) {
+        const wheelFileName = sdkTarball.replace("file:", "");
+        const wheelPath = join(GENERATED_DIR, "functions", wheelFileName);
+        if (existsSync(wheelPath)) {
+          this.log(`✓ SDK wheel exists at: ${wheelPath}`, "success");
+        } else {
+          this.log(`⚠️  WARNING: SDK wheel not found at: ${wheelPath}`, "warn");
+          this.log(`   This will cause deployment to fail!`, "warn");
+        }
+      }
 
       // Save artifact if requested
       if (this.saveArtifact) {
@@ -332,9 +345,9 @@ class TestRunner {
 
     const functionsDir = join(GENERATED_DIR, "functions");
 
-    // Install and build
-    await this.exec("npm install", { cwd: functionsDir });
-    await this.exec("npm run build", { cwd: functionsDir });
+    // Python build: create venv and install dependencies
+    await this.exec("python3.11 -m venv venv", { cwd: functionsDir });
+    await this.exec(". venv/bin/activate && pip install --upgrade pip && pip install -r requirements.txt", { cwd: functionsDir });
 
     this.log("✓ Functions built successfully", "success");
   }
@@ -552,25 +565,105 @@ class TestRunner {
     }
 
     for (const functionName of functions) {
+      let deleted = false;
+
+      // Try Firebase CLI first
       try {
         await this.exec(
           `firebase functions:delete ${functionName} --project ${metadata.projectId} --region ${
             metadata.region || DEFAULT_REGION
-          } --force`,
-          { silent: true }
+          } --force`
         );
-        this.log(`   Deleted function: ${functionName}`);
-      } catch (error) {
-        // Try gcloud as fallback
+
+        // Verify the function was actually deleted
+        this.log(`   Verifying deletion of ${functionName}...`, "info");
         try {
-          await this.exec(
-            `gcloud functions delete ${functionName} --region=${
-              metadata.region || DEFAULT_REGION
-            } --project=${metadata.projectId} --quiet`,
+          const listResult = await this.exec(
+            `firebase functions:list --project ${metadata.projectId}`,
             { silent: true }
           );
-        } catch (e) {
-          // Ignore cleanup errors
+
+          // Check if function still exists in the list
+          const functionStillExists = listResult.stdout.includes(functionName);
+
+          if (!functionStillExists) {
+            this.log(`   ✅ Verified: Function deleted via Firebase CLI: ${functionName}`, "success");
+            deleted = true;
+          } else {
+            this.log(`   ⚠️ Function still exists after Firebase CLI delete: ${functionName}`, "warn");
+          }
+        } catch (listError) {
+          // If we can't list functions, assume deletion worked
+          this.log(`   ✅ Deleted function via Firebase CLI (unverified): ${functionName}`, "success");
+          deleted = true;
+        }
+      } catch (error) {
+        this.log(`   ⚠️ Firebase CLI delete failed for ${functionName}: ${error.message}`, "warn");
+      }
+
+      // If not deleted yet, try alternative methods
+      if (!deleted) {
+        // For v2 functions, try to delete the Cloud Run service directly
+        if (metadata.projectId === "functions-integration-tests-v2") {
+          this.log(`   Attempting Cloud Run service deletion for v2 function...`, "warn");
+          try {
+            await this.exec(
+              `gcloud run services delete ${functionName} --region=${
+                metadata.region || DEFAULT_REGION
+              } --project=${metadata.projectId} --quiet`,
+              { silent: true }
+            );
+
+            // Verify deletion
+            try {
+              await this.exec(
+                `gcloud run services describe ${functionName} --region=${
+                  metadata.region || DEFAULT_REGION
+                } --project=${metadata.projectId}`,
+                { silent: true }
+              );
+              // If describe succeeds, function still exists
+              this.log(`   ⚠️ Cloud Run service still exists after deletion: ${functionName}`, "warn");
+            } catch {
+              // If describe fails, function was deleted
+              this.log(`   ✅ Deleted function as Cloud Run service: ${functionName}`, "success");
+              deleted = true;
+            }
+          } catch (runError) {
+            this.log(`   ⚠️ Cloud Run delete failed: ${runError.message}`, "warn");
+          }
+        }
+
+        // If still not deleted, try gcloud functions delete as last resort
+        if (!deleted) {
+          try {
+            await this.exec(
+              `gcloud functions delete ${functionName} --region=${
+                metadata.region || DEFAULT_REGION
+              } --project=${metadata.projectId} --quiet`,
+              { silent: true }
+            );
+
+            // Verify deletion
+            try {
+              await this.exec(
+                `gcloud functions describe ${functionName} --region=${
+                  metadata.region || DEFAULT_REGION
+                } --project=${metadata.projectId}`,
+                { silent: true }
+              );
+              // If describe succeeds, function still exists
+              this.log(`   ⚠️ Function still exists after gcloud delete: ${functionName}`, "warn");
+              deleted = false;
+            } catch {
+              // If describe fails, function was deleted
+              this.log(`   ✅ Deleted function via gcloud: ${functionName}`, "success");
+              deleted = true;
+            }
+          } catch (e) {
+            this.log(`   ❌ Failed to delete function ${functionName} via any method`, "error");
+            this.log(`   Last error: ${e.message}`, "error");
+          }
         }
       }
     }
@@ -737,12 +830,14 @@ class TestRunner {
 
         for (const line of lines) {
           // Look for table rows with function names (containing │)
-          if (line.includes("│") && line.includes("Test")) {
+          // Skip header rows and empty lines
+          if (line.includes("│") && !line.includes("Function") && !line.includes("────")) {
             const parts = line.split("│");
             if (parts.length >= 2) {
               const functionName = parts[1].trim();
-              // Check if it's a test function (contains Test + test run ID pattern)
-              if (functionName.match(/Test.*t[a-z0-9]{7,10}/)) {
+              // Add ALL functions for cleanup (not just test functions)
+              // This ensures a clean slate for testing
+              if (functionName && functionName.length > 0) {
                 testFunctions.push(functionName);
               }
             }
@@ -751,7 +846,7 @@ class TestRunner {
 
         if (testFunctions.length > 0) {
           this.log(
-            `   Found ${testFunctions.length} test function(s) in ${projectId}. Cleaning up...`,
+            `   Found ${testFunctions.length} function(s) in ${projectId}. Cleaning up ALL functions...`,
             "warn"
           );
 
@@ -790,7 +885,7 @@ class TestRunner {
             }
           }
         } else {
-          this.log(`   ✅ No test functions found in ${projectId}`, "success");
+          this.log(`   ✅ No functions found in ${projectId}`, "success");
         }
       } catch (e) {
         // Project might not be accessible
@@ -911,6 +1006,10 @@ class TestRunner {
       // Deploy functions
       await this.deployFunctions();
 
+      // Wait for functions to become fully available
+      this.log("⏳ Waiting 20 seconds for functions to become fully available...", "info");
+      await new Promise(resolve => setTimeout(resolve, 20000));
+
       // Run tests
       await this.runTests([suiteName]);
 
@@ -1015,6 +1114,10 @@ class TestRunner {
           // Deploy functions
           await this.deployFunctions();
 
+          // Wait for functions to become fully available
+          this.log("⏳ Waiting 20 seconds for functions to become fully available...", "info");
+          await new Promise(resolve => setTimeout(resolve, 20000));
+
           // Run tests for this project's suites
           await this.runTests(projectSuites);
 
@@ -1035,6 +1138,10 @@ class TestRunner {
 
         // Deploy functions
         await this.deployFunctions();
+
+        // Wait for functions to become fully available
+        this.log("⏳ Waiting 20 seconds for functions to become fully available...", "info");
+        await new Promise(resolve => setTimeout(resolve, 20000));
 
         // Run tests
         await this.runTests(suiteNames);
