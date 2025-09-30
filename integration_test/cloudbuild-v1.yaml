@@ -145,4 +145,3 @@ artifacts:
     location: 'gs://${_PROJECT_ID}-test-results/${BUILD_ID}'
     paths:
       - 'integration_test/logs/*.log'
-      - 'integration_test/generated/.metadata.json'
