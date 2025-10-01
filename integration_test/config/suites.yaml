@@ -129,7 +129,9 @@ suites:
     functions:
       - name: schedulerOnSchedule
         trigger: onSchedule
+        decorator: on_schedule
         schedule: "every 1 minutes"
+        collection: schedulerOnScheduleV2Tests
 
   # V2 Task Queue functions
   - name: v2_tasks
@@ -139,7 +141,9 @@ suites:
     functions:
       - name: taskQueueOnEnqueue
         trigger: onTaskDispatched
+        decorator: on_task_dispatched
         queueName: "v2-test-queue"
+        collection: tasksOnTaskDispatchedTests
 
   # V2 Identity triggers
   - name: v2_identity
@@ -149,8 +153,12 @@ suites:
     functions:
       - name: identityBeforeUserCreated
         trigger: beforeUserCreated
+        decorator: before_user_created
+        collection: identityBeforeUserCreatedTests
       - name: identityBeforeUserSignedIn
         trigger: beforeUserSignedIn
+        decorator: before_user_signed_in
+        collection: identityBeforeUserSignedInTests
 
   # V2 Eventarc triggers
   - name: v2_eventarc
@@ -182,6 +190,8 @@ suites:
     functions:
       - name: testLabOnTestMatrixCompleted
         trigger: onTestMatrixCompleted
+        decorator: on_test_matrix_completed
+        collection: testLabOnTestMatrixCompletedTests
 
   # V2 Remote Config triggers
   - name: v2_remoteconfig
@@ -191,3 +201,5 @@ suites:
     functions:
       - name: remoteConfigOnConfigUpdated
         trigger: onConfigUpdated
+        decorator: on_config_updated
+        collection: remoteConfigOnConfigUpdatedTests

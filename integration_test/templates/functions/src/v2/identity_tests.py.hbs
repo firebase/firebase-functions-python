@@ -1,0 +1,46 @@
+"""
+Identity trigger tests for v2
+Test Run ID: {{testRunId}}
+"""
+
+import os
+from firebase_admin import firestore
+from firebase_functions import identity_fn
+
+REGION = "{{region}}"
+
+{{#each functions}}
+@identity_fn.{{decorator}}(
+    region=REGION,
+    timeout_sec={{timeout}}
+)
+def {{name}}_{{../testRunId}}(event: identity_fn.AuthBlockingEvent) -> None:
+    """
+    Test function: {{name}}
+    Trigger: {{trigger}}
+    """
+    # Extract uid from event data
+    uid = event.data.uid
+
+    # Get project ID from environment
+    project_id = os.environ.get('PROJECT_ID') or os.environ.get('GCLOUD_PROJECT') or "functions-integration-tests-v2"
+
+    # Prepare context data for storage
+    context_data = {
+        "eventId": event.event_id,
+        "eventType": event.event_type,
+        "timestamp": event.timestamp.isoformat() if hasattr(event.timestamp, 'isoformat') else str(event.timestamp),
+        "resource": {
+            "name": f"projects/{project_id}"
+        }
+    }
+
+    # Store context in Firestore for verification
+    db = firestore.client()
+    collection_name = "{{#if collection}}{{collection}}{{else}}{{name}}{{/if}}"
+    db.collection(collection_name).document(uid).set(context_data)
+
+    # Return None (no modifications to user)
+    return None
+
+{{/each}}

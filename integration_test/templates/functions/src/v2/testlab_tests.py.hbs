@@ -1,0 +1,42 @@
+"""
+Test Lab trigger tests for v2
+Test Run ID: {{testRunId}}
+"""
+
+from firebase_admin import firestore
+from firebase_functions import test_lab_fn
+
+REGION = "{{region}}"
+
+{{#each functions}}
+@test_lab_fn.{{decorator}}(
+    region=REGION,
+    timeout_sec={{timeout}}
+)
+def {{name}}_{{../testRunId}}(event: test_lab_fn.CloudEvent[test_lab_fn.TestMatrixCompletedData]) -> None:
+    """
+    Test function: {{name}}
+    Trigger: {{trigger}}
+    """
+    # Extract test_id from client_info details
+    test_id = event.data.client_info.details.get('testId') if event.data.client_info else None
+
+    if not test_id:
+        print(f"Warning: No testId found in client_info details")
+        return
+
+    # Prepare context data for storage
+    context_data = {
+        "testId": test_id,
+        "id": event.id,
+        "time": event.time.isoformat() if hasattr(event.time, 'isoformat') else str(event.time),
+        "type": event.type,
+        "state": str(event.data.state),
+    }
+
+    # Store context in Firestore for verification
+    db = firestore.client()
+    collection_name = "{{#if collection}}{{collection}}{{else}}{{name}}{{/if}}"
+    db.collection(collection_name).document(test_id).set(context_data)
+
+{{/each}}

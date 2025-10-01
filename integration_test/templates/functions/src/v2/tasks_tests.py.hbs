@@ -1,0 +1,44 @@
+"""
+Task Queue trigger tests for v2
+Test Run ID: {{testRunId}}
+"""
+
+import json
+import uuid
+from firebase_admin import firestore
+from firebase_functions import tasks_fn
+from firebase_functions.https_fn import CallableRequest
+
+REGION = "{{region}}"
+
+{{#each functions}}
+@tasks_fn.{{decorator}}(
+    region=REGION,
+    timeout_sec={{timeout}}
+)
+def {{name}}_{{../testRunId}}(request: CallableRequest) -> None:
+    """
+    Test function: {{name}}
+    Trigger: {{trigger}}
+    """
+    # Extract test_id from request data
+    data = request.data
+    if not data or not isinstance(data, dict) or 'testId' not in data:
+        print(f"Warning: Invalid data structure for tasks onTaskDispatched")
+        return
+
+    test_id = data.get('testId')
+
+    # Prepare context data for storage
+    # Generate a unique ID since CallableRequest doesn't have one
+    context_data = {
+        "id": str(uuid.uuid4()),
+        "data": json.dumps(data) if data else "{}",
+    }
+
+    # Store context in Firestore for verification
+    db = firestore.client()
+    collection_name = "{{#if collection}}{{collection}}{{else}}{{name}}{{/if}}"
+    db.collection(collection_name).document(test_id).set(context_data)
+
+{{/each}}
