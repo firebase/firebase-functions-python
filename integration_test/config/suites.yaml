@@ -85,7 +85,10 @@ suites:
     functions:
       - name: pubsubOnMessagePublished
         trigger: onMessagePublished
-        topic: "firebase-functions-pubsub-v2"
+        decorator: on_message_published
+        eventType: messagePublished
+        topic: custom_message_tests
+        collection: pubsubOnMessagePublishedTests
 
   # V2 Storage triggers
   - name: v2_storage
@@ -157,7 +160,9 @@ suites:
     functions:
       - name: eventarcOnCustomEventPublished
         trigger: onCustomEventPublished
-        eventType: "test.event.v1"
+        decorator: on_custom_event_published
+        eventType: achieved-leaderboard
+        collection: eventarcOnCustomEventPublishedTests
 
   # V2 Alerts triggers
   - name: v2_alerts
