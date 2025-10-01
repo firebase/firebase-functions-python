@@ -17,7 +17,7 @@ REGION = "{{region}}"
     region=REGION,
     timeout_sec={{timeout}}
 )
-def {{name}}_{{../testRunId}}(event: {{#if (or (eq trigger "onValueUpdated") (eq trigger "onValueWritten"))}}db_fn.Event[Change[Any | None]]{{else}}db_fn.Event[Any | None]{{/if}}) -> None:
+def {{name}}{{../testRunId}}(event: {{#if (or (eq trigger "onValueUpdated") (eq trigger "onValueWritten"))}}db_fn.Event[Change[Any | None]]{{else}}db_fn.Event[Any | None]{{/if}}) -> None:
     """
     Test function: {{name}}
     Trigger: {{trigger}}

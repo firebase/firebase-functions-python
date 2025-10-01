@@ -15,7 +15,7 @@ REGION = "{{region}}"
     region=REGION,
     timeout_sec={{timeout}}
 )
-def {{name}}_{{../testRunId}}(event: {{#if (or (eq trigger "onDocumentUpdated") (eq trigger "onDocumentWritten"))}}firestore_fn.Event[firestore_fn.Change[firestore_fn.DocumentSnapshot]]{{else}}firestore_fn.Event[firestore_fn.DocumentSnapshot]{{/if}}) -> None:
+def {{name}}{{../testRunId}}(event: {{#if (or (eq trigger "onDocumentUpdated") (eq trigger "onDocumentWritten"))}}firestore_fn.Event[firestore_fn.Change[firestore_fn.DocumentSnapshot]]{{else}}firestore_fn.Event[firestore_fn.DocumentSnapshot]{{/if}}) -> None:
     """
     Test function: {{name}}
     Trigger: {{trigger}}

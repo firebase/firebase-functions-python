@@ -14,7 +14,7 @@ REGION = "{{region}}"
     region=REGION,
     timeout_sec={{timeout}}
 )
-def {{name}}_{{../testRunId}}(event: storage_fn.CloudEvent[storage_fn.StorageObjectData]) -> None:
+def {{name}}{{../testRunId}}(event: storage_fn.CloudEvent[storage_fn.StorageObjectData]) -> None:
     """
     Test function: {{name}}
     Trigger: {{trigger}}

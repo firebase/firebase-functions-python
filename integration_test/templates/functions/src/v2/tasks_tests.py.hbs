@@ -16,7 +16,7 @@ REGION = "{{region}}"
     region=REGION,
     timeout_sec={{timeout}}
 )
-def {{name}}_{{../testRunId}}(request: CallableRequest) -> None:
+def {{name}}{{../testRunId}}(request: CallableRequest) -> None:
     """
     Test function: {{name}}
     Trigger: {{trigger}}

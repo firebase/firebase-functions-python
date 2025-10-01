@@ -15,7 +15,7 @@ REGION = "{{region}}"
     region=REGION,
     timeout_sec={{timeout}}
 )
-def {{name}}_{{../testRunId}}(event: eventarc_fn.CloudEvent) -> None:
+def {{name}}{{../testRunId}}(event: eventarc_fn.CloudEvent) -> None:
     """
     Test function: {{name}}
     Trigger: {{trigger}}

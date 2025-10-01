@@ -13,7 +13,7 @@ REGION = "{{region}}"
     region=REGION,
     timeout_sec={{timeout}}
 )
-def {{name}}_{{../testRunId}}(event: remote_config_fn.CloudEvent[remote_config_fn.ConfigUpdateData]) -> None:
+def {{name}}{{../testRunId}}(event: remote_config_fn.CloudEvent[remote_config_fn.ConfigUpdateData]) -> None:
     """
     Test function: {{name}}
     Trigger: {{trigger}}

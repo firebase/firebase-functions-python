@@ -13,7 +13,7 @@ REGION = "{{region}}"
     region=REGION,
     timeout_sec={{timeout}}
 )
-def {{name}}_{{../testRunId}}(event: test_lab_fn.CloudEvent[test_lab_fn.TestMatrixCompletedData]) -> None:
+def {{name}}{{../testRunId}}(event: test_lab_fn.CloudEvent[test_lab_fn.TestMatrixCompletedData]) -> None:
     """
     Test function: {{name}}
     Trigger: {{trigger}}

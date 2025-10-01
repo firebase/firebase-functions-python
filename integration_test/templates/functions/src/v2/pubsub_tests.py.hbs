@@ -15,7 +15,7 @@ REGION = "{{region}}"
     region=REGION,
     timeout_sec={{timeout}}
 )
-def {{name}}_{{../testRunId}}(event: pubsub_fn.CloudEvent[pubsub_fn.MessagePublishedData[dict]]) -> None:
+def {{name}}{{../testRunId}}(event: pubsub_fn.CloudEvent[pubsub_fn.MessagePublishedData[dict]]) -> None:
     """
     Test function: {{name}}
     Trigger: {{trigger}}

@@ -223,7 +223,7 @@ export async function generateFunctions(suitePatterns, options = {}) {
         version,
         projectId: suite.projectId,
         region: suite.region,
-        functions: suite.functions.map((f) => `${f.name}_${testRunId}`),
+        functions: suite.functions.map((f) => `${f.name}${testRunId}`),
       });
     }
   }
