@@ -827,6 +827,7 @@ class TestRunner {
             // Function names from firebase functions:list are just the name, no region suffix
             const functionName = func.trim();
             const region = DEFAULT_REGION;
+            let deleted = false;
 
             this.log(`   Deleting function: ${functionName} in region: ${region}`, "warn");
 
@@ -836,21 +837,63 @@ class TestRunner {
                 `firebase functions:delete ${functionName} --project ${projectId} --region ${region} --force`,
                 { silent: true }
               );
-              this.log(`   ✅ Deleted via Firebase CLI: ${functionName}`);
+
+              // Verify the function was actually deleted
+              this.log(`   Verifying deletion of ${functionName}...`, "info");
+              try {
+                const listResult = await this.exec(
+                  `firebase functions:list --project ${projectId}`,
+                  { silent: true }
+                );
+
+                // Check if function still exists in the list
+                const functionStillExists = listResult.stdout.includes(functionName);
+
+                if (!functionStillExists) {
+                  this.log(`   ✅ Verified: Function deleted via Firebase CLI: ${functionName}`, "success");
+                  deleted = true;
+                } else {
+                  this.log(`   ⚠️ Function still exists after Firebase CLI delete: ${functionName}`, "warn");
+                }
+              } catch (listError) {
+                // If we can't list functions, assume deletion worked
+                this.log(`   ✅ Deleted via Firebase CLI (unverified): ${functionName}`, "success");
+                deleted = true;
+              }
             } catch (firebaseError) {
-              // If Firebase CLI fails, try gcloud as fallback
-              this.log(`   Firebase CLI failed, trying gcloud for: ${functionName}`, "warn");
+              this.log(`   ⚠️ Firebase CLI delete failed for ${functionName}: ${firebaseError.message}`, "warn");
+            }
+
+            // If not deleted yet, try gcloud as fallback
+            if (!deleted) {
+              this.log(`   Trying gcloud for: ${functionName}`, "warn");
               try {
                 await this.exec(
                   `gcloud functions delete ${functionName} --region=${region} --project=${projectId} --quiet`,
                   { silent: true }
                 );
-                this.log(`   ✅ Deleted via gcloud: ${functionName}`);
+
+                // Verify deletion
+                try {
+                  await this.exec(
+                    `gcloud functions describe ${functionName} --region=${region} --project=${projectId}`,
+                    { silent: true }
+                  );
+                  // If describe succeeds, function still exists
+                  this.log(`   ⚠️ Function still exists after gcloud delete: ${functionName}`, "warn");
+                } catch {
+                  // If describe fails, function was deleted
+                  this.log(`   ✅ Deleted via gcloud: ${functionName}`, "success");
+                  deleted = true;
+                }
               } catch (gcloudError) {
                 this.log(`   ❌ Failed to delete: ${functionName}`, "error");
-                this.log(`   Firebase error: ${firebaseError.message}`, "error");
                 this.log(`   Gcloud error: ${gcloudError.message}`, "error");
               }
+            }
+
+            if (!deleted) {
+              this.log(`   ❌ Failed to delete function ${functionName} via any method`, "error");
             }
           } catch (e) {
             this.log(`   ❌ Unexpected error deleting ${func}: ${e.message}`, "error");
