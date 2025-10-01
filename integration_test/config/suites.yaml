@@ -23,18 +23,26 @@ suites:
     functions:
       - name: firestoreOnDocumentCreated
         trigger: onDocumentCreated
+        decorator: on_document_created
+        eventType: created
         document: "tests/{testId}"
         collection: firestoreOnDocumentCreatedTests
       - name: firestoreOnDocumentDeleted
         trigger: onDocumentDeleted
+        decorator: on_document_deleted
+        eventType: deleted
         document: "tests/{testId}"
         collection: firestoreOnDocumentDeletedTests
       - name: firestoreOnDocumentUpdated
         trigger: onDocumentUpdated
+        decorator: on_document_updated
+        eventType: updated
         document: "tests/{testId}"
         collection: firestoreOnDocumentUpdatedTests
       - name: firestoreOnDocumentWritten
         trigger: onDocumentWritten
+        decorator: on_document_written
+        eventType: written
         document: "tests/{testId}"
         collection: firestoreOnDocumentWrittenTests
 
@@ -46,18 +54,26 @@ suites:
     functions:
       - name: databaseOnValueCreated
         trigger: onValueCreated
+        decorator: on_value_created
+        eventType: created
         path: "databaseCreatedTests/{testId}/start"
         collection: databaseCreatedTests
       - name: databaseOnValueDeleted
         trigger: onValueDeleted
+        decorator: on_value_deleted
+        eventType: deleted
         path: "databaseDeletedTests/{testId}/start"
         collection: databaseDeletedTests
       - name: databaseOnValueUpdated
         trigger: onValueUpdated
+        decorator: on_value_updated
+        eventType: updated
         path: "databaseUpdatedTests/{testId}/start"
         collection: databaseUpdatedTests
       - name: databaseOnValueWritten
         trigger: onValueWritten
+        decorator: on_value_written
+        eventType: written
         path: "databaseWrittenTests/{testId}/start"
         collection: databaseWrittenTests
 
@@ -79,16 +95,28 @@ suites:
     functions:
       - name: storageOnObjectArchived
         trigger: onObjectArchived
-        bucket: "{{projectId}}.appspot.com"
+        decorator: on_object_archived
+        eventType: archived
+        bucket: functions-integration-tests-v2.firebasestorage.app
+        collection: storageOnObjectArchivedTests
       - name: storageOnObjectDeleted
         trigger: onObjectDeleted
-        bucket: "{{projectId}}.appspot.com"
+        decorator: on_object_deleted
+        eventType: deleted
+        bucket: functions-integration-tests-v2.firebasestorage.app
+        collection: storageOnObjectDeletedTests
       - name: storageOnObjectFinalized
         trigger: onObjectFinalized
-        bucket: "{{projectId}}.appspot.com"
+        decorator: on_object_finalized
+        eventType: finalized
+        bucket: functions-integration-tests-v2.firebasestorage.app
+        collection: storageOnObjectFinalizedTests
       - name: storageOnObjectMetadataUpdated
         trigger: onObjectMetadataUpdated
-        bucket: "{{projectId}}.appspot.com"
+        decorator: on_object_metadata_updated
+        eventType: metadataUpdated
+        bucket: functions-integration-tests-v2.firebasestorage.app
+        collection: storageOnObjectMetadataUpdatedTests
 
   # V2 Scheduler triggers
   - name: v2_scheduler

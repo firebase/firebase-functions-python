@@ -12,7 +12,7 @@ from typing import Any
 REGION = "{{region}}"
 
 {{#each functions}}
-@db_fn.on_value_{{pythonTrigger trigger}}(
+@db_fn.{{decorator}}(
     reference="{{path}}",
     region=REGION,
     timeout_sec={{timeout}}
@@ -36,7 +36,7 @@ def {{name}}_{{../testRunId}}(event: {{#if (or (eq trigger "onValueUpdated") (eq
     context_data = {
         "id": event.id,
         "time": event.time,
-        "type": f"google.firebase.database.ref.v1.{{pythonTrigger trigger}}",
+        "type": f"google.firebase.database.ref.v1.{{eventType}}",
         "source": event.source,
         "resource": {
             "name": event.reference

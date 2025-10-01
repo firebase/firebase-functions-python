@@ -25,23 +25,6 @@ Handlebars.registerHelper("unless", function (conditional, options) {
   return options.inverse(this);
 });
 
-// Python-specific trigger name mapping
-// Converts trigger names like "onDocumentCreated" or "onCreate" to "created"
-Handlebars.registerHelper("pythonTrigger", function(trigger) {
-  // Extract the action verb (last camelCase component after "on")
-  // Examples:
-  //   onDocumentCreated -> Created -> created
-  //   onValueDeleted -> Deleted -> deleted
-  //   onObjectFinalized -> Finalized -> finalized
-  //   beforeUserCreated -> Created -> created
-  const match = trigger.match(/(?:on|before)[A-Z][a-z]*([A-Z][a-z]+(?:ed|n))$/);
-  if (match) {
-    return match[1].toLowerCase();
-  }
-  // Fallback: just remove "on" and lowercase
-  return trigger.replace(/^on/, "").toLowerCase();
-});
-
 /**
  * Generate Python Firebase Functions from templates
  * @param {string[]} suitePatterns - Array of suite names or patterns

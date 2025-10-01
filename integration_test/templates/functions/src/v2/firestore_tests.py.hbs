@@ -10,7 +10,7 @@ from utils import sanitize_data
 REGION = "{{region}}"
 
 {{#each functions}}
-@firestore_fn.on_document_{{pythonTrigger trigger}}(
+@firestore_fn.{{decorator}}(
     document="{{document}}",
     region=REGION,
     timeout_sec={{timeout}}
@@ -27,7 +27,7 @@ def {{name}}_{{../testRunId}}(event: {{#if (or (eq trigger "onDocumentUpdated") 
     context_data = {
         "id": event.id,
         "time": event.time,
-        "type": f"google.cloud.firestore.document.v1.{{pythonTrigger trigger}}",
+        "type": f"google.cloud.firestore.document.v1.{{eventType}}",
         "source": event.source,
         "resource": {
             "name": f"projects/{event.project}/databases/{event.database}/documents/{event.document}"

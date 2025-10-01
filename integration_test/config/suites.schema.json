@@ -211,6 +211,18 @@
                   "description": "Trigger type for the function",
                   "minLength": 1
                 },
+                "decorator": {
+                  "type": "string",
+                  "description": "Python decorator name (e.g., on_document_created, on_value_deleted)",
+                  "pattern": "^[a-z_]+$",
+                  "examples": ["on_document_created", "on_value_created", "on_object_archived"]
+                },
+                "eventType": {
+                  "type": "string",
+                  "description": "Event type suffix for CloudEvent type field (e.g., created, deleted, metadataUpdated)",
+                  "minLength": 1,
+                  "examples": ["created", "deleted", "updated", "written", "metadataUpdated", "archived", "finalized"]
+                },
                 "type": {
                   "type": "string",
                   "description": "Type field for identity platform functions",
@@ -253,10 +265,6 @@
                 "alertType": {
                   "type": "string",
                   "description": "Type of alert for alert triggers"
-                },
-                "eventType": {
-                  "type": "string",
-                  "description": "Event type for EventArc triggers"
                 },
                 "database": {
                   "type": "string",
