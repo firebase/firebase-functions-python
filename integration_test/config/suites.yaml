@@ -181,7 +181,7 @@ suites:
     functions:
       - name: alertsOnAlertPublished
         trigger: onAlertPublished
-        alertType: "billing.planAutomatedUpdatePublished"
+        alertType: "billing.planAutomatedUpdate"
 
   # V2 Test Lab triggers
   - name: v2_testlab

@@ -596,46 +596,14 @@ class TestRunner {
 
       // If not deleted yet, try alternative methods
       if (!deleted) {
-        // For v2 functions, try to delete the Cloud Run service directly
+        // For v2 functions, use gcloud functions delete with --gen2 flag
         if (metadata.projectId === "functions-integration-tests-v2") {
-          this.log(`   Attempting Cloud Run service deletion for v2 function...`, "warn");
-          // Cloud Run service names are lowercase
-          const cloudRunServiceName = functionName.toLowerCase();
-          try {
-            await this.exec(
-              `gcloud run services delete ${cloudRunServiceName} --region=${
-                metadata.region || DEFAULT_REGION
-              } --project=${metadata.projectId} --quiet`,
-              { silent: true }
-            );
-
-            // Verify deletion
-            try {
-              await this.exec(
-                `gcloud run services describe ${cloudRunServiceName} --region=${
-                  metadata.region || DEFAULT_REGION
-                } --project=${metadata.projectId}`,
-                { silent: true }
-              );
-              // If describe succeeds, function still exists
-              this.log(`   ⚠️ Cloud Run service still exists after deletion: ${functionName}`, "warn");
-            } catch {
-              // If describe fails, function was deleted
-              this.log(`   ✅ Deleted function as Cloud Run service: ${functionName}`, "success");
-              deleted = true;
-            }
-          } catch (runError) {
-            this.log(`   ⚠️ Cloud Run delete failed: ${runError.message}`, "warn");
-          }
-        }
-
-        // If still not deleted, try gcloud functions delete as last resort
-        if (!deleted) {
+          this.log(`   Attempting gcloud functions delete with --gen2 flag...`, "warn");
           try {
             await this.exec(
               `gcloud functions delete ${functionName} --region=${
                 metadata.region || DEFAULT_REGION
-              } --project=${metadata.projectId} --quiet`,
+              } --project=${metadata.projectId} --gen2 --quiet`,
               { silent: true }
             );
 
@@ -644,7 +612,7 @@ class TestRunner {
               await this.exec(
                 `gcloud functions describe ${functionName} --region=${
                   metadata.region || DEFAULT_REGION
-                } --project=${metadata.projectId}`,
+                } --project=${metadata.projectId} --gen2`,
                 { silent: true }
               );
               // If describe succeeds, function still exists
@@ -652,7 +620,7 @@ class TestRunner {
               deleted = false;
             } catch {
               // If describe fails, function was deleted
-              this.log(`   ✅ Deleted function via gcloud: ${functionName}`, "success");
+              this.log(`   ✅ Deleted function via gcloud gen2: ${functionName}`, "success");
               deleted = true;
             }
           } catch (e) {
