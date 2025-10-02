@@ -599,9 +599,11 @@ class TestRunner {
         // For v2 functions, try to delete the Cloud Run service directly
         if (metadata.projectId === "functions-integration-tests-v2") {
           this.log(`   Attempting Cloud Run service deletion for v2 function...`, "warn");
+          // Cloud Run service names are lowercase
+          const cloudRunServiceName = functionName.toLowerCase();
           try {
             await this.exec(
-              `gcloud run services delete ${functionName} --region=${
+              `gcloud run services delete ${cloudRunServiceName} --region=${
                 metadata.region || DEFAULT_REGION
               } --project=${metadata.projectId} --quiet`,
               { silent: true }
@@ -610,7 +612,7 @@ class TestRunner {
             // Verify deletion
             try {
               await this.exec(
-                `gcloud run services describe ${functionName} --region=${
+                `gcloud run services describe ${cloudRunServiceName} --region=${
                   metadata.region || DEFAULT_REGION
                 } --project=${metadata.projectId}`,
                 { silent: true }

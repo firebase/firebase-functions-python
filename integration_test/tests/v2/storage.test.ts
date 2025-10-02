@@ -1,9 +1,10 @@
-import * as admin from "firebase-admin";
+import { getFirestore, DocumentData } from "firebase-admin/firestore";
+import { getStorage } from "firebase-admin/storage";
 import { initializeFirebase } from "../firebaseSetup";
 import { retry, timeout } from "../utils";
 
 async function uploadBufferToFirebase(buffer: Buffer, fileName: string) {
-  const bucket = admin.storage().bucket();
+  const bucket = getStorage().bucket();
 
   const file = bucket.file(fileName);
   await file.save(buffer, {
@@ -25,13 +26,13 @@ describe("Firebase Storage (v2)", () => {
   });
 
   afterAll(async () => {
-    await admin.firestore().collection("storageOnObjectFinalizedTests").doc(testId).delete();
-    await admin.firestore().collection("storageOnObjectDeletedTests").doc(testId).delete();
-    await admin.firestore().collection("storageOnObjectMetadataUpdatedTests").doc(testId).delete();
+    await getFirestore().collection("storageOnObjectFinalizedTests").doc(testId).delete();
+    await getFirestore().collection("storageOnObjectDeletedTests").doc(testId).delete();
+    await getFirestore().collection("storageOnObjectMetadataUpdatedTests").doc(testId).delete();
   });
 
   describe("onObjectFinalized trigger", () => {
-    let loggedContext: admin.firestore.DocumentData | undefined;
+    let loggedContext: DocumentData | undefined;
 
     beforeAll(async () => {
       const testContent = testId;
@@ -40,8 +41,7 @@ describe("Firebase Storage (v2)", () => {
       await uploadBufferToFirebase(buffer, testId + ".txt");
 
       loggedContext = await retry(() =>
-        admin
-          .firestore()
+        getFirestore()
           .collection("storageOnObjectFinalizedTests")
           .doc(testId)
           .get()
@@ -50,8 +50,7 @@ describe("Firebase Storage (v2)", () => {
     });
 
     afterAll(async () => {
-      const file = admin
-        .storage()
+      const file = getStorage()
         .bucket()
         .file(testId + ".txt");
 
@@ -75,7 +74,7 @@ describe("Firebase Storage (v2)", () => {
   });
 
   describe("onDeleted trigger", () => {
-    let loggedContext: admin.firestore.DocumentData | undefined;
+    let loggedContext: DocumentData | undefined;
 
     beforeAll(async () => {
       const testContent = testId;
@@ -85,15 +84,13 @@ describe("Firebase Storage (v2)", () => {
 
       await timeout(5000); // Short delay before delete
 
-      const file = admin
-        .storage()
+      const file = getStorage()
         .bucket()
         .file(testId + ".txt");
       await file.delete();
 
       loggedContext = await retry(() =>
-        admin
-          .firestore()
+        getFirestore()
           .collection("storageOnObjectDeletedTests")
           .doc(testId)
           .get()
@@ -115,7 +112,7 @@ describe("Firebase Storage (v2)", () => {
   });
 
   describe("onMetadataUpdated trigger", () => {
-    let loggedContext: admin.firestore.DocumentData | undefined;
+    let loggedContext: DocumentData | undefined;
 
     beforeAll(async () => {
       const testContent = testId;
@@ -124,15 +121,13 @@ describe("Firebase Storage (v2)", () => {
       await uploadBufferToFirebase(buffer, testId + ".txt");
 
       // Trigger metadata update
-      const file = admin
-        .storage()
+      const file = getStorage()
         .bucket()
         .file(testId + ".txt");
       await file.setMetadata({ contentType: "application/json" });
 
       loggedContext = await retry(() =>
-        admin
-          .firestore()
+        getFirestore()
           .collection("storageOnObjectMetadataUpdatedTests")
           .doc(testId)
           .get()
@@ -141,8 +136,7 @@ describe("Firebase Storage (v2)", () => {
     });
 
     afterAll(async () => {
-      const file = admin
-        .storage()
+      const file = getStorage()
         .bucket()
         .file(testId + ".txt");
 

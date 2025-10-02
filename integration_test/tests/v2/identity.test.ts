@@ -1,4 +1,6 @@
 import * as admin from "firebase-admin";
+import { getFirestore, DocumentData } from "firebase-admin/firestore";
+import { getAuth as getAdminAuth } from "firebase-admin/auth";
 import { retry } from "../utils";
 import { initializeApp } from "firebase/app";
 import { initializeFirebase } from "../firebaseSetup";
@@ -32,11 +34,11 @@ describe("Firebase Identity (v2)", () => {
 
   afterAll(async () => {
     for (const userId of userIds) {
-      await admin.firestore().collection("userProfiles").doc(userId).delete();
-      await admin.firestore().collection("authUserOnCreateTests").doc(userId).delete();
-      await admin.firestore().collection("authUserOnDeleteTests").doc(userId).delete();
-      await admin.firestore().collection("authBeforeCreateTests").doc(userId).delete();
-      await admin.firestore().collection("authBeforeSignInTests").doc(userId).delete();
+      await getFirestore().collection("userProfiles").doc(userId).delete();
+      await getFirestore().collection("authUserOnCreateTests").doc(userId).delete();
+      await getFirestore().collection("authUserOnDeleteTests").doc(userId).delete();
+      await getFirestore().collection("authBeforeCreateTests").doc(userId).delete();
+      await getFirestore().collection("authBeforeSignInTests").doc(userId).delete();
     }
   });
   describe("beforeUserCreated trigger", () => {
@@ -53,8 +55,7 @@ describe("Firebase Identity (v2)", () => {
       userIds.push(userRecord.user.uid);
 
       loggedContext = await retry(() =>
-        admin
-          .firestore()
+        getFirestore()
           .collection("identityBeforeUserCreatedTests")
           .doc(userRecord.user.uid)
           .get()
@@ -63,7 +64,7 @@ describe("Firebase Identity (v2)", () => {
     });
 
     afterAll(async () => {
-      await admin.auth().deleteUser(userRecord.user.uid);
+      await getAdminAuth().deleteUser(userRecord.user.uid);
     });
 
     it("should have a project as resource", () => {
@@ -87,7 +88,7 @@ describe("Firebase Identity (v2)", () => {
 
   describe("identityBeforeUserSignedInTests trigger", () => {
     let userRecord: UserCredential;
-    let loggedContext: admin.firestore.DocumentData | undefined;
+    let loggedContext: DocumentData | undefined;
 
     beforeAll(async () => {
       userRecord = await createUserWithEmailAndPassword(
@@ -99,8 +100,7 @@ describe("Firebase Identity (v2)", () => {
       userIds.push(userRecord.user.uid);
 
       loggedContext = await retry(() =>
-        admin
-          .firestore()
+        getFirestore()
           .collection("identityBeforeUserSignedInTests")
           .doc(userRecord.user.uid)
           .get()
@@ -109,7 +109,7 @@ describe("Firebase Identity (v2)", () => {
     });
 
     afterAll(async () => {
-      await admin.auth().deleteUser(userRecord.user.uid);
+      await getAdminAuth().deleteUser(userRecord.user.uid);
     });
 
     it("should have a project as resource", () => {

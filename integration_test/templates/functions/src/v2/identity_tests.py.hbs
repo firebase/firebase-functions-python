@@ -26,9 +26,11 @@ def {{name}}{{../testRunId}}(event: identity_fn.AuthBlockingEvent) -> None:
     project_id = os.environ.get('PROJECT_ID') or os.environ.get('GCLOUD_PROJECT') or "functions-integration-tests-v2"
 
     # Prepare context data for storage
+    # Note: Python SDK doesn't append sign-in method to event_type, so we do it manually
+    full_event_type = f"{event.event_type}:{event.credential.sign_in_method}" if event.credential else event.event_type
     context_data = {
         "eventId": event.event_id,
-        "eventType": event.event_type,
+        "eventType": full_event_type,
         "timestamp": event.timestamp.isoformat() if hasattr(event.timestamp, 'isoformat') else str(event.timestamp),
         "resource": {
             "name": f"projects/{project_id}"

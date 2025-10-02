@@ -1,5 +1,5 @@
 import { CloudTasksClient } from "@google-cloud/tasks";
-import * as admin from "firebase-admin";
+import { getStorage } from "firebase-admin/storage";
 
 export const timeout = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -162,7 +162,7 @@ async function createTestMatrix(
     },
     resultStorage: {
       googleCloudStorage: {
-        gcsPath: "gs://" + admin.storage().bucket().name,
+        gcsPath: "gs://" + getStorage().bucket().name,
       },
     },
     clientInfo: {

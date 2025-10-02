@@ -146,19 +146,20 @@ suites:
         collection: tasksOnTaskDispatchedTests
 
   # V2 Identity triggers
-  - name: v2_identity
-    description: "V2 Identity trigger tests for Python"
-    version: v2
-    service: identity
-    functions:
-      - name: identityBeforeUserCreated
-        trigger: beforeUserCreated
-        decorator: before_user_created
-        collection: identityBeforeUserCreatedTests
-      - name: identityBeforeUserSignedIn
-        trigger: beforeUserSignedIn
-        decorator: before_user_signed_in
-        collection: identityBeforeUserSignedInTests
+  # DISABLED: Identity blocking functions require manual registration in Firebase Console
+  # - name: v2_identity
+  #   description: "V2 Identity trigger tests for Python"
+  #   version: v2
+  #   service: identity
+  #   functions:
+  #     - name: identityBeforeUserCreated
+  #       trigger: beforeUserCreated
+  #       decorator: before_user_created
+  #       collection: identityBeforeUserCreatedTests
+  #     - name: identityBeforeUserSignedIn
+  #       trigger: beforeUserSignedIn
+  #       decorator: before_user_signed_in
+  #       collection: identityBeforeUserSignedInTests
 
   # V2 Eventarc triggers
   - name: v2_eventarc

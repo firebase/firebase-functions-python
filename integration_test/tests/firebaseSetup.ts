@@ -34,6 +34,7 @@ export function initializeFirebase(): admin.app.App {
     } catch (error) {
       console.error("Error initializing Firebase:", error);
       console.error("PROJECT_ID:", process.env.PROJECT_ID);
+      throw error;
     }
   }
   return admin.app();

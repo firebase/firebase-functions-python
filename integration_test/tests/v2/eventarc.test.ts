@@ -1,4 +1,4 @@
-import * as admin from "firebase-admin";
+import { getFirestore, DocumentData } from "firebase-admin/firestore";
 import { initializeFirebase } from "../firebaseSetup";
 import { CloudEvent, getEventarc } from "firebase-admin/eventarc";
 import { retry } from "../utils";
@@ -17,11 +17,11 @@ describe("Eventarc (v2)", () => {
   });
 
   afterAll(async () => {
-    await admin.firestore().collection("eventarcOnCustomEventPublishedTests").doc(testId).delete();
+    await getFirestore().collection("eventarcOnCustomEventPublishedTests").doc(testId).delete();
   });
 
   describe("onCustomEventPublished trigger", () => {
-    let loggedContext: admin.firestore.DocumentData | undefined;
+    let loggedContext: DocumentData | undefined;
 
     beforeAll(async () => {
       const cloudEvent: CloudEvent = {
@@ -36,8 +36,7 @@ describe("Eventarc (v2)", () => {
       await getEventarc().channel(`locations/${region}/channels/firebase`).publish(cloudEvent);
 
       loggedContext = await retry(() =>
-        admin
-          .firestore()
+        getFirestore()
           .collection("eventarcOnCustomEventPublishedTests")
           .doc(testId)
           .get()

@@ -1,4 +1,4 @@
-import * as admin from "firebase-admin";
+import { getFirestore, DocumentData } from "firebase-admin/firestore";
 import { retry } from "../utils";
 import { PubSub } from "@google-cloud/pubsub";
 import { initializeFirebase } from "../firebaseSetup";
@@ -28,11 +28,11 @@ describe("Pub/Sub (v2)", () => {
   });
 
   afterAll(async () => {
-    await admin.firestore().collection("pubsubOnMessagePublishedTests").doc(testId).delete();
+    await getFirestore().collection("pubsubOnMessagePublishedTests").doc(testId).delete();
   });
 
   describe("onMessagePublished trigger", () => {
-    let loggedContext: admin.firestore.DocumentData | undefined;
+    let loggedContext: DocumentData | undefined;
 
     beforeAll(async () => {
       const serviceAccount = await import(serviceAccountPath);
@@ -44,8 +44,7 @@ describe("Pub/Sub (v2)", () => {
       await topic.publish(Buffer.from(JSON.stringify({ testId })));
 
       loggedContext = await retry(() =>
-        admin
-          .firestore()
+        getFirestore()
           .collection("pubsubOnMessagePublishedTests")
           .doc(testId)
           .get()

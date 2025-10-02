@@ -1,0 +1,180 @@
+"""
+Alerts trigger tests for v2
+Test Run ID: {{testRunId}}
+"""
+
+from firebase_functions import alerts_fn
+
+REGION = "{{region}}"
+
+# TODO: All this does is test that the function is deployable.
+# Since you cannot directly trigger alerts in a CI environment, we cannot test
+# the internals without mocking.
+
+{{#each functions}}
+{{#if (eq trigger "onAlertPublished")}}
+@alerts_fn.on_alert_published(
+    alert_type="{{alertType}}",
+    region=REGION,
+    timeout_sec={{timeout}}
+)
+def {{name}}{{../testRunId}}(event: alerts_fn.AlertEvent) -> None:
+    """
+    Test function: {{name}}
+    Trigger: {{trigger}}
+    Alert Type: {{alertType}}
+    """
+    # Since we cannot trigger alerts in CI, this just tests deployability
+    # In a real implementation, you would:
+    # test_id = event.data.get("testId")
+    # db = firestore.client()
+    # db.collection("{{name}}").document(test_id).set({
+    #     "event": str(event)
+    # })
+    pass
+
+{{/if}}
+{{#if (eq trigger "onInAppFeedbackPublished")}}
+@alerts_fn.on_in_app_feedback_published(
+    region=REGION,
+    timeout_sec={{timeout}}
+)
+def {{name}}{{../testRunId}}(event: alerts_fn.AlertEvent) -> None:
+    """
+    Test function: {{name}}
+    Trigger: {{trigger}}
+    """
+    pass
+
+{{/if}}
+{{#if (eq trigger "onNewTesterIosDevicePublished")}}
+@alerts_fn.on_new_tester_ios_device_published(
+    region=REGION,
+    timeout_sec={{timeout}}
+)
+def {{name}}{{../testRunId}}(event: alerts_fn.AlertEvent) -> None:
+    """
+    Test function: {{name}}
+    Trigger: {{trigger}}
+    """
+    pass
+
+{{/if}}
+{{#if (eq trigger "onPlanAutomatedUpdatePublished")}}
+@alerts_fn.on_plan_automated_update_published(
+    region=REGION,
+    timeout_sec={{timeout}}
+)
+def {{name}}{{../testRunId}}(event: alerts_fn.AlertEvent) -> None:
+    """
+    Test function: {{name}}
+    Trigger: {{trigger}}
+    """
+    pass
+
+{{/if}}
+{{#if (eq trigger "onPlanUpdatePublished")}}
+@alerts_fn.on_plan_update_published(
+    region=REGION,
+    timeout_sec={{timeout}}
+)
+def {{name}}{{../testRunId}}(event: alerts_fn.AlertEvent) -> None:
+    """
+    Test function: {{name}}
+    Trigger: {{trigger}}
+    """
+    pass
+
+{{/if}}
+{{#if (eq trigger "onNewAnrIssuePublished")}}
+@alerts_fn.on_new_anr_issue_published(
+    region=REGION,
+    timeout_sec={{timeout}}
+)
+def {{name}}{{../testRunId}}(event: alerts_fn.AlertEvent) -> None:
+    """
+    Test function: {{name}}
+    Trigger: {{trigger}}
+    """
+    pass
+
+{{/if}}
+{{#if (eq trigger "onNewFatalIssuePublished")}}
+@alerts_fn.on_new_fatal_issue_published(
+    region=REGION,
+    timeout_sec={{timeout}}
+)
+def {{name}}{{../testRunId}}(event: alerts_fn.AlertEvent) -> None:
+    """
+    Test function: {{name}}
+    Trigger: {{trigger}}
+    """
+    pass
+
+{{/if}}
+{{#if (eq trigger "onNewNonfatalIssuePublished")}}
+@alerts_fn.on_new_nonfatal_issue_published(
+    region=REGION,
+    timeout_sec={{timeout}}
+)
+def {{name}}{{../testRunId}}(event: alerts_fn.AlertEvent) -> None:
+    """
+    Test function: {{name}}
+    Trigger: {{trigger}}
+    """
+    pass
+
+{{/if}}
+{{#if (eq trigger "onRegressionAlertPublished")}}
+@alerts_fn.on_regression_alert_published(
+    region=REGION,
+    timeout_sec={{timeout}}
+)
+def {{name}}{{../testRunId}}(event: alerts_fn.AlertEvent) -> None:
+    """
+    Test function: {{name}}
+    Trigger: {{trigger}}
+    """
+    pass
+
+{{/if}}
+{{#if (eq trigger "onStabilityDigestPublished")}}
+@alerts_fn.on_stability_digest_published(
+    region=REGION,
+    timeout_sec={{timeout}}
+)
+def {{name}}{{../testRunId}}(event: alerts_fn.AlertEvent) -> None:
+    """
+    Test function: {{name}}
+    Trigger: {{trigger}}
+    """
+    pass
+
+{{/if}}
+{{#if (eq trigger "onVelocityAlertPublished")}}
+@alerts_fn.on_velocity_alert_published(
+    region=REGION,
+    timeout_sec={{timeout}}
+)
+def {{name}}{{../testRunId}}(event: alerts_fn.AlertEvent) -> None:
+    """
+    Test function: {{name}}
+    Trigger: {{trigger}}
+    """
+    pass
+
+{{/if}}
+{{#if (eq trigger "onThresholdAlertPublished")}}
+@alerts_fn.on_threshold_alert_published(
+    region=REGION,
+    timeout_sec={{timeout}}
+)
+def {{name}}{{../testRunId}}(event: alerts_fn.AlertEvent) -> None:
+    """
+    Test function: {{name}}
+    Trigger: {{trigger}}
+    """
+    pass
+
+{{/if}}
+{{/each}}

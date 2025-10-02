@@ -1,4 +1,5 @@
 import * as admin from "firebase-admin";
+import { getFirestore, DocumentData } from "firebase-admin/firestore";
 import { retry } from "../utils";
 import { initializeFirebase } from "../firebaseSetup";
 
@@ -15,11 +16,11 @@ describe("Firebase Remote Config (v2)", () => {
   });
 
   afterAll(async () => {
-    await admin.firestore().collection("remoteConfigOnConfigUpdatedTests").doc(testId).delete();
+    await getFirestore().collection("remoteConfigOnConfigUpdatedTests").doc(testId).delete();
   });
 
   describe("onUpdated trigger", () => {
-    let loggedContext: admin.firestore.DocumentData | undefined;
+    let loggedContext: DocumentData | undefined;
     let shouldSkip = false;
 
     beforeAll(async () => {
@@ -43,8 +44,7 @@ describe("Firebase Remote Config (v2)", () => {
         }
 
         loggedContext = await retry(() =>
-          admin
-            .firestore()
+          getFirestore()
             .collection("remoteConfigOnConfigUpdatedTests")
             .doc(testId)
             .get()

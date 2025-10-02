@@ -1,4 +1,5 @@
 import * as admin from "firebase-admin";
+import { getFirestore, DocumentData } from "firebase-admin/firestore";
 import { retry } from "../utils";
 import { initializeFirebase } from "../firebaseSetup";
 
@@ -16,11 +17,11 @@ describe("Scheduler", () => {
   });
 
   afterAll(async () => {
-    await admin.firestore().collection("schedulerOnScheduleV2Tests").doc(testId).delete();
+    await getFirestore().collection("schedulerOnScheduleV2Tests").doc(testId).delete();
   });
 
   describe("onSchedule trigger", () => {
-    let loggedContext: admin.firestore.DocumentData | undefined;
+    let loggedContext: DocumentData | undefined;
 
     beforeAll(async () => {
       const accessToken = await admin.credential.applicationDefault().getAccessToken();
@@ -40,8 +41,7 @@ describe("Scheduler", () => {
       }
 
       loggedContext = await retry(() =>
-        admin
-          .firestore()
+        getFirestore()
           .collection("schedulerOnScheduleV2Tests")
           .doc(jobName)
           .get()

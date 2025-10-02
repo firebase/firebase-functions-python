@@ -1,4 +1,4 @@
-import * as admin from "firebase-admin";
+import { getFirestore, DocumentData } from "firebase-admin/firestore";
 import { initializeFirebase } from "../firebaseSetup";
 import { createTask, retry } from "../utils";
 
@@ -29,19 +29,18 @@ describe("Cloud Tasks (v2)", () => {
   });
 
   afterAll(async () => {
-    await admin.firestore().collection("tasksOnTaskDispatchedTests").doc(testId).delete();
+    await getFirestore().collection("tasksOnTaskDispatchedTests").doc(testId).delete();
   });
 
   describe("onDispatch trigger", () => {
-    let loggedContext: admin.firestore.DocumentData | undefined;
+    let loggedContext: DocumentData | undefined;
 
     beforeAll(async () => {
       const url = `https://${region}-${projectId}.cloudfunctions.net/tasksOnTaskDispatchedTests${testId}`;
       await createTask(projectId, queueName, region, url, { data: { testId } });
 
       loggedContext = await retry(() =>
-        admin
-          .firestore()
+        getFirestore()
           .collection("tasksOnTaskDispatchedTests")
           .doc(testId)
           .get()

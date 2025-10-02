@@ -1,4 +1,5 @@
-import * as admin from "firebase-admin";
+import { getFirestore, DocumentData } from "firebase-admin/firestore";
+import { getDatabase } from "firebase-admin/database";
 import { retry } from "../utils";
 import { initializeFirebase } from "../firebaseSetup";
 import { Reference } from "@firebase/database-types";
@@ -27,7 +28,7 @@ describe("Firebase Database (v2)", () => {
 
     for (const collection of collectionsToClean) {
       try {
-        await admin.firestore().collection(collection).doc(testId).delete();
+        await getFirestore().collection(collection).doc(testId).delete();
         console.log(`🗑️ Deleted test document: ${collection}/${testId}`);
       } catch (error) {
         console.log(`ℹ️ No test document to delete: ${collection}/${testId}`);
@@ -36,7 +37,7 @@ describe("Firebase Database (v2)", () => {
   });
 
   async function setupRef(refPath: string) {
-    const ref = admin.database().ref(refPath);
+    const ref = getDatabase().ref(refPath);
     await ref.set({ ".sv": "timestamp" });
     return ref;
   }
@@ -53,8 +54,7 @@ describe("Firebase Database (v2)", () => {
 
   async function getLoggedContext(collectionName: string, testId: string) {
     return retry(() =>
-      admin
-        .firestore()
+      getFirestore()
         .collection(collectionName)
         .doc(testId)
         .get()
@@ -64,7 +64,7 @@ describe("Firebase Database (v2)", () => {
 
   describe("created trigger", () => {
     let ref: Reference;
-    let loggedContext: admin.firestore.DocumentData | undefined;
+    let loggedContext: DocumentData | undefined;
 
     beforeAll(async () => {
       ref = await setupRef(`databaseCreatedTests/${testId}/start`);
@@ -78,18 +78,24 @@ describe("Firebase Database (v2)", () => {
     it("should give refs access to admin data", async () => {
       await ref.parent?.child("adminOnly").update({ allowed: 1 });
 
-      const adminDataSnapshot = await ref.parent?.child("adminOnly").once("value");
+      const adminDataSnapshot = await ref.parent
+        ?.child("adminOnly")
+        .once("value");
       const adminData = adminDataSnapshot?.val();
 
       expect(adminData).toEqual({ allowed: 1 });
     });
 
     it("should have a correct ref url", () => {
-      expect(loggedContext?.url).toMatch(`databaseCreatedTests/${testId}/start`);
+      expect(loggedContext?.url).toMatch(
+        `databaseCreatedTests/${testId}/start`
+      );
     });
 
     it("should have the right event type", () => {
-      expect(loggedContext?.type).toEqual("google.firebase.database.ref.v1.created");
+      expect(loggedContext?.type).toEqual(
+        "google.firebase.database.ref.v1.created"
+      );
     });
 
     it("should have event id", () => {
@@ -103,7 +109,7 @@ describe("Firebase Database (v2)", () => {
 
   describe("deleted trigger", () => {
     let ref: Reference;
-    let loggedContext: admin.firestore.DocumentData | undefined;
+    let loggedContext: DocumentData | undefined;
 
     beforeAll(async () => {
       ref = await setupRef(`databaseDeletedTests/${testId}/start`);
@@ -112,11 +118,15 @@ describe("Firebase Database (v2)", () => {
     });
 
     it("should have a correct ref url", () => {
-      expect(loggedContext?.url).toMatch(`databaseDeletedTests/${testId}/start`);
+      expect(loggedContext?.url).toMatch(
+        `databaseDeletedTests/${testId}/start`
+      );
     });
 
     it("should have the right event type", () => {
-      expect(loggedContext?.type).toEqual("google.firebase.database.ref.v1.deleted");
+      expect(loggedContext?.type).toEqual(
+        "google.firebase.database.ref.v1.deleted"
+      );
     });
 
     it("should have event id", () => {
@@ -130,7 +140,7 @@ describe("Firebase Database (v2)", () => {
 
   describe("updated trigger", () => {
     let ref: Reference;
-    let loggedContext: admin.firestore.DocumentData | undefined;
+    let loggedContext: DocumentData | undefined;
 
     beforeAll(async () => {
       ref = await setupRef(`databaseUpdatedTests/${testId}/start`);
@@ -145,18 +155,24 @@ describe("Firebase Database (v2)", () => {
     it("should give refs access to admin data", async () => {
       await ref.parent?.child("adminOnly").update({ allowed: 1 });
 
-      const adminDataSnapshot = await ref.parent?.child("adminOnly").once("value");
+      const adminDataSnapshot = await ref.parent
+        ?.child("adminOnly")
+        .once("value");
       const adminData = adminDataSnapshot?.val();
 
       expect(adminData).toEqual({ allowed: 1 });
     });
 
     it("should have a correct ref url", () => {
-      expect(loggedContext?.url).toMatch(`databaseUpdatedTests/${testId}/start`);
+      expect(loggedContext?.url).toMatch(
+        `databaseUpdatedTests/${testId}/start`
+      );
     });
 
     it("should have the right event type", () => {
-      expect(loggedContext?.type).toEqual("google.firebase.database.ref.v1.updated");
+      expect(loggedContext?.type).toEqual(
+        "google.firebase.database.ref.v1.updated"
+      );
     });
 
     it("should have event id", () => {
@@ -175,7 +191,7 @@ describe("Firebase Database (v2)", () => {
 
   describe("written trigger", () => {
     let ref: Reference;
-    let loggedContext: admin.firestore.DocumentData | undefined;
+    let loggedContext: DocumentData | undefined;
 
     beforeAll(async () => {
       ref = await setupRef(`databaseWrittenTests/${testId}/start`);
@@ -189,18 +205,24 @@ describe("Firebase Database (v2)", () => {
     it("should give refs access to admin data", async () => {
       await ref.parent?.child("adminOnly").update({ allowed: 1 });
 
-      const adminDataSnapshot = await ref.parent?.child("adminOnly").once("value");
+      const adminDataSnapshot = await ref.parent
+        ?.child("adminOnly")
+        .once("value");
       const adminData = adminDataSnapshot?.val();
 
       expect(adminData).toEqual({ allowed: 1 });
     });
 
     it("should have a correct ref url", () => {
-      expect(loggedContext?.url).toMatch(`databaseWrittenTests/${testId}/start`);
+      expect(loggedContext?.url).toMatch(
+        `databaseWrittenTests/${testId}/start`
+      );
     });
 
     it("should have the right event type", () => {
-      expect(loggedContext?.type).toEqual("google.firebase.database.ref.v1.written");
+      expect(loggedContext?.type).toEqual(
+        "google.firebase.database.ref.v1.written"
+      );
     });
 
     it("should have event id", () => {

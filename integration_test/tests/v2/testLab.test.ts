@@ -1,4 +1,5 @@
 import * as admin from "firebase-admin";
+import { getFirestore, DocumentData } from "firebase-admin/firestore";
 import { retry, startTestRun } from "../utils";
 import { initializeFirebase } from "../firebaseSetup";
 
@@ -15,11 +16,11 @@ describe.skip("TestLab (v2)", () => {
   });
 
   afterAll(async () => {
-    await admin.firestore().collection("testLabOnTestMatrixCompletedTests").doc(testId).delete();
+    await getFirestore().collection("testLabOnTestMatrixCompletedTests").doc(testId).delete();
   });
 
   describe("test matrix onComplete trigger", () => {
-    let loggedContext: admin.firestore.DocumentData | undefined;
+    let loggedContext: DocumentData | undefined;
     let shouldSkip = false;
 
     beforeAll(async () => {
@@ -28,8 +29,7 @@ describe.skip("TestLab (v2)", () => {
         await startTestRun(projectId, testId, accessToken.access_token);
 
         loggedContext = await retry(() =>
-          admin
-            .firestore()
+          getFirestore()
             .collection("testLabOnTestMatrixCompletedTests")
             .doc(testId)
             .get()

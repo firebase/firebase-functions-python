@@ -1,4 +1,4 @@
-import * as admin from "firebase-admin";
+import { getFirestore, DocumentData, DocumentSnapshot, DocumentReference } from "firebase-admin/firestore";
 import { retry } from "../utils";
 import { initializeFirebase } from "../firebaseSetup";
 
@@ -15,25 +15,24 @@ describe("Cloud Firestore (v2)", () => {
   });
 
   afterAll(async () => {
-    await admin.firestore().collection("firestoreOnDocumentCreatedTests").doc(testId).delete();
-    await admin.firestore().collection("firestoreOnDocumentDeletedTests").doc(testId).delete();
-    await admin.firestore().collection("firestoreOnDocumentUpdatedTests").doc(testId).delete();
-    await admin.firestore().collection("firestoreOnDocumentWrittenTests").doc(testId).delete();
+    await getFirestore().collection("firestoreOnDocumentCreatedTests").doc(testId).delete();
+    await getFirestore().collection("firestoreOnDocumentDeletedTests").doc(testId).delete();
+    await getFirestore().collection("firestoreOnDocumentUpdatedTests").doc(testId).delete();
+    await getFirestore().collection("firestoreOnDocumentWrittenTests").doc(testId).delete();
   });
 
   describe("Document created trigger", () => {
-    let loggedContext: admin.firestore.DocumentData | undefined;
-    let dataSnapshot: admin.firestore.DocumentSnapshot<admin.firestore.DocumentData>;
-    let docRef: admin.firestore.DocumentReference<admin.firestore.DocumentData>;
+    let loggedContext: DocumentData | undefined;
+    let dataSnapshot: DocumentSnapshot<DocumentData>;
+    let docRef: DocumentReference<DocumentData>;
 
     beforeAll(async () => {
-      docRef = admin.firestore().collection("tests").doc(testId);
+      docRef = getFirestore().collection("tests").doc(testId);
       await docRef.set({ test: testId });
       dataSnapshot = await docRef.get();
 
       loggedContext = await retry(() =>
-        admin
-          .firestore()
+        getFirestore()
           .collection("firestoreOnDocumentCreatedTests")
           .doc(testId)
           .get()
@@ -74,12 +73,12 @@ describe("Cloud Firestore (v2)", () => {
   });
 
   describe("Document deleted trigger", () => {
-    let loggedContext: admin.firestore.DocumentData | undefined;
-    let dataSnapshot: admin.firestore.DocumentSnapshot<admin.firestore.DocumentData>;
-    let docRef: admin.firestore.DocumentReference<admin.firestore.DocumentData>;
+    let loggedContext: DocumentData | undefined;
+    let dataSnapshot: DocumentSnapshot<DocumentData>;
+    let docRef: DocumentReference<DocumentData>;
 
     beforeAll(async () => {
-      docRef = admin.firestore().collection("tests").doc(testId);
+      docRef = getFirestore().collection("tests").doc(testId);
       await docRef.set({ test: testId });
       dataSnapshot = await docRef.get();
 
@@ -89,8 +88,7 @@ describe("Cloud Firestore (v2)", () => {
       dataSnapshot = await docRef.get();
 
       loggedContext = await retry(() =>
-        admin
-          .firestore()
+        getFirestore()
           .collection("firestoreOnDocumentDeletedTests")
           .doc(testId)
           .get()
@@ -126,18 +124,17 @@ describe("Cloud Firestore (v2)", () => {
   });
 
   describe("Document updated trigger", () => {
-    let loggedContext: admin.firestore.DocumentData | undefined;
-    let docRef: admin.firestore.DocumentReference<admin.firestore.DocumentData>;
+    let loggedContext: DocumentData | undefined;
+    let docRef: DocumentReference<DocumentData>;
 
     beforeAll(async () => {
-      docRef = admin.firestore().collection("tests").doc(testId);
+      docRef = getFirestore().collection("tests").doc(testId);
       await docRef.set({});
 
       await docRef.update({ test: testId });
 
       loggedContext = await retry(() =>
-        admin
-          .firestore()
+        getFirestore()
           .collection("firestoreOnDocumentUpdatedTests")
           .doc(testId)
           .get()
@@ -175,18 +172,17 @@ describe("Cloud Firestore (v2)", () => {
   });
 
   describe("Document written trigger", () => {
-    let loggedContext: admin.firestore.DocumentData | undefined;
-    let dataSnapshot: admin.firestore.DocumentSnapshot<admin.firestore.DocumentData>;
-    let docRef: admin.firestore.DocumentReference<admin.firestore.DocumentData>;
+    let loggedContext: DocumentData | undefined;
+    let dataSnapshot: DocumentSnapshot<DocumentData>;
+    let docRef: DocumentReference<DocumentData>;
 
     beforeAll(async () => {
-      docRef = admin.firestore().collection("tests").doc(testId);
+      docRef = getFirestore().collection("tests").doc(testId);
       await docRef.set({ test: testId });
       dataSnapshot = await docRef.get();
 
       loggedContext = await retry(() =>
-        admin
-          .firestore()
+        getFirestore()
           .collection("firestoreOnDocumentWrittenTests")
           .doc(testId)
           .get()
