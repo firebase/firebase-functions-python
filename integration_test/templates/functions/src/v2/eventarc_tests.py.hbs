@@ -1,0 +1,46 @@
+"""
+Eventarc trigger tests for v2
+Test Run ID: {{testRunId}}
+"""
+
+import json
+from firebase_admin import firestore
+from firebase_functions import eventarc_fn
+
+REGION = "{{region}}"
+
+{{#each functions}}
+@eventarc_fn.{{decorator}}(
+    event_type="{{eventType}}",
+    region=REGION,
+    timeout_sec={{timeout}}
+)
+def {{name}}{{../testRunId}}(event: eventarc_fn.CloudEvent) -> None:
+    """
+    Test function: {{name}}
+    Trigger: {{trigger}}
+    Event Type: {{eventType}}
+    """
+    # Extract test_id from event data
+    test_id = event.data.get('testId') if event.data else None
+
+    if not test_id:
+        print(f"Warning: No testId found in event data")
+        return
+
+    # Prepare context data for storage
+    context_data = {
+        "id": event.id,
+        "time": event.time.isoformat() if hasattr(event.time, 'isoformat') else str(event.time),
+        "type": event.type,
+        "source": event.source,
+        # Stringify the data dict for storage (matching JS behavior)
+        "data": json.dumps(event.data) if event.data else "{}"
+    }
+
+    # Store context in Firestore for verification
+    db = firestore.client()
+    collection_name = "{{#if collection}}{{collection}}{{else}}{{name}}{{/if}}"
+    db.collection(collection_name).document(test_id).set(context_data)
+
+{{/each}}

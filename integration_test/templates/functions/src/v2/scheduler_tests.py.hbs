@@ -1,0 +1,34 @@
+"""
+Scheduler trigger tests for v2
+Test Run ID: {{testRunId}}
+"""
+
+from firebase_admin import firestore
+from firebase_functions import scheduler_fn
+
+REGION = "{{region}}"
+
+{{#each functions}}
+@scheduler_fn.{{decorator}}(
+    schedule="{{schedule}}",
+    region=REGION,
+    timeout_sec={{timeout}}
+)
+def {{name}}{{../testRunId}}(event: scheduler_fn.ScheduledEvent) -> None:
+    """
+    Test function: {{name}}
+    Trigger: {{trigger}}
+    Schedule: {{schedule}}
+    """
+    # Extract test_id from job_name
+    test_id = event.job_name
+    if not test_id:
+        print(f"Warning: No job_name found for scheduled function execution")
+        return
+
+    # Store success flag in Firestore for verification
+    db = firestore.client()
+    collection_name = "{{#if collection}}{{collection}}{{else}}{{name}}{{/if}}"
+    db.collection(collection_name).document(test_id).set({"success": True})
+
+{{/each}}

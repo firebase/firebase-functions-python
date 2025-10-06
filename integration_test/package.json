@@ -1,0 +1,39 @@
+{
+  "name": "integration-test-declarative",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Declarative Firebase Functions integration tests",
+  "scripts": {
+    "generate": "node scripts/generate.js",
+    "test": "jest --forceExit",
+    "run-tests": "node scripts/run-tests.js",
+    "deploy": "cd generated/functions && firebase deploy --only functions --project functions-integration-tests-v2",
+    "cloudbuild": "cd .. && gcloud builds submit --config=integration_test/cloudbuild.yaml --project=functions-integration-tests-v2 .",
+    "test:firestore": "PROJECT_ID=functions-integration-tests-v2 node scripts/run-tests.js v2_firestore",
+    "test:database": "PROJECT_ID=functions-integration-tests-v2 node scripts/run-tests.js v2_database",
+    "test:all": "PROJECT_ID=functions-integration-tests-v2 node scripts/run-tests.js --sequential 'v2_*'",
+    "test:all:sequential": "PROJECT_ID=functions-integration-tests-v2 node scripts/run-tests.js --sequential 'v2_*'",
+    "test:all:parallel": "PROJECT_ID=functions-integration-tests-v2 node scripts/run-tests.js 'v2_*'",
+    "cleanup": "./scripts/cleanup-suite.sh --project functions-integration-tests-v2",
+    "cleanup:list": "./scripts/cleanup-suite.sh --list-artifacts",
+    "clean": "rm -rf generated/*",
+    "hard-reset": "./scripts/hard-reset.sh"
+  },
+  "dependencies": {
+    "@google-cloud/pubsub": "^4.0.0",
+    "ajv": "^8.17.1",
+    "chalk": "^4.1.2",
+    "firebase-admin": "^12.0.0"
+  },
+  "devDependencies": {
+    "@google-cloud/tasks": "^6.2.0",
+    "@types/jest": "^29.5.11",
+    "@types/node": "^20.10.5",
+    "firebase": "^12.2.1",
+    "handlebars": "^4.7.8",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.1.1",
+    "typescript": "^5.3.3",
+    "yaml": "^2.3.4"
+  }
+}

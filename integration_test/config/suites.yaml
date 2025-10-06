@@ -1,0 +1,206 @@
+# Firebase Functions Python Integration Test Suites Configuration
+# Python SDK only supports V2 APIs - all tests deploy to functions-integration-tests-v2
+
+defaults:
+  projectId: functions-integration-tests-v2
+  region: us-central1
+  timeout: 540
+  dependencies:
+    firebase-admin: "^6.0.1"
+    firebase-functions: "{{sdkTarball}}"
+  devDependencies: {}
+
+suites:
+  # ============================================================================
+  # V2 API Suites (Python SDK only supports V2 Firebase APIs)
+  # ============================================================================
+
+  # V2 Firestore triggers
+  - name: v2_firestore
+    description: "V2 Firestore trigger tests for Python"
+    version: v2
+    service: firestore
+    functions:
+      - name: firestoreOnDocumentCreated
+        trigger: onDocumentCreated
+        decorator: on_document_created
+        eventType: created
+        document: "tests/{testId}"
+        collection: firestoreOnDocumentCreatedTests
+      - name: firestoreOnDocumentDeleted
+        trigger: onDocumentDeleted
+        decorator: on_document_deleted
+        eventType: deleted
+        document: "tests/{testId}"
+        collection: firestoreOnDocumentDeletedTests
+      - name: firestoreOnDocumentUpdated
+        trigger: onDocumentUpdated
+        decorator: on_document_updated
+        eventType: updated
+        document: "tests/{testId}"
+        collection: firestoreOnDocumentUpdatedTests
+      - name: firestoreOnDocumentWritten
+        trigger: onDocumentWritten
+        decorator: on_document_written
+        eventType: written
+        document: "tests/{testId}"
+        collection: firestoreOnDocumentWrittenTests
+
+  # V2 Realtime Database triggers
+  - name: v2_database
+    description: "V2 Realtime Database trigger tests for Python"
+    version: v2
+    service: database
+    functions:
+      - name: databaseOnValueCreated
+        trigger: onValueCreated
+        decorator: on_value_created
+        eventType: created
+        path: "databaseCreatedTests/{testId}/start"
+        collection: databaseCreatedTests
+      - name: databaseOnValueDeleted
+        trigger: onValueDeleted
+        decorator: on_value_deleted
+        eventType: deleted
+        path: "databaseDeletedTests/{testId}/start"
+        collection: databaseDeletedTests
+      - name: databaseOnValueUpdated
+        trigger: onValueUpdated
+        decorator: on_value_updated
+        eventType: updated
+        path: "databaseUpdatedTests/{testId}/start"
+        collection: databaseUpdatedTests
+      - name: databaseOnValueWritten
+        trigger: onValueWritten
+        decorator: on_value_written
+        eventType: written
+        path: "databaseWrittenTests/{testId}/start"
+        collection: databaseWrittenTests
+
+  # V2 Pub/Sub triggers
+  - name: v2_pubsub
+    description: "V2 Pub/Sub trigger tests for Python"
+    version: v2
+    service: pubsub
+    functions:
+      - name: pubsubOnMessagePublished
+        trigger: onMessagePublished
+        decorator: on_message_published
+        eventType: messagePublished
+        topic: custom_message_tests
+        collection: pubsubOnMessagePublishedTests
+
+  # V2 Storage triggers
+  - name: v2_storage
+    description: "V2 Storage trigger tests for Python"
+    version: v2
+    service: storage
+    functions:
+      - name: storageOnObjectArchived
+        trigger: onObjectArchived
+        decorator: on_object_archived
+        eventType: archived
+        bucket: functions-integration-tests-v2.firebasestorage.app
+        collection: storageOnObjectArchivedTests
+      - name: storageOnObjectDeleted
+        trigger: onObjectDeleted
+        decorator: on_object_deleted
+        eventType: deleted
+        bucket: functions-integration-tests-v2.firebasestorage.app
+        collection: storageOnObjectDeletedTests
+      - name: storageOnObjectFinalized
+        trigger: onObjectFinalized
+        decorator: on_object_finalized
+        eventType: finalized
+        bucket: functions-integration-tests-v2.firebasestorage.app
+        collection: storageOnObjectFinalizedTests
+      - name: storageOnObjectMetadataUpdated
+        trigger: onObjectMetadataUpdated
+        decorator: on_object_metadata_updated
+        eventType: metadataUpdated
+        bucket: functions-integration-tests-v2.firebasestorage.app
+        collection: storageOnObjectMetadataUpdatedTests
+
+  # V2 Scheduler triggers
+  - name: v2_scheduler
+    description: "V2 Scheduled function tests for Python"
+    version: v2
+    service: scheduler
+    functions:
+      - name: schedulerOnSchedule
+        trigger: onSchedule
+        decorator: on_schedule
+        schedule: "every 1 minutes"
+        collection: schedulerOnScheduleV2Tests
+
+  # V2 Task Queue functions
+  - name: v2_tasks
+    description: "V2 Task Queue function tests for Python"
+    version: v2
+    service: tasks
+    functions:
+      - name: taskQueueOnEnqueue
+        trigger: onTaskDispatched
+        decorator: on_task_dispatched
+        queueName: "v2-test-queue"
+        collection: tasksOnTaskDispatchedTests
+
+  # V2 Identity triggers
+  # DISABLED: Identity blocking functions require manual registration in Firebase Console
+  # - name: v2_identity
+  #   description: "V2 Identity trigger tests for Python"
+  #   version: v2
+  #   service: identity
+  #   functions:
+  #     - name: identityBeforeUserCreated
+  #       trigger: beforeUserCreated
+  #       decorator: before_user_created
+  #       collection: identityBeforeUserCreatedTests
+  #     - name: identityBeforeUserSignedIn
+  #       trigger: beforeUserSignedIn
+  #       decorator: before_user_signed_in
+  #       collection: identityBeforeUserSignedInTests
+
+  # V2 Eventarc triggers
+  - name: v2_eventarc
+    description: "V2 Eventarc trigger tests for Python"
+    version: v2
+    service: eventarc
+    functions:
+      - name: eventarcOnCustomEventPublished
+        trigger: onCustomEventPublished
+        decorator: on_custom_event_published
+        eventType: achieved-leaderboard
+        collection: eventarcOnCustomEventPublishedTests
+
+  # V2 Alerts triggers
+  - name: v2_alerts
+    description: "V2 Alerts trigger tests for Python"
+    version: v2
+    service: alerts
+    functions:
+      - name: alertsOnAlertPublished
+        trigger: onAlertPublished
+        alertType: "billing.planAutomatedUpdate"
+
+  # V2 Test Lab triggers
+  - name: v2_testlab
+    description: "V2 Test Lab trigger tests for Python"
+    version: v2
+    service: testlab
+    functions:
+      - name: testLabOnTestMatrixCompleted
+        trigger: onTestMatrixCompleted
+        decorator: on_test_matrix_completed
+        collection: testLabOnTestMatrixCompletedTests
+
+  # V2 Remote Config triggers
+  - name: v2_remoteconfig
+    description: "V2 Remote Config trigger tests for Python"
+    version: v2
+    service: remoteconfig
+    functions:
+      - name: remoteConfigOnConfigUpdated
+        trigger: onConfigUpdated
+        decorator: on_config_updated
+        collection: remoteConfigOnConfigUpdatedTests

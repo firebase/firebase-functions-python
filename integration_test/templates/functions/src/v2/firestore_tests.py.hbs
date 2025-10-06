@@ -1,0 +1,64 @@
+"""
+Firestore trigger tests for v2
+Test Run ID: {{testRunId}}
+"""
+
+from firebase_admin import firestore
+from firebase_functions import firestore_fn
+from utils import sanitize_data
+
+REGION = "{{region}}"
+
+{{#each functions}}
+@firestore_fn.{{decorator}}(
+    document="{{document}}",
+    region=REGION,
+    timeout_sec={{timeout}}
+)
+def {{name}}{{../testRunId}}(event: {{#if (or (eq trigger "onDocumentUpdated") (eq trigger "onDocumentWritten"))}}firestore_fn.Event[firestore_fn.Change[firestore_fn.DocumentSnapshot]]{{else}}firestore_fn.Event[firestore_fn.DocumentSnapshot]{{/if}}) -> None:
+    """
+    Test function: {{name}}
+    Trigger: {{trigger}}
+    Document: {{document}}
+    """
+    test_id = event.params.get("testId")
+
+    # Prepare context data for storage
+    context_data = {
+        "id": event.id,
+        "time": event.time,
+        "type": f"google.cloud.firestore.document.v1.{{eventType}}",
+        "source": event.source,
+        "resource": {
+            "name": f"projects/{event.project}/databases/{event.database}/documents/{event.document}"
+        },
+        "params": dict(event.params) if event.params else {}
+    }
+
+    {{#if (eq trigger "onDocumentWritten")}}
+    # For onDocumentWritten trigger, check if it's a delete
+    if hasattr(event.data, 'after') and event.data.after is None:
+        print(f"Event for {test_id} is null; presuming data cleanup, so skipping.")
+        return
+
+    # Add document URL if available
+    if hasattr(event.data, 'after') and event.data.after:
+        context_data["url"] = event.data.after.reference.path
+    {{else if (eq trigger "onDocumentUpdated")}}
+    # For onDocumentUpdated trigger, add the updated data URL
+    if hasattr(event.data, 'after') and event.data.after:
+        context_data["url"] = event.data.after.reference.path
+        if event.data.after.to_dict():
+            context_data["data"] = str(event.data.after.to_dict())
+    {{else if (eq trigger "onDocumentCreated")}}
+    # For onDocumentCreated, add the document URL
+    if hasattr(event.data, 'reference'):
+        context_data["url"] = event.data.reference.path
+    {{/if}}
+
+    # Store context in Firestore for verification
+    db = firestore.client()
+    collection_name = "{{#if collection}}{{collection}}{{else}}{{name}}{{/if}}"
+    db.collection(collection_name).document(test_id).set(context_data)
+
+{{/each}}

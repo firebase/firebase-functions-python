@@ -1,0 +1,54 @@
+"""
+Pub/Sub trigger tests for v2
+Test Run ID: {{testRunId}}
+"""
+
+import json
+from firebase_admin import firestore
+from firebase_functions import pubsub_fn
+
+REGION = "{{region}}"
+
+{{#each functions}}
+@pubsub_fn.{{decorator}}(
+    topic="{{topic}}",
+    region=REGION,
+    timeout_sec={{timeout}}
+)
+def {{name}}{{../testRunId}}(event: pubsub_fn.CloudEvent[pubsub_fn.MessagePublishedData[dict]]) -> None:
+    """
+    Test function: {{name}}
+    Trigger: {{trigger}}
+    Topic: {{topic}}
+    """
+    # Extract test_id from message JSON data
+    message = event.data.message
+    message_json = message.json
+    test_id = message_json.get('testId') if message_json else None
+
+    if not test_id:
+        print(f"Warning: No testId found in message")
+        return
+
+    # Prepare context data for storage
+    context_data = {
+        "id": event.id,
+        "time": event.time,
+        "type": f"google.cloud.pubsub.topic.v1.{{eventType}}",
+        "source": event.source,
+        # Stringify the message object for storage (matching JS behavior)
+        "message": json.dumps({
+            "data": message.data,
+            "messageId": message.message_id,
+            "publishTime": message.publish_time,
+            "attributes": message.attributes,
+            "orderingKey": message.ordering_key,
+        })
+    }
+
+    # Store context in Firestore for verification
+    db = firestore.client()
+    collection_name = "{{#if collection}}{{collection}}{{else}}{{name}}{{/if}}"
+    db.collection(collection_name).document(test_id).set(context_data)
+
+{{/each}}
