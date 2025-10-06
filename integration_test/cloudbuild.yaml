@@ -130,6 +130,13 @@ steps:
 
         node scripts/run-tests.js \
           --sequential \
+          v2_firestore \
+          v2_database \
+          v2_pubsub \
+          v2_storage \
+          v2_scheduler \
+          v2_tasks \
+          v2_eventarc \
           v2_alerts \
           --use-published-sdk=file:$$WHEEL_FILE
 
