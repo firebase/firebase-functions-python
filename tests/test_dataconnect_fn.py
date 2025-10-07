@@ -114,6 +114,8 @@ class TestDataConnect(unittest.TestCase):
                 "service": "service-id",
                 "connector": "connector-id",
                 "operation": "mutation-name",
+                "authtype": "app_user",
+                "authid": "auth-id"
             },
             data=json.dumps({}),
         )
@@ -123,5 +125,13 @@ class TestDataConnect(unittest.TestCase):
             service="service-id", connector="connector-id", operation="mutation-name"
         )(func)
         decorated_func(event)
+
+        func.assert_called_once()
+        event = func.call_args.args[0]
+        self.assertIsNotNone(event)
+        self.assertEqual(event.project, "project-id")
+        self.assertEqual(event.location, "location-id")
+        self.assertEqual(event.auth_type, "app_user")
+        self.assertEqual(event.auth_id, "auth-id")
 
         self.assertEqual(hello, "world")

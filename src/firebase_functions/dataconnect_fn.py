@@ -30,6 +30,7 @@ from firebase_functions.options import DataConnectOptions
 
 _event_type_mutation_executed = "google.firebase.dataconnect.connector.v1.mutationExecuted"
 
+AuthType = _typing.Literal["app_user", "admin", "unknown"]
 
 @_dataclass.dataclass(frozen=True)
 class Event(_core.CloudEvent[_core.T]):
@@ -53,6 +54,15 @@ class Event(_core.CloudEvent[_core.T]):
     Only named capture groups are populated - {key}, {key=*}, {key=**}
     """
 
+    auth_type: AuthType
+    """
+    The type of principal that triggered the event.
+    """
+
+    auth_id: str
+    """
+    The unique identifier for the principal.
+    """
 
 @_dataclass.dataclass(frozen=True)
 class GraphqlErrorExtensions:
@@ -210,6 +220,9 @@ def _dataconnect_endpoint_handler(
         **operation_pattern.extract_matches(event_operation),
     }
 
+    event_auth_type = event_attributes["authtype"]
+    event_auth_id = event_attributes["authid"]
+
     dataconnect_event = Event(
         specversion=event_attributes["specversion"],
         id=event_attributes["id"],
@@ -224,6 +237,8 @@ def _dataconnect_endpoint_handler(
         project=event_attributes["project"],
         params=params,
         data=dataconnect_event_data,
+        auth_type=event_auth_type,
+        auth_id=event_auth_id,
     )
     _core._with_init(func)(dataconnect_event)
 
