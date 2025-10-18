@@ -39,6 +39,23 @@ class TestDataConnect(unittest.TestCase):
         self.assertEqual(endpoint.eventTrigger["eventFilters"]["connector"], "connector-id")
         self.assertEqual(endpoint.eventTrigger["eventFilters"]["operation"], "mutation-name")
 
+    def test_on_mutation_executed_decorator_optional_filters(self):
+        """
+        Tests on_mutation_executed decorator functionality by checking that the
+        __firebase_endpoint__ attribute is set properly.
+        """
+        func = mock.Mock(__name__="example_func")
+        decorated_func = dataconnect_fn.on_mutation_executed()(func)
+        endpoint = decorated_func.__firebase_endpoint__
+        self.assertIsNotNone(endpoint)
+        self.assertIsNotNone(endpoint.eventTrigger)
+        self.assertEqual(
+            endpoint.eventTrigger["eventType"],
+            "google.firebase.dataconnect.connector.v1.mutationExecuted",
+        )
+        self.assertIsNotNone(endpoint.eventTrigger["eventFilters"])
+        self.assertEqual(endpoint.eventTrigger["eventFilters"], {})
+
     def test_on_mutation_executed_decorator_with_captures(self):
         """
         Tests on_mutation_executed decorator functionality by checking that the

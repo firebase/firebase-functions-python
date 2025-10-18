@@ -1159,17 +1159,17 @@ class DataConnectOptions(RuntimeOptions):
     Internal use only.
     """
 
-    service: str
+    service: str | None = None
     """
     The Firebase Data Connect service ID.
     """
 
-    connector: str
+    connector: str | None = None
     """
     The Firebase Data Connect connector ID.
     """
 
-    operation: str
+    operation: str | None = None
     """
     Name of the operation.
     """
@@ -1179,9 +1179,6 @@ class DataConnectOptions(RuntimeOptions):
         **kwargs,
     ) -> _manifest.ManifestEndpoint:
         assert kwargs["event_type"] is not None
-        assert kwargs["service_pattern"] is not None
-        assert kwargs["connector_pattern"] is not None
-        assert kwargs["operation_pattern"] is not None
 
         service_pattern: _path_pattern.PathPattern = kwargs["service_pattern"]
         connector_pattern: _path_pattern.PathPattern = kwargs["connector_pattern"]
@@ -1190,20 +1187,23 @@ class DataConnectOptions(RuntimeOptions):
         event_filters: _typing.Any = {}
         event_filters_path_patterns: _typing.Any = {}
 
-        if service_pattern.has_wildcards:
-            event_filters_path_patterns["service"] = service_pattern.value
-        else:
-            event_filters["service"] = service_pattern.value
+        if self.service:
+          if service_pattern.has_wildcards:
+              event_filters_path_patterns["service"] = service_pattern.value
+          else:
+              event_filters["service"] = service_pattern.value
 
-        if connector_pattern.has_wildcards:
-            event_filters_path_patterns["connector"] = connector_pattern.value
-        else:
-            event_filters["connector"] = connector_pattern.value
+        if self.connector:
+          if connector_pattern.has_wildcards:
+              event_filters_path_patterns["connector"] = connector_pattern.value
+          else:
+              event_filters["connector"] = connector_pattern.value
 
-        if operation_pattern.has_wildcards:
-            event_filters_path_patterns["operation"] = operation_pattern.value
-        else:
-            event_filters["operation"] = operation_pattern.value
+        if self.operation:
+          if operation_pattern.has_wildcards:
+              event_filters_path_patterns["operation"] = operation_pattern.value
+          else:
+              event_filters["operation"] = operation_pattern.value
 
         event_trigger = _manifest.EventTrigger(
             eventType=kwargs["event_type"],

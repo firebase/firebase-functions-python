@@ -32,6 +32,7 @@ _event_type_mutation_executed = "google.firebase.dataconnect.connector.v1.mutati
 
 AuthType = _typing.Literal["app_user", "admin", "unknown"]
 
+
 @_dataclass.dataclass(frozen=True)
 class Event(_core.CloudEvent[_core.T]):
     """
@@ -63,6 +64,7 @@ class Event(_core.CloudEvent[_core.T]):
     """
     The unique identifier for the principal.
     """
+
 
 @_dataclass.dataclass(frozen=True)
 class GraphqlErrorExtensions:
@@ -183,6 +185,7 @@ class Mutation:
     It conforms to https://spec.graphql.org/draft/#sec-Errors.
     """
 
+
 @_dataclass.dataclass(frozen=True)
 class MutationEventData:
     """
@@ -191,6 +194,7 @@ class MutationEventData:
 
     payload: Mutation
 
+
 _E1 = Event[MutationEventData]
 _C1 = _typing.Callable[[_E1], None]
 
@@ -198,9 +202,9 @@ _C1 = _typing.Callable[[_E1], None]
 def _dataconnect_endpoint_handler(
     func: _C1,
     event_type: str,
-    service_pattern: _path_pattern.PathPattern,
-    connector_pattern: _path_pattern.PathPattern,
-    operation_pattern: _path_pattern.PathPattern,
+    service_pattern: _path_pattern.PathPattern | None,
+    connector_pattern: _path_pattern.PathPattern | None,
+    operation_pattern: _path_pattern.PathPattern | None,
     raw: _ce.CloudEvent,
 ) -> None:
     # Currently, only mutationExecuted is supported
@@ -214,11 +218,20 @@ def _dataconnect_endpoint_handler(
     event_service = event_attributes["service"]
     event_connector = event_attributes["connector"]
     event_operation = event_attributes["operation"]
-    params: dict[str, str] = {
-        **service_pattern.extract_matches(event_service),
-        **connector_pattern.extract_matches(event_connector),
-        **operation_pattern.extract_matches(event_operation),
-    }
+    params: dict[str, str] = {}
+
+    if service_pattern:
+        params = {**params, **service_pattern.extract_matches(event_service)}
+    if connector_pattern:
+        params = {
+            **params,
+            **connector_pattern.extract_matches(event_connector)
+        }
+    if operation_pattern:
+        params = {
+            **params,
+            **operation_pattern.extract_matches(event_operation)
+        }
 
     event_auth_type = event_attributes["authtype"]
     event_auth_id = event_attributes["authid"]
@@ -270,9 +283,12 @@ def on_mutation_executed(**kwargs) -> _typing.Callable[[_C1], _C1]:
     options = DataConnectOptions(**kwargs)
 
     def on_mutation_executed_inner_decorator(func: _C1):
-        service_pattern = _path_pattern.PathPattern(options.service)
-        connector_pattern = _path_pattern.PathPattern(options.connector)
-        operation_pattern = _path_pattern.PathPattern(options.operation)
+        service_pattern = _path_pattern.PathPattern(
+            options.service) if options.service else None
+        connector_pattern = _path_pattern.PathPattern(
+            options.connector) if options.connector else None
+        operation_pattern = _path_pattern.PathPattern(
+            options.operation) if options.operation else None
 
         @_functools.wraps(func)
         def on_mutation_executed_wrapped(raw: _ce.CloudEvent):
