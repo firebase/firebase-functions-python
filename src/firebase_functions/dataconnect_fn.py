@@ -235,16 +235,14 @@ def _dataconnect_endpoint_handler(
 
     event_auth_type = event_attributes["authtype"]
     event_auth_id = event_attributes["authid"]
+    event_time = _util.timestamp_conversion(event_attributes["time"])
 
     dataconnect_event = Event(
         specversion=event_attributes["specversion"],
         id=event_attributes["id"],
         source=event_attributes["source"],
         type=event_attributes["type"],
-        time=_dt.datetime.strptime(
-            event_attributes["time"],
-            "%Y-%m-%dT%H:%M:%S.%f%z",
-        ),
+        time=event_time,
         subject=event_attributes.get("subject"),
         location=event_attributes["location"],
         project=event_attributes["project"],
