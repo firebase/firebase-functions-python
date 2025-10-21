@@ -103,10 +103,16 @@ def on_schedule(**kwargs) -> _typing.Callable[[_C], _Response]:
             if schedule_time_str is None:
                 schedule_time = _dt.datetime.utcnow()
             else:
-                schedule_time = _dt.datetime.strptime(
-                    schedule_time_str,
-                    "%Y-%m-%dT%H:%M:%S%z",
-                )
+                try:
+                    # Robust RFC 3339 parsing
+                    schedule_time = dateutil_parser.isoparse(schedule_time_str)
+                except ValueError as e:
+                    print(f"Failed to parse RFC 3339 timestamp: {e}")
+                    schedule_time = _dt.utcnow()
+                    schedule_time = _dt.datetime.strptime(
+                        schedule_time_str,
+                        "%Y-%m-%dT%H:%M:%S%z",
+                    )
             event = ScheduledEvent(
                 job_name=request.headers.get("X-CloudScheduler-JobName"),
                 schedule_time=schedule_time,
