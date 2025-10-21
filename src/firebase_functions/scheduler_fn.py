@@ -32,7 +32,6 @@ from functions_framework import logging as _logging
 import firebase_functions.options as _options
 import firebase_functions.private.util as _util
 from firebase_functions.core import _with_init
-import dateutil.parser as dateutil_parser
 
 # Re-export Timezone from options module so users can import it directly from scheduler_fn
 # This provides a more convenient API: from firebase_functions.scheduler_fn import Timezone
@@ -105,11 +104,24 @@ def on_schedule(**kwargs) -> _typing.Callable[[_C], _Response]:
                 schedule_time = _dt.datetime.utcnow()
             else:
                 try:
-                    # Robust RFC 3339 parsing
-                    schedule_time = dateutil_parser.isoparse(schedule_time_str)
-                except ValueError as e:
-                    print(f"Failed to parse RFC 3339 timestamp: {e}")
-                    schedule_time = _dt.utcnow()
+                    # Try to parse with the stdlib which supports fractional
+                    # seconds and offsets in Python 3.11+ via fromisoformat.
+                    # Normalize RFC3339 'Z' to '+00:00' for fromisoformat.
+                    iso_str = schedule_time_str
+                    if iso_str.endswith("Z"):
+                        iso_str = iso_str[:-1] + "+00:00"
+                    schedule_time = _dt.datetime.fromisoformat(iso_str)
+                except Exception:
+                    # Fallback to strict parsing without fractional seconds
+                    try:
+                        schedule_time = _dt.datetime.strptime(
+                            schedule_time_str,
+                            "%Y-%m-%dT%H:%M:%S%z",
+                        )
+                    except Exception as e:
+                        # If all parsing fails, log and use current UTC time
+                        _logging.exception(e)
+                        schedule_time = _dt.datetime.utcnow()
             event = ScheduledEvent(
                 job_name=request.headers.get("X-CloudScheduler-JobName"),
                 schedule_time=schedule_time,
