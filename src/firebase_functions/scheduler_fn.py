@@ -32,6 +32,7 @@ from functions_framework import logging as _logging
 import firebase_functions.options as _options
 import firebase_functions.private.util as _util
 from firebase_functions.core import _with_init
+import dateutil.parser as dateutil_parser
 
 # Re-export Timezone from options module so users can import it directly from scheduler_fn
 # This provides a more convenient API: from firebase_functions.scheduler_fn import Timezone
@@ -109,10 +110,6 @@ def on_schedule(**kwargs) -> _typing.Callable[[_C], _Response]:
                 except ValueError as e:
                     print(f"Failed to parse RFC 3339 timestamp: {e}")
                     schedule_time = _dt.utcnow()
-                    schedule_time = _dt.datetime.strptime(
-                        schedule_time_str,
-                        "%Y-%m-%dT%H:%M:%S%z",
-                    )
             event = ScheduledEvent(
                 job_name=request.headers.get("X-CloudScheduler-JobName"),
                 schedule_time=schedule_time,
