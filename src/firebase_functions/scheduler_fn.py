@@ -111,14 +111,14 @@ def on_schedule(**kwargs) -> _typing.Callable[[_C], _Response]:
                     if iso_str.endswith("Z"):
                         iso_str = iso_str[:-1] + "+00:00"
                     schedule_time = _dt.datetime.fromisoformat(iso_str)
-                except Exception:
+                except ValueError:
                     # Fallback to strict parsing without fractional seconds
                     try:
                         schedule_time = _dt.datetime.strptime(
                             schedule_time_str,
                             "%Y-%m-%dT%H:%M:%S%z",
                         )
-                    except Exception as e:
+                    except ValueError as e:
                         # If all parsing fails, log and use current UTC time
                         _logging.exception(e)
                         schedule_time = _dt.datetime.utcnow()
