@@ -208,7 +208,8 @@ def _dataconnect_endpoint_handler(
     raw: _ce.CloudEvent,
 ) -> None:
     # Currently, only mutationExecuted is supported
-    assert event_type == _event_type_mutation_executed
+    if event_type != _event_type_mutation_executed:
+        raise NotImplementedError(f"Unsupported event type: {event_type}. Only {_event_type_mutation_executed} is currently supported.")
 
     event_attributes = raw._get_attributes()
     event_data: _typing.Any = raw.get_data()
