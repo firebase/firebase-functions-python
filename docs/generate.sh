@@ -88,6 +88,7 @@ PY_MODULES='firebase_functions.core
             firebase_functions.alerts.billing_fn
             firebase_functions.alerts.crashlytics_fn
             firebase_functions.alerts.performance_fn
+            firebase_functions.dataconnect_fn
             firebase_functions.db_fn
             firebase_functions.eventarc_fn
             firebase_functions.firestore_fn

@@ -1152,6 +1152,73 @@ class HttpsOptions(RuntimeOptions):
         return _manifest.ManifestEndpoint(**_typing.cast(dict, kwargs_merged))
 
 
+@_dataclasses.dataclass(frozen=True, kw_only=True)
+class DataConnectOptions(RuntimeOptions):
+    """
+    Options specific to Firebase Data Connect function types.
+    Internal use only.
+    """
+
+    service: str | None = None
+    """
+    The Firebase Data Connect service ID.
+    """
+
+    connector: str | None = None
+    """
+    The Firebase Data Connect connector ID.
+    """
+
+    operation: str | None = None
+    """
+    Name of the operation.
+    """
+
+    def _endpoint(
+        self,
+        **kwargs,
+    ) -> _manifest.ManifestEndpoint:
+        assert kwargs["event_type"] is not None
+
+        service_pattern: _path_pattern.PathPattern = kwargs["service_pattern"]
+        connector_pattern: _path_pattern.PathPattern = kwargs["connector_pattern"]
+        operation_pattern: _path_pattern.PathPattern = kwargs["operation_pattern"]
+
+        event_filters: _typing.Any = {}
+        event_filters_path_patterns: _typing.Any = {}
+
+        if self.service:
+          if service_pattern.has_wildcards:
+              event_filters_path_patterns["service"] = service_pattern.value
+          else:
+              event_filters["service"] = service_pattern.value
+
+        if self.connector:
+          if connector_pattern.has_wildcards:
+              event_filters_path_patterns["connector"] = connector_pattern.value
+          else:
+              event_filters["connector"] = connector_pattern.value
+
+        if self.operation:
+          if operation_pattern.has_wildcards:
+              event_filters_path_patterns["operation"] = operation_pattern.value
+          else:
+              event_filters["operation"] = operation_pattern.value
+
+        event_trigger = _manifest.EventTrigger(
+            eventType=kwargs["event_type"],
+            retry=False,
+            eventFilters=event_filters,
+            eventFilterPathPatterns=event_filters_path_patterns,
+        )
+
+        kwargs_merged = {
+            **_dataclasses.asdict(super()._endpoint(**kwargs)),
+            "eventTrigger": event_trigger,
+        }
+        return _manifest.ManifestEndpoint(**_typing.cast(dict, kwargs_merged))
+
+
 _GLOBAL_OPTIONS = RuntimeOptions()
 """The current default options for all functions. Internal use only."""
 
