@@ -15,9 +15,9 @@
 
 import dataclasses as _dataclasses
 import datetime as _dt
-from datetime import timezone as _timezone
 import functools as _functools
 import typing as _typing
+from datetime import timezone as _timezone
 
 from flask import (
     Request as _Request,

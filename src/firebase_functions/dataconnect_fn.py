@@ -17,7 +17,6 @@ Module for Cloud Functions that are triggered by Firebase Data Connect.
 
 # pylint: disable=protected-access
 import dataclasses as _dataclass
-import datetime as _dt
 import functools as _functools
 import typing as _typing
 
