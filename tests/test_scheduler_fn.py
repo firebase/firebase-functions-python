@@ -14,7 +14,7 @@
 """Scheduler function tests."""
 
 import unittest
-from datetime import datetime
+from datetime import datetime, timezone
 from unittest.mock import Mock
 
 from flask import Flask, Request
@@ -81,6 +81,30 @@ class TestScheduler(unittest.TestCase):
                 )
             )
 
+    def test_on_schedule_call_with_z_suffix(self):
+        """
+        Tests to ensure that timestamps with 'Z' suffix are parsed correctly as UTC.
+        """
+        with Flask(__name__).test_request_context("/"):
+            environ = EnvironBuilder(
+                headers={
+                    "X-CloudScheduler-JobName": "example-job",
+                    "X-CloudScheduler-ScheduleTime": "2023-04-13T19:00:00Z",
+                }
+            ).get_environ()
+            mock_request = Request(environ)
+            example_func = Mock(__name__="example_func")
+            decorated_func = scheduler_fn.on_schedule(schedule="* * * * *")(example_func)
+            response = decorated_func(mock_request)
+
+            self.assertEqual(response.status_code, 200)
+            example_func.assert_called_once_with(
+                scheduler_fn.ScheduledEvent(
+                    job_name="example-job",
+                    schedule_time=datetime(2023, 4, 13, 19, 0, 0, tzinfo=timezone.utc),
+                )
+            )
+
     def test_on_schedule_call_with_no_headers(self):
         """
         Tests to ensure that if the function is called manually
@@ -99,6 +123,7 @@ class TestScheduler(unittest.TestCase):
             self.assertEqual(example_func.call_count, 1)
             self.assertIsNone(example_func.call_args[0][0].job_name)
             self.assertIsNotNone(example_func.call_args[0][0].schedule_time)
+            self.assertIsNotNone(example_func.call_args[0][0].schedule_time.tzinfo)
 
     def test_on_schedule_call_with_exception(self):
         """
