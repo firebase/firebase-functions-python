@@ -15,6 +15,7 @@
 
 import dataclasses as _dataclasses
 import datetime as _dt
+from datetime import timezone as _timezone
 import functools as _functools
 import typing as _typing
 
@@ -101,7 +102,7 @@ def on_schedule(**kwargs) -> _typing.Callable[[_C], _Response]:
             schedule_time: _dt.datetime
             schedule_time_str = request.headers.get("X-CloudScheduler-ScheduleTime")
             if schedule_time_str is None:
-                schedule_time = _dt.datetime.utcnow()
+                schedule_time = _dt.datetime.now(_timezone.utc)
             else:
                 try:
                     # Try to parse with the stdlib which supports fractional
@@ -121,7 +122,7 @@ def on_schedule(**kwargs) -> _typing.Callable[[_C], _Response]:
                     except ValueError as e:
                         # If all parsing fails, log and use current UTC time
                         _logging.exception(e)
-                        schedule_time = _dt.datetime.utcnow()
+                        schedule_time = _dt.datetime.now(_timezone.utc)
             event = ScheduledEvent(
                 job_name=request.headers.get("X-CloudScheduler-JobName"),
                 schedule_time=schedule_time,
