@@ -132,7 +132,7 @@ class TestDataConnect(unittest.TestCase):
                 "connector": "connector-id",
                 "operation": "mutation-name",
                 "authtype": "app_user",
-                "authid": "auth-id"
+                "authid": "auth-id",
             },
             data=json.dumps({}),
         )
