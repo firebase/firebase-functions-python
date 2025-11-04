@@ -17,7 +17,6 @@ Module for Cloud Functions that are triggered by Firebase Data Connect.
 
 # pylint: disable=protected-access
 import dataclasses as _dataclass
-import datetime as _dt
 import functools as _functools
 import typing as _typing
 
@@ -209,7 +208,9 @@ def _dataconnect_endpoint_handler(
 ) -> None:
     # Currently, only mutationExecuted is supported
     if event_type != _event_type_mutation_executed:
-        raise NotImplementedError(f"Unsupported event type: {event_type}. Only {_event_type_mutation_executed} is currently supported.")
+        raise NotImplementedError(
+            f"Unsupported event type: {event_type}. Only {_event_type_mutation_executed} is currently supported."
+        )
 
     event_attributes = raw._get_attributes()
     event_data: _typing.Any = raw.get_data()
@@ -224,15 +225,9 @@ def _dataconnect_endpoint_handler(
     if service_pattern:
         params = {**params, **service_pattern.extract_matches(event_service)}
     if connector_pattern:
-        params = {
-            **params,
-            **connector_pattern.extract_matches(event_connector)
-        }
+        params = {**params, **connector_pattern.extract_matches(event_connector)}
     if operation_pattern:
-        params = {
-            **params,
-            **operation_pattern.extract_matches(event_operation)
-        }
+        params = {**params, **operation_pattern.extract_matches(event_operation)}
 
     event_auth_type = event_attributes["authtype"]
     event_auth_id = event_attributes["authid"]
@@ -282,12 +277,13 @@ def on_mutation_executed(**kwargs) -> _typing.Callable[[_C1], _C1]:
     options = DataConnectOptions(**kwargs)
 
     def on_mutation_executed_inner_decorator(func: _C1):
-        service_pattern = _path_pattern.PathPattern(
-            options.service) if options.service else None
-        connector_pattern = _path_pattern.PathPattern(
-            options.connector) if options.connector else None
-        operation_pattern = _path_pattern.PathPattern(
-            options.operation) if options.operation else None
+        service_pattern = _path_pattern.PathPattern(options.service) if options.service else None
+        connector_pattern = (
+            _path_pattern.PathPattern(options.connector) if options.connector else None
+        )
+        operation_pattern = (
+            _path_pattern.PathPattern(options.operation) if options.operation else None
+        )
 
         @_functools.wraps(func)
         def on_mutation_executed_wrapped(raw: _ce.CloudEvent):

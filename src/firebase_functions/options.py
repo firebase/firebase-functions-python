@@ -1188,22 +1188,22 @@ class DataConnectOptions(RuntimeOptions):
         event_filters_path_patterns: _typing.Any = {}
 
         if self.service:
-          if service_pattern.has_wildcards:
-              event_filters_path_patterns["service"] = service_pattern.value
-          else:
-              event_filters["service"] = service_pattern.value
+            if service_pattern.has_wildcards:
+                event_filters_path_patterns["service"] = service_pattern.value
+            else:
+                event_filters["service"] = service_pattern.value
 
         if self.connector:
-          if connector_pattern.has_wildcards:
-              event_filters_path_patterns["connector"] = connector_pattern.value
-          else:
-              event_filters["connector"] = connector_pattern.value
+            if connector_pattern.has_wildcards:
+                event_filters_path_patterns["connector"] = connector_pattern.value
+            else:
+                event_filters["connector"] = connector_pattern.value
 
         if self.operation:
-          if operation_pattern.has_wildcards:
-              event_filters_path_patterns["operation"] = operation_pattern.value
-          else:
-              event_filters["operation"] = operation_pattern.value
+            if operation_pattern.has_wildcards:
+                event_filters_path_patterns["operation"] = operation_pattern.value
+            else:
+                event_filters["operation"] = operation_pattern.value
 
         event_trigger = _manifest.EventTrigger(
             eventType=kwargs["event_type"],
