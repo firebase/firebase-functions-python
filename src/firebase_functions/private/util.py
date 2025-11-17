@@ -402,17 +402,44 @@ def get_precision_timestamp(time: str) -> PrecisionTimestamp:
         return PrecisionTimestamp.MICROSECONDS
 
 
-def timestamp_conversion(time: str) -> _dt.datetime:
-    """Converts a timestamp and returns a datetime object of the current time in UTC"""
-    precision_timestamp = get_precision_timestamp(time)
+def timestamp_conversion(timestamp: str | dict | _typing.Any) -> _dt.datetime:
+    """
+    Converts a timestamp-like value to a timezone-aware UTC datetime.
 
+    Accepts RFC 3339/ISO 8601 strings or Firebase Timestamp objects
+    (with 'seconds', 'nanoseconds' attributes).
+    """
+    # Handle Firebase Timestamp object case
+    # Accept dict-like objects, or python objects with 'seconds' and 'nanoseconds' attributes
+    if hasattr(timestamp, "seconds") and hasattr(timestamp, "nanoseconds"):
+        # Normalize nanoseconds into seconds (handles values >= 1_000_000_000 or < 0)
+        carry, ns = divmod(int(timestamp.nanoseconds), 1_000_000_000)
+        secs = int(timestamp.seconds) + carry
+        # Truncate (deterministic, no floating precision issues, matches string path behavior)
+        microseconds = ns // 1_000
+        # Build without using fromtimestamp
+        epoch = _dt.datetime(1970, 1, 1, tzinfo=_dt.timezone.utc)
+        return epoch + _dt.timedelta(seconds=secs, microseconds=microseconds)
+    elif isinstance(timestamp, dict) and "seconds" in timestamp and "nanoseconds" in timestamp:
+        # Normalize nanoseconds into seconds (handles values >= 1_000_000_000 or < 0)
+        carry, ns = divmod(int(timestamp["nanoseconds"]), 1_000_000_000)
+        secs = int(timestamp["seconds"]) + carry
+        # Truncate (deterministic, no floating precision issues, matches string path behavior)
+        microseconds = ns // 1_000
+        # Build without using fromtimestamp
+        epoch = _dt.datetime(1970, 1, 1, tzinfo=_dt.timezone.utc)
+        return epoch + _dt.timedelta(seconds=secs, microseconds=microseconds)
+
+    # Assume string input
+    if not isinstance(timestamp, str):
+        raise ValueError("timestamp_conversion expects a string or a Timestamp-like object")
+    precision_timestamp = get_precision_timestamp(timestamp)
     if precision_timestamp == PrecisionTimestamp.NANOSECONDS:
-        return nanoseconds_timestamp_conversion(time)
+        return nanoseconds_timestamp_conversion(timestamp)
     elif precision_timestamp == PrecisionTimestamp.MICROSECONDS:
-        return microsecond_timestamp_conversion(time)
+        return microsecond_timestamp_conversion(timestamp)
     elif precision_timestamp == PrecisionTimestamp.SECONDS:
-        return second_timestamp_conversion(time)
-
+        return second_timestamp_conversion(timestamp)
     raise ValueError("Invalid timestamp")
 
 
