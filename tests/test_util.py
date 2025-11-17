@@ -18,6 +18,8 @@ Internal utils tests.
 import datetime as _dt
 from os import environ, path
 
+import pytest
+
 from firebase_functions.private.util import (
     PrecisionTimestamp,
     _unsafe_decode_id_token,
@@ -28,6 +30,7 @@ from firebase_functions.private.util import (
     nanoseconds_timestamp_conversion,
     normalize_path,
     second_timestamp_conversion,
+    timestamp_conversion,
 )
 
 test_bucket = "python-functions-testing.appspot.com"
@@ -187,3 +190,88 @@ def test_unsafe_decode_token():
     result = _unsafe_decode_id_token(test_token)
     assert result["sub"] == "firebase"
     assert result["name"] == "John Doe"
+
+
+def test_timestamp_conversion_with_object():
+    """
+    Testing timestamp_conversion works with objects that have seconds and nanoseconds attributes.
+    """
+    class Timestamp:
+        def __init__(self, seconds, nanoseconds):
+            self.seconds = seconds
+            self.nanoseconds = nanoseconds
+
+    test_cases = [
+        (1672578896, 123456789),
+        (1672578896, 0),
+        (1672578896, 1_500_000_000),
+    ]
+
+    for seconds, nanoseconds in test_cases:
+        timestamp_obj = Timestamp(seconds=seconds, nanoseconds=nanoseconds)
+        result = timestamp_conversion(timestamp_obj)
+        expected = _dt.datetime.fromtimestamp(
+            seconds + nanoseconds / 1_000_000_000, tz=_dt.timezone.utc
+        )
+        assert result == expected
+        assert result.tzinfo == _dt.timezone.utc
+
+
+def test_timestamp_conversion_with_dict():
+    """
+    Testing timestamp_conversion works with dict objects containing seconds and nanoseconds keys.
+    """
+    test_cases = [
+        (1687256122, 396358000),
+        (1687256122, 0),
+    ]
+
+    for seconds, nanoseconds in test_cases:
+        timestamp_dict = {"seconds": seconds, "nanoseconds": nanoseconds}
+        result = timestamp_conversion(timestamp_dict)
+        expected = _dt.datetime.fromtimestamp(
+            seconds + nanoseconds / 1_000_000_000, tz=_dt.timezone.utc
+        )
+        assert result == expected
+        assert result.tzinfo == _dt.timezone.utc
+
+
+def test_timestamp_conversion_with_string():
+    """
+    Testing timestamp_conversion works with string inputs.
+    """
+    test_cases = [
+        ("2023-01-01T12:34:56.123456789Z", nanoseconds_timestamp_conversion),
+        ("2023-06-20T10:15:22.396358Z", microsecond_timestamp_conversion),
+        ("2023-01-01T12:34:56Z", second_timestamp_conversion),
+    ]
+
+    for timestamp_str, conversion_func in test_cases:
+        result = timestamp_conversion(timestamp_str)
+        expected = conversion_func(timestamp_str)
+        assert result == expected
+
+
+def test_timestamp_conversion_errors():
+    """
+    Testing timestamp_conversion raises appropriate errors for invalid inputs.
+    """
+    class IncompleteTimestamp:
+        def __init__(self, nanoseconds):
+            self.nanoseconds = nanoseconds
+
+    with pytest.raises(ValueError):
+        timestamp_conversion(IncompleteTimestamp(nanoseconds=123456789))
+
+    with pytest.raises(ValueError) as context:
+        timestamp_conversion(12345)
+    assert "timestamp_conversion expects a string or a Timestamp-like object" in str(context.value)
+    with pytest.raises(ValueError):
+        timestamp_conversion({"nanoseconds": 123456789})
+
+    with pytest.raises(ValueError):
+        timestamp_conversion("invalid_timestamp")
+
+    with pytest.raises(ValueError):
+        timestamp_conversion(None)
+

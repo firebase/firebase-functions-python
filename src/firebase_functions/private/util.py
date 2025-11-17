@@ -402,17 +402,33 @@ def get_precision_timestamp(time: str) -> PrecisionTimestamp:
         return PrecisionTimestamp.MICROSECONDS
 
 
-def timestamp_conversion(time: str) -> _dt.datetime:
-    """Converts a timestamp and returns a datetime object of the current time in UTC"""
-    precision_timestamp = get_precision_timestamp(time)
+def timestamp_conversion(time) -> _dt.datetime:
+    """
+    Converts a timestamp and returns a datetime object of the current time in UTC.
+    Accepts RFC 3339/ISO 8601 strings or Firebase Timestamp objects (with 'seconds', 'nanoseconds' attributes).
+    """
+    # Handle Firebase Timestamp object case
+    # Accept dict-like objects, or python objects with 'seconds' and 'nanoseconds' attributes
+    if hasattr(time, 'seconds') and hasattr(time, 'nanoseconds'):
+        # Use UTC time
+        return _dt.datetime.fromtimestamp(
+            time.seconds + time.nanoseconds / 1_000_000_000, tz=_dt.timezone.utc
+        )
+    elif isinstance(time, dict) and "seconds" in time and "nanoseconds" in time:
+        return _dt.datetime.fromtimestamp(
+            time["seconds"] + time["nanoseconds"] / 1_000_000_000, tz=_dt.timezone.utc
+        )
 
+    # Assume string input
+    if not isinstance(time, str):
+        raise ValueError("timestamp_conversion expects a string or a Timestamp-like object")
+    precision_timestamp = get_precision_timestamp(time)
     if precision_timestamp == PrecisionTimestamp.NANOSECONDS:
         return nanoseconds_timestamp_conversion(time)
     elif precision_timestamp == PrecisionTimestamp.MICROSECONDS:
         return microsecond_timestamp_conversion(time)
     elif precision_timestamp == PrecisionTimestamp.SECONDS:
         return second_timestamp_conversion(time)
-
     raise ValueError("Invalid timestamp")
 
 
