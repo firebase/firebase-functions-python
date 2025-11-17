@@ -409,7 +409,7 @@ def timestamp_conversion(time) -> _dt.datetime:
     """
     # Handle Firebase Timestamp object case
     # Accept dict-like objects, or python objects with 'seconds' and 'nanoseconds' attributes
-    if hasattr(time, 'seconds') and hasattr(time, 'nanoseconds'):
+    if hasattr(time, "seconds") and hasattr(time, "nanoseconds"):
         # Use UTC time
         return _dt.datetime.fromtimestamp(
             time.seconds + time.nanoseconds / 1_000_000_000, tz=_dt.timezone.utc

@@ -196,6 +196,7 @@ def test_timestamp_conversion_with_object():
     """
     Testing timestamp_conversion works with objects that have seconds and nanoseconds attributes.
     """
+
     class Timestamp:
         def __init__(self, seconds, nanoseconds):
             self.seconds = seconds
@@ -256,6 +257,7 @@ def test_timestamp_conversion_errors():
     """
     Testing timestamp_conversion raises appropriate errors for invalid inputs.
     """
+
     class IncompleteTimestamp:
         def __init__(self, nanoseconds):
             self.nanoseconds = nanoseconds
@@ -274,4 +276,3 @@ def test_timestamp_conversion_errors():
 
     with pytest.raises(ValueError):
         timestamp_conversion(None)
-
