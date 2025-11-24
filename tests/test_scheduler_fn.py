@@ -47,6 +47,18 @@ class TestScheduler(unittest.TestCase):
         self.assertEqual(endpoint.scheduleTrigger.get("schedule"), schedule)
         self.assertEqual(endpoint.scheduleTrigger.get("timeZone"), tz)
 
+    def test_on_schedule_with_timeout(self):
+        """
+        Tests that attemptDeadlineSeconds is set to timeoutSeconds.
+        """
+        decorated_func = scheduler_fn.on_schedule(
+            schedule="* * * * *",
+            timeout_sec=120,
+        )(Mock(__name__="example_func"))
+        endpoint = decorated_func.__firebase_endpoint__
+        self.assertEqual(endpoint.timeoutSeconds, 120)
+        self.assertEqual(endpoint.scheduleTrigger.get("attemptDeadlineSeconds"), 120)
+
     def test_on_schedule_call(self):
         """
         Tests to ensure the decorated function is called correctly

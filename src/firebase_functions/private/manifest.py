@@ -125,6 +125,7 @@ class ScheduleTrigger(_typing.TypedDict):
     schedule: str | _params.Expression[str]
     timeZone: str | _params.Expression[str] | _util.Sentinel | None
     retryConfig: RetryConfigScheduler | None
+    attemptDeadlineSeconds: int | _params.Expression[int] | _util.Sentinel | None
 
 
 class BlockingTriggerOptions(_typing.TypedDict):

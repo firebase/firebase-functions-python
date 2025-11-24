@@ -869,6 +869,7 @@ class ScheduleOptions(RuntimeOptions):
                 schedule=self.schedule,
                 timeZone=time_zone,
                 retryConfig=retry_config,
+                attemptDeadlineSeconds=self.timeout_sec,
             ),
         }
         return _manifest.ManifestEndpoint(**_typing.cast(dict, kwargs_merged))
