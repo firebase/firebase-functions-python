@@ -418,7 +418,6 @@ def timestamp_conversion(timestamp: str | dict | _typing.Any) -> _dt.datetime:
     if hasattr(timestamp, "seconds"):
         ns_val = getattr(timestamp, "nanoseconds", getattr(timestamp, "nanos", None))
         if ns_val is not None:
-            # Normalize nanoseconds into seconds (handles values >= 1_000_000_000 or < 0)
             carry, ns = divmod(int(ns_val), 1_000_000_000)
             secs = int(timestamp.seconds) + carry
             # Truncate (deterministic, no floating precision issues, matches string path behavior)
