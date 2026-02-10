@@ -270,6 +270,41 @@ def test_timestamp_conversion_object_dict_consistency(seconds: int, nanoseconds:
     _assert_utc_datetime(result_dict)
 
 
+def test_timestamp_conversion_dict_nanos_equivalent_to_nanoseconds():
+    """Test that dict with 'nanos' (protobuf-style) returns same result as 'nanoseconds'."""
+    dict_nanos = {"seconds": "1730890800", "nanos": 0}
+    dict_nanoseconds = {"seconds": "1730890800", "nanoseconds": 0}
+    result_nanos = timestamp_conversion(dict_nanos)
+    result_nanoseconds = timestamp_conversion(dict_nanoseconds)
+    assert result_nanos == result_nanoseconds
+    _assert_utc_datetime(result_nanos)
+    assert result_nanos == _dt.datetime(2024, 11, 6, 11, 0, 0, tzinfo=_dt.timezone.utc)
+
+
+def test_timestamp_conversion_object_nanos():
+    """Test that object with .nanos (no .nanoseconds) is accepted and matches dict result."""
+
+    class TimestampWithNanos:
+        def __init__(self, seconds: int, nanos: int):
+            self.seconds = seconds
+            self.nanos = nanos
+
+    obj = TimestampWithNanos(seconds=1730890800, nanos=0)
+    d = {"seconds": 1730890800, "nanos": 0}
+    result_obj = timestamp_conversion(obj)
+    result_dict = timestamp_conversion(d)
+    assert result_obj == result_dict
+    _assert_utc_datetime(result_obj)
+
+
+def test_get_precision_timestamp_without_timezone_suffix():
+    """Test get_precision_timestamp does not crash when fraction has no Z/z (e.g. .000)."""
+    # String without timezone suffix - previously raised ValueError on unpack
+    ts = "2025-11-06T12:00:00.000"
+    result = get_precision_timestamp(ts)
+    assert result is PrecisionTimestamp.MICROSECONDS
+
+
 @pytest.mark.parametrize(
     "seconds,nanoseconds",
     [

@@ -392,8 +392,12 @@ def get_precision_timestamp(time: str) -> PrecisionTimestamp:
     except ValueError:
         return PrecisionTimestamp.SECONDS
 
-    # Split the fraction from the timezone specifier ('Z' or 'z')
-    s_fraction, _ = s_fraction.split("Z") if "Z" in s_fraction else s_fraction.split("z")
+    # Split the fraction from the timezone specifier ('Z' or 'z') when present
+    if "Z" in s_fraction:
+        s_fraction, _ = s_fraction.split("Z", 1)
+    elif "z" in s_fraction:
+        s_fraction, _ = s_fraction.split("z", 1)
+    # else: no timezone suffix (e.g. "000"), use fraction as-is
 
     # If the fraction is more than 6 digits long, it's a nanosecond timestamp
     if len(s_fraction) > 6:
@@ -407,28 +411,33 @@ def timestamp_conversion(timestamp: str | dict | _typing.Any) -> _dt.datetime:
     Converts a timestamp-like value to a timezone-aware UTC datetime.
 
     Accepts RFC 3339/ISO 8601 strings or Firebase Timestamp objects
-    (with 'seconds', 'nanoseconds' attributes).
+    (with 'seconds' and 'nanoseconds' or 'nanos' attributes).
     """
     # Handle Firebase Timestamp object case
-    # Accept dict-like objects, or python objects with 'seconds' and 'nanoseconds' attributes
-    if hasattr(timestamp, "seconds") and hasattr(timestamp, "nanoseconds"):
-        # Normalize nanoseconds into seconds (handles values >= 1_000_000_000 or < 0)
-        carry, ns = divmod(int(timestamp.nanoseconds), 1_000_000_000)
-        secs = int(timestamp.seconds) + carry
-        # Truncate (deterministic, no floating precision issues, matches string path behavior)
-        microseconds = ns // 1_000
-        # Build without using fromtimestamp
-        epoch = _dt.datetime(1970, 1, 1, tzinfo=_dt.timezone.utc)
-        return epoch + _dt.timedelta(seconds=secs, microseconds=microseconds)
-    elif isinstance(timestamp, dict) and "seconds" in timestamp and "nanoseconds" in timestamp:
-        # Normalize nanoseconds into seconds (handles values >= 1_000_000_000 or < 0)
-        carry, ns = divmod(int(timestamp["nanoseconds"]), 1_000_000_000)
-        secs = int(timestamp["seconds"]) + carry
-        # Truncate (deterministic, no floating precision issues, matches string path behavior)
-        microseconds = ns // 1_000
-        # Build without using fromtimestamp
-        epoch = _dt.datetime(1970, 1, 1, tzinfo=_dt.timezone.utc)
-        return epoch + _dt.timedelta(seconds=secs, microseconds=microseconds)
+    # Accept objects with .seconds and .nanoseconds or .nanos
+    if hasattr(timestamp, "seconds"):
+        ns_val = getattr(timestamp, "nanoseconds", getattr(timestamp, "nanos", None))
+        if ns_val is not None:
+            # Normalize nanoseconds into seconds (handles values >= 1_000_000_000 or < 0)
+            carry, ns = divmod(int(ns_val), 1_000_000_000)
+            secs = int(timestamp.seconds) + carry
+            # Truncate (deterministic, no floating precision issues, matches string path behavior)
+            microseconds = ns // 1_000
+            # Build without using fromtimestamp
+            epoch = _dt.datetime(1970, 1, 1, tzinfo=_dt.timezone.utc)
+            return epoch + _dt.timedelta(seconds=secs, microseconds=microseconds)
+    # Handle dict (e.g. protobuf-style with "nanos" or "nanoseconds")
+    elif isinstance(timestamp, dict) and "seconds" in timestamp:
+        nanos_val = timestamp.get("nanoseconds", timestamp.get("nanos"))
+        if nanos_val is not None:
+            # Normalize nanoseconds into seconds (handles values >= 1_000_000_000 or < 0)
+            carry, ns = divmod(int(nanos_val), 1_000_000_000)
+            secs = int(timestamp["seconds"]) + carry
+            # Truncate (deterministic, no floating precision issues, matches string path behavior)
+            microseconds = ns // 1_000
+            # Build without using fromtimestamp
+            epoch = _dt.datetime(1970, 1, 1, tzinfo=_dt.timezone.utc)
+            return epoch + _dt.timedelta(seconds=secs, microseconds=microseconds)
 
     # Assume string input
     if not isinstance(timestamp, str):
