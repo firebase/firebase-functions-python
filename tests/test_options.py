@@ -206,7 +206,6 @@ def test_invoker_with_no_element_throws():
         params.BoolParam("USE_VPC").equals(True).then("my-vpc", ""),
     ],
 )
-
 def test_vpc_connector_accepts_expression(vpc_connector_expr):
     https_options = options.HttpsOptions(vpc_connector=vpc_connector_expr)
     https_options_dict = https_options._asdict_with_global_options()
