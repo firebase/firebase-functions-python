@@ -254,7 +254,7 @@ class RuntimeOptions:
     to the value "gcf_gen1"
     """
 
-    vpc_connector: str | _util.Sentinel | None = None
+    vpc_connector: str | Expression[str] | _util.Sentinel | None = None
     """
     Connect function to specified VPC connector.
     A value of ``RESET_VALUE`` removes the VPC connector.

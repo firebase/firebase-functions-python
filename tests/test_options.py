@@ -196,3 +196,22 @@ def test_invoker_with_no_element_throws():
         AssertionError, match="HttpsOptions: Invalid option for invoker - must be a non-empty list."
     ):
         options.HttpsOptions(invoker=[])._endpoint(func_name="test")
+
+
+def test_vpc_connector_accepts_string_param():
+    vpc_param = params.StringParam("VPC_CONNECTOR")
+
+    https_options = options.HttpsOptions(vpc_connector=vpc_param)
+    https_options_dict = https_options._asdict_with_global_options()
+
+    # The options dict should contain the CEL string representation for the param.
+    assert https_options_dict["vpc_connector"] == f"{vpc_param}", (
+        "vpc_connector param was not converted to CEL string"
+    )
+
+    # The generated endpoint should map the resolved vpc_connector into the vpc block.
+    endpoint = https_options._endpoint(func_name="test_vpc")
+    assert endpoint.vpc is not None, "vpc block was not set on endpoint"
+    assert endpoint.vpc["connector"] == f"{vpc_param}", (
+        "vpc connector was not set from vpc_connector Expression[str]"
+    )
