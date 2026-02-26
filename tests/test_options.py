@@ -15,6 +15,7 @@
 Options unit tests.
 """
 
+import pytest
 from pytest import raises
 
 from firebase_functions import https_fn, options, params
@@ -198,20 +199,26 @@ def test_invoker_with_no_element_throws():
         options.HttpsOptions(invoker=[])._endpoint(func_name="test")
 
 
-def test_vpc_connector_accepts_string_param():
-    vpc_param = params.StringParam("VPC_CONNECTOR")
+@pytest.mark.parametrize(
+    "vpc_connector_expr",
+    [
+        params.StringParam("VPC_CONNECTOR"),
+        params.BoolParam("USE_VPC").equals(True).then("my-vpc", ""),
+    ],
+)
 
-    https_options = options.HttpsOptions(vpc_connector=vpc_param)
+def test_vpc_connector_accepts_expression(vpc_connector_expr):
+    https_options = options.HttpsOptions(vpc_connector=vpc_connector_expr)
     https_options_dict = https_options._asdict_with_global_options()
 
-    # The options dict should contain the CEL string representation for the param.
-    assert https_options_dict["vpc_connector"] == f"{vpc_param}", (
-        "vpc_connector param was not converted to CEL string"
+    # The options dict should contain the CEL string representation for the expression.
+    assert https_options_dict["vpc_connector"] == str(vpc_connector_expr), (
+        "vpc_connector expression was not converted to CEL string"
     )
 
     # The generated endpoint should map the resolved vpc_connector into the vpc block.
     endpoint = https_options._endpoint(func_name="test_vpc")
     assert endpoint.vpc is not None, "vpc block was not set on endpoint"
-    assert endpoint.vpc["connector"] == f"{vpc_param}", (
+    assert endpoint.vpc["connector"] == str(vpc_connector_expr), (
         "vpc connector was not set from vpc_connector Expression[str]"
     )
