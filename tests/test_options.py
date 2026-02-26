@@ -24,6 +24,14 @@ from firebase_functions.private.serving import functions_as_yaml, merge_required
 # pylint: disable=protected-access
 
 
+@pytest.fixture(autouse=True)
+def _cleanup_params():
+    """Clear the global params registry so each test runs with a clean state."""
+    params._params.clear()
+    yield
+    params._params.clear()
+
+
 @https_fn.on_call()
 def asamplefunction(_):
     return "hello world"
