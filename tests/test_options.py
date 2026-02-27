@@ -32,6 +32,15 @@ def _cleanup_params():
     params._params.clear()
 
 
+@pytest.fixture(autouse=True)
+def _cleanup_global_options():
+    """Reset global options so each test runs with a clean state."""
+    original_options = options._GLOBAL_OPTIONS
+    options._GLOBAL_OPTIONS = options.RuntimeOptions()
+    yield
+    options._GLOBAL_OPTIONS = original_options
+
+
 @https_fn.on_call()
 def asamplefunction(_):
     return "hello world"
