@@ -19,7 +19,6 @@ import pytest
 
 from firebase_functions import options, params
 
-
 # pylint: disable=protected-access
 
 
