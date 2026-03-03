@@ -53,3 +53,31 @@ class TestDb(unittest.TestCase):
         self.assertEqual(event.auth_id, "auth-id")
 
         self.assertEqual(hello, "world")
+
+    def test_missing_auth_context(self):
+        func = mock.Mock(__name__="example_func_no_auth")
+        decorated_func = db_fn.on_value_created(reference="path")(func)
+
+        event = CloudEvent(
+            attributes={
+                "specversion": "1.0",
+                "id": "id",
+                "source": "source",
+                "subject": "subject",
+                "type": "type",
+                "time": "2024-04-10T12:00:00.000Z",
+                "instance": "instance",
+                "ref": "ref",
+                "firebasedatabasehost": "firebasedatabasehost",
+                "location": "location",
+            },
+            data={"delta": "delta"},
+        )
+
+        decorated_func(event)
+
+        func.assert_called_once()
+        event_arg = func.call_args.args[0]
+        self.assertIsNotNone(event_arg)
+        self.assertEqual(event_arg.auth_type, "unknown")
+        self.assertIsNone(event_arg.auth_id)
