@@ -38,7 +38,7 @@ class TestDb(unittest.TestCase):
                 "ref": "ref",
                 "firebasedatabasehost": "firebasedatabasehost",
                 "location": "location",
-                "authtype": "app_user",
+                "authtype": "app-user",
                 "authid": "auth-id",
             },
             data={"delta": "delta"},
@@ -49,7 +49,7 @@ class TestDb(unittest.TestCase):
         func.assert_called_once()
         event = func.call_args.args[0]
         self.assertIsNotNone(event)
-        self.assertEqual(event.auth_type, "app_user")
+        self.assertEqual(event.auth_type, "app-user")
         self.assertEqual(event.auth_id, "auth-id")
 
         self.assertEqual(hello, "world")
