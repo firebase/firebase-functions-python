@@ -47,10 +47,10 @@ class TestDb(unittest.TestCase):
         decorated_func(event)
 
         func.assert_called_once()
-        event = func.call_args.args[0]
-        self.assertIsNotNone(event)
-        self.assertEqual(event.auth_type, "app_user")
-        self.assertEqual(event.auth_id, "auth-id")
+        event_arg = func.call_args.args[0]
+        self.assertIsNotNone(event_arg)
+        self.assertEqual(event_arg.auth_type, "app_user")
+        self.assertEqual(event_arg.auth_id, "auth-id")
 
         self.assertEqual(hello, "world")
 
