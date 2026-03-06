@@ -438,7 +438,7 @@ def on_request(**kwargs) -> _typing.Callable[[_C1], _C1]:
                 return _cross_origin(
                     methods=options.cors.cors_methods,
                     origins=options.cors.cors_origins,
-                )(func)(request)
+                )(_core._with_init(func))(request)
             return _core._with_init(func)(request)
 
         _util.set_func_endpoint_attr(
