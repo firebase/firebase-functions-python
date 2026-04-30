@@ -386,14 +386,15 @@ class PrecisionTimestamp(_enum.Enum):
 
 def get_precision_timestamp(time: str) -> PrecisionTimestamp:
     """Return a bool which indicates if the timestamp is in nanoseconds"""
-    # Split the string into date-time and fraction of second
-    try:
-        _, s_fraction = time.split(".")
-    except ValueError:
+    if "." not in time:
         return PrecisionTimestamp.SECONDS
 
-    # Split the fraction from the timezone specifier ('Z' or 'z')
-    s_fraction, _ = s_fraction.split("Z") if "Z" in s_fraction else s_fraction.split("z")
+    _, s_fraction = time.split(".", 1)
+    fraction_match = _re.match(r"\d+", s_fraction)
+    if fraction_match is None:
+        raise ValueError("Invalid timestamp")
+
+    s_fraction = fraction_match.group()
 
     # If the fraction is more than 6 digits long, it's a nanosecond timestamp
     if len(s_fraction) > 6:

@@ -28,6 +28,7 @@ from firebase_functions.private.util import (
     nanoseconds_timestamp_conversion,
     normalize_path,
     second_timestamp_conversion,
+    timestamp_conversion,
 )
 
 test_bucket = "python-functions-testing.appspot.com"
@@ -105,6 +106,59 @@ def test_second_conversion():
         expected_datetime = _dt.datetime.strptime(expected_output, "%Y-%m-%dT%H:%M:%SZ")
         expected_datetime = expected_datetime.replace(tzinfo=_dt.timezone.utc)
         assert second_timestamp_conversion(input_timestamp) == expected_datetime
+
+
+def test_timestamp_conversion_supported_formats():
+    """
+    Testing shared timestamp conversion handles supported RTDB and CloudEvent formats.
+    """
+    timestamps = [
+        (
+            "2024-04-10T12:00:00.000Z",
+            _dt.datetime(2024, 4, 10, 12, 0, tzinfo=_dt.timezone.utc),
+        ),
+        (
+            "2024-04-10T12:00:00.123456Z",
+            _dt.datetime(2024, 4, 10, 12, 0, 0, 123456, tzinfo=_dt.timezone.utc),
+        ),
+        (
+            "2024-04-10T12:00:00.123456+05:30",
+            _dt.datetime(
+                2024,
+                4,
+                10,
+                12,
+                0,
+                0,
+                123456,
+                tzinfo=_dt.timezone(_dt.timedelta(hours=5, minutes=30)),
+            ),
+        ),
+        (
+            "2024-04-10T12:00:00.123456-0700",
+            _dt.datetime(
+                2024,
+                4,
+                10,
+                12,
+                0,
+                0,
+                123456,
+                tzinfo=_dt.timezone(-_dt.timedelta(hours=7)),
+            ),
+        ),
+        (
+            "2023-01-01T12:34:56.123456789Z",
+            _dt.datetime(2023, 1, 1, 12, 34, 56, 123456, tzinfo=_dt.timezone.utc),
+        ),
+        (
+            "2025-10-30T21:15:51Z",
+            _dt.datetime(2025, 10, 30, 21, 15, 51, tzinfo=_dt.timezone.utc),
+        ),
+    ]
+
+    for input_timestamp, expected_datetime in timestamps:
+        assert timestamp_conversion(input_timestamp) == expected_datetime
 
 
 def test_is_nanoseconds_timestamp():
