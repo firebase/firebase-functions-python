@@ -371,7 +371,7 @@ def second_timestamp_conversion(time: str) -> _dt.datetime:
 
 class PrecisionTimestamp(_enum.Enum):
     """
-    The status of a token.
+    Timestamp precision levels supported by Firebase event timestamp parsing.
     """
 
     NANOSECONDS = "NANOSECONDS"
@@ -385,15 +385,13 @@ class PrecisionTimestamp(_enum.Enum):
 
 
 def get_precision_timestamp(time: str) -> PrecisionTimestamp:
-    """Return a bool which indicates if the timestamp is in nanoseconds"""
+    """Return the precision used by a Firebase event timestamp."""
     if "." not in time:
         return PrecisionTimestamp.SECONDS
 
     _, s_fraction = time.split(".", 1)
-    fraction_match = _re.match(r"\d+", s_fraction)
-    if fraction_match is None:
-        raise ValueError("Invalid timestamp")
-
+    if not (fraction_match := _re.match(r"\d+", s_fraction)):
+        raise ValueError(f"Invalid timestamp format: {time}")
     s_fraction = fraction_match.group()
 
     # If the fraction is more than 6 digits long, it's a nanosecond timestamp
