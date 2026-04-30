@@ -18,7 +18,6 @@ Functions to handle events from Google Cloud Pub/Sub.
 # pylint: disable=protected-access
 import base64 as _base64
 import dataclasses as _dataclasses
-import datetime as _dt
 import functools as _functools
 import json as _json
 import typing as _typing
@@ -105,25 +104,9 @@ def _message_handler(
     data = event_dict["data"]
     message_dict = data["message"]
 
-    # if no microseconds are present, we should set them to 0 to prevent parsing from failing
-    if "." not in event_dict["time"]:
-        event_dict["time"] = event_dict["time"].replace("Z", ".000000Z")
-    if "." not in message_dict["publish_time"]:
-        message_dict["publish_time"] = message_dict["publish_time"].replace("Z", ".000000Z")
-
-    time = _dt.datetime.strptime(
-        event_dict["time"],
-        "%Y-%m-%dT%H:%M:%S.%f%z",
-    )
-
-    publish_time = _dt.datetime.strptime(
-        message_dict["publish_time"],
-        "%Y-%m-%dT%H:%M:%S.%f%z",
-    )
-
     # Convert the UTC string into a datetime object
-    event_dict["time"] = time
-    message_dict["publish_time"] = publish_time
+    event_dict["time"] = _util.timestamp_conversion(event_dict["time"])
+    message_dict["publish_time"] = _util.timestamp_conversion(message_dict["publish_time"])
 
     # Pop unnecessary keys from the message data
     # (we get these keys from the snake case alternatives that are provided)

@@ -214,7 +214,7 @@ def _event_handler(func: _C1, raw: _ce.CloudEvent) -> None:
     event_dict = {**event_data, **event_attributes}
 
     test_lab_data = TestMatrixCompletedData(
-        create_time=_dt.datetime.strptime(event_data["createTime"], "%Y-%m-%dT%H:%M:%S.%f%z"),
+        create_time=_util.timestamp_conversion(event_data["createTime"]),
         state=TestState(event_data["state"]),
         invalid_matrix_details=event_data.get("invalidMatrixDetails"),
         outcome_summary=OutcomeSummary(event_data["outcomeSummary"]),
@@ -237,10 +237,7 @@ def _event_handler(func: _C1, raw: _ce.CloudEvent) -> None:
         source=event_dict["source"],
         specversion=event_dict["specversion"],
         subject=event_dict["subject"] if "subject" in event_dict else None,
-        time=_dt.datetime.strptime(
-            event_dict["time"],
-            "%Y-%m-%dT%H:%M:%S.%f%z",
-        ),
+        time=_util.timestamp_conversion(event_dict["time"]),
         type=event_dict["type"],
     )
 

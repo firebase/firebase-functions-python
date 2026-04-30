@@ -164,7 +164,7 @@ def _config_handler(func: _C1, raw: _ce.CloudEvent) -> None:
 
     config_data = ConfigUpdateData(
         version_number=event_data["versionNumber"],
-        update_time=_dt.datetime.strptime(event_data["updateTime"], "%Y-%m-%dT%H:%M:%S.%f%z"),
+        update_time=_util.timestamp_conversion(event_data["updateTime"]),
         update_user=ConfigUser(
             name=event_data["updateUser"]["name"],
             email=event_data["updateUser"]["email"],
@@ -182,10 +182,7 @@ def _config_handler(func: _C1, raw: _ce.CloudEvent) -> None:
         source=event_dict["source"],
         specversion=event_dict["specversion"],
         subject=event_dict["subject"] if "subject" in event_dict else None,
-        time=_dt.datetime.strptime(
-            event_dict["time"],
-            "%Y-%m-%dT%H:%M:%S.%f%z",
-        ),
+        time=_util.timestamp_conversion(event_dict["time"]),
         type=event_dict["type"],
     )
 
