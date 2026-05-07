@@ -14,7 +14,6 @@
 """Cloud functions to handle Eventarc events."""
 
 # pylint: disable=protected-access
-import datetime as _dt
 import functools as _functools
 import typing as _typing
 
@@ -64,10 +63,7 @@ def on_custom_event_published(
                 source=event_dict["source"],
                 specversion=event_dict["specversion"],
                 subject=event_dict["subject"] if "subject" in event_dict else None,
-                time=_dt.datetime.strptime(
-                    event_dict["time"],
-                    "%Y-%m-%dT%H:%M:%S.%f%z",
-                ),
+                time=_util.timestamp_conversion(event_dict["time"]),
                 type=event_dict["type"],
             )
             _with_init(func)(event)

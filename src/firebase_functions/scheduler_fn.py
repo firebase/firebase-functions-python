@@ -105,24 +105,11 @@ def on_schedule(**kwargs) -> _typing.Callable[[_C], _Response]:
                 schedule_time = _dt.datetime.now(_timezone.utc)
             else:
                 try:
-                    # Try to parse with the stdlib which supports fractional
-                    # seconds and offsets in Python 3.11+ via fromisoformat.
-                    # Normalize RFC3339 'Z' to '+00:00' for fromisoformat.
-                    iso_str = schedule_time_str
-                    if iso_str.endswith("Z"):
-                        iso_str = iso_str[:-1] + "+00:00"
-                    schedule_time = _dt.datetime.fromisoformat(iso_str)
-                except ValueError:
-                    # Fallback to strict parsing without fractional seconds
-                    try:
-                        schedule_time = _dt.datetime.strptime(
-                            schedule_time_str,
-                            "%Y-%m-%dT%H:%M:%S%z",
-                        )
-                    except ValueError as e:
-                        # If all parsing fails, log and use current UTC time
-                        _logging.exception(e)
-                        schedule_time = _dt.datetime.now(_timezone.utc)
+                    schedule_time = _util.timestamp_conversion(schedule_time_str)
+                except ValueError as e:
+                    # If parsing fails, log and use current UTC time.
+                    _logging.exception(e)
+                    schedule_time = _dt.datetime.now(_timezone.utc)
             event = ScheduledEvent(
                 job_name=request.headers.get("X-CloudScheduler-JobName"),
                 schedule_time=schedule_time,

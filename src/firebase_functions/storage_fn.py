@@ -17,7 +17,6 @@ Functions to handle events from Google Cloud Storage.
 
 # pylint: disable=protected-access
 import dataclasses as _dataclasses
-import datetime as _dt
 import functools as _functools
 import typing as _typing
 
@@ -250,10 +249,7 @@ def _message_handler(
         source=event_attributes["source"],
         specversion=event_attributes["specversion"],
         subject=event_attributes["subject"] if "subject" in event_attributes else None,
-        time=_dt.datetime.strptime(
-            event_attributes["time"],
-            "%Y-%m-%dT%H:%M:%S.%f%z",
-        ),
+        time=_util.timestamp_conversion(event_attributes["time"]),
         type=event_attributes["type"],
     )
 
