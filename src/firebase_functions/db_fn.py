@@ -17,7 +17,6 @@ Module for Cloud Functions that are triggered by the Firebase Realtime Database.
 
 # pylint: disable=protected-access
 import dataclasses as _dataclass
-import datetime as _dt
 import functools as _functools
 import typing as _typing
 
@@ -126,10 +125,7 @@ def _db_endpoint_handler(
         id=event_attributes["id"],
         source=event_attributes["source"],
         type=event_attributes["type"],
-        time=_dt.datetime.strptime(
-            event_attributes["time"],
-            "%Y-%m-%dT%H:%M:%S.%f%z",
-        ),
+        time=_util.timestamp_conversion(event_attributes["time"]),
         data=database_event_data,
         subject=event_attributes["subject"],
         params=params,
