@@ -15,6 +15,7 @@
 Options unit tests.
 """
 
+import pytest
 from pytest import raises
 
 from firebase_functions import https_fn, options, params
@@ -196,3 +197,27 @@ def test_invoker_with_no_element_throws():
         AssertionError, match="HttpsOptions: Invalid option for invoker - must be a non-empty list."
     ):
         options.HttpsOptions(invoker=[])._endpoint(func_name="test")
+
+
+@pytest.mark.parametrize(
+    "vpc_connector_expr",
+    [
+        params.StringParam("VPC_CONNECTOR"),
+        params.BoolParam("USE_VPC").equals(True).then("my-vpc", ""),
+    ],
+)
+def test_vpc_connector_accepts_expression(vpc_connector_expr):
+    https_options = options.HttpsOptions(vpc_connector=vpc_connector_expr)
+    https_options_dict = https_options._asdict_with_global_options()
+
+    # The options dict should contain the CEL string representation for the expression.
+    assert https_options_dict["vpc_connector"] == str(vpc_connector_expr), (
+        "vpc_connector expression was not converted to CEL string"
+    )
+
+    # The generated endpoint should map the resolved vpc_connector into the vpc block.
+    endpoint = https_options._endpoint(func_name="test_vpc")
+    assert endpoint.vpc is not None, "vpc block was not set on endpoint"
+    assert endpoint.vpc["connector"] == str(vpc_connector_expr), (
+        "vpc connector was not set from vpc_connector Expression[str]"
+    )
