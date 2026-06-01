@@ -5,8 +5,8 @@ Logger module for Firebase Functions.
 import enum as _enum
 import json as _json
 import sys as _sys
-import typing as _typing
 import traceback as _traceback
+import typing as _typing
 
 import typing_extensions as _typing_extensions
 
@@ -88,9 +88,7 @@ def _exception_from_args(
     if exception.__traceback__ is not None:
         try:
             details["stack_trace"] = "".join(
-                _traceback.format_exception(
-                    exception.__class__, exception, exception.__traceback__
-                )
+                _traceback.format_exception(exception.__class__, exception, exception.__traceback__)
             )
         except Exception:
             details["stack_trace"] = "".join(_traceback.format_tb(exception.__traceback__))

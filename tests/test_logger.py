@@ -75,7 +75,9 @@ class TestLogger:
         assert "stack_trace" in log_output["error"]
         assert "ValueError: boom" in log_output["error"]["stack_trace"]
 
-    def test_error_should_accept_self_referential_exception(self, capsys: pytest.CaptureFixture[str]):
+    def test_error_should_accept_self_referential_exception(
+        self, capsys: pytest.CaptureFixture[str]
+    ):
         class SelfArgError(Exception):
             pass
 
