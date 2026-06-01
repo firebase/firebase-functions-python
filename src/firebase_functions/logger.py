@@ -6,6 +6,7 @@ import enum as _enum
 import json as _json
 import sys as _sys
 import typing as _typing
+import traceback as _traceback
 
 import typing_extensions as _typing_extensions
 
@@ -71,6 +72,43 @@ def _entry_from_args(severity: LogSeverity, *args, **kwargs) -> LogEntry:
     return _typing.cast(LogEntry, entry)
 
 
+def _exception_from_args(
+    exception: BaseException, refs: set[_typing.Any] | None = None
+) -> dict[str, _typing.Any]:
+    """
+    Creates a JSON-safe representation of an exception.
+    """
+
+    details: dict[str, _typing.Any] = {
+        "type": exception.__class__.__name__,
+        "message": _safe_exception_string(exception),
+    }
+    if exception.args:
+        details["args"] = _remove_circular(exception.args, refs)
+    if exception.__traceback__ is not None:
+        try:
+            details["stack_trace"] = "".join(
+                _traceback.format_exception(
+                    exception.__class__, exception, exception.__traceback__
+                )
+            )
+        except Exception:
+            details["stack_trace"] = "".join(_traceback.format_tb(exception.__traceback__))
+            details["stack_trace"] += f"{exception.__class__.__name__}: {details['message']}\n"
+    return details
+
+
+def _safe_exception_string(exception: BaseException) -> str:
+    """
+    Returns a string representation of an exception without propagating repr/str errors.
+    """
+
+    try:
+        return str(exception)
+    except Exception:
+        return exception.__class__.__name__
+
+
 def _remove_circular(obj: _typing.Any, refs: set[_typing.Any] | None = None):
     """
     Removes circular references from the given object and replaces them with "[CIRCULAR]".
@@ -89,7 +127,9 @@ def _remove_circular(obj: _typing.Any, refs: set[_typing.Any] | None = None):
 
     # Recursively process the object based on its type
     result: _typing.Any
-    if isinstance(obj, dict):
+    if isinstance(obj, BaseException):
+        result = _exception_from_args(obj, refs)
+    elif isinstance(obj, dict):
         result = {key: _remove_circular(value, refs) for key, value in obj.items()}
     elif isinstance(obj, list):
         result = [_remove_circular(item, refs) for item in obj]
@@ -149,3 +189,16 @@ def error(*args, **kwargs) -> None:
     Logs an error message.
     """
     write(_entry_from_args(LogSeverity.ERROR, *args, **kwargs))
+
+
+def exception(*args, **kwargs) -> None:
+    """
+    Logs an error message and includes the active stack trace.
+    """
+    entry = _entry_from_args(LogSeverity.ERROR, *args, **kwargs)
+    exc_type, exc_value, exc_traceback = _sys.exc_info()
+    if exc_type is not None and exc_value is not None and exc_traceback is not None:
+        entry["stack_trace"] = "".join(
+            _traceback.format_exception(exc_type, exc_value, exc_traceback)
+        )
+    write(entry)

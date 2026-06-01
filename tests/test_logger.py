@@ -59,6 +59,56 @@ class TestLogger:
         log_output = json.loads(raw_log_output)
         assert log_output["severity"] == "ERROR"
 
+    def test_error_should_accept_exception(self, capsys: pytest.CaptureFixture[str]):
+        try:
+            raise ValueError("boom")
+        except ValueError as exception:
+            logger.error("failed", error=exception)
+
+        raw_log_output = capsys.readouterr().err
+        log_output = json.loads(raw_log_output)
+
+        assert log_output["severity"] == "ERROR"
+        assert log_output["message"] == "failed"
+        assert log_output["error"]["type"] == "ValueError"
+        assert log_output["error"]["message"] == "boom"
+        assert "stack_trace" in log_output["error"]
+        assert "ValueError: boom" in log_output["error"]["stack_trace"]
+
+    def test_error_should_accept_self_referential_exception(self, capsys: pytest.CaptureFixture[str]):
+        class SelfArgError(Exception):
+            pass
+
+        exception = SelfArgError("boom")
+        exception.args = (exception,)
+
+        logger.error("failed", error=exception)
+
+        raw_log_output = capsys.readouterr().err
+        log_output = json.loads(raw_log_output)
+
+        assert log_output["severity"] == "ERROR"
+        assert log_output["message"] == "failed"
+        assert log_output["error"]["type"] == "SelfArgError"
+        assert log_output["error"]["args"] == ["[CIRCULAR]"]
+
+    def test_error_should_accept_exception_with_cyclic_payload(
+        self, capsys: pytest.CaptureFixture[str]
+    ):
+        payload = {}
+        payload["self"] = payload
+        exception = ValueError(payload)
+
+        logger.error("failed", error=exception)
+
+        raw_log_output = capsys.readouterr().err
+        log_output = json.loads(raw_log_output)
+
+        assert log_output["severity"] == "ERROR"
+        assert log_output["message"] == "failed"
+        assert log_output["error"]["type"] == "ValueError"
+        assert log_output["error"]["args"] == [{"self": "[CIRCULAR]"}]
+
     def test_log_should_have_message(self, capsys: pytest.CaptureFixture[str]):
         logger.log("bar")
         raw_log_output = capsys.readouterr().out
@@ -77,6 +127,20 @@ class TestLogger:
         raw_log_output = capsys.readouterr().out
         log_output = json.loads(raw_log_output)
         assert log_output["message"] == expected_message
+
+    def test_exception_should_include_stack_trace(self, capsys: pytest.CaptureFixture[str]):
+        try:
+            raise ValueError("boom")
+        except ValueError:
+            logger.exception("failed")
+
+        raw_log_output = capsys.readouterr().err
+        log_output = json.loads(raw_log_output)
+
+        assert log_output["severity"] == "ERROR"
+        assert log_output["message"] == "failed"
+        assert "stack_trace" in log_output
+        assert "ValueError: boom" in log_output["stack_trace"]
 
     def test_remove_circular_references(self, capsys: pytest.CaptureFixture[str]):
         # Create an object with a circular reference.
