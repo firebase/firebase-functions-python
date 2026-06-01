@@ -54,7 +54,7 @@ def _quote_if_string(literal: _T) -> _T:
     return _obj_cel_name(literal) if not isinstance(literal, str) else f'"{literal}"'
 
 
-_params: dict[str, Expression] = {}
+_params: dict[str, "Param[_typing.Any] | SecretParam"] = {}
 
 
 @_dataclasses.dataclass(frozen=True)
