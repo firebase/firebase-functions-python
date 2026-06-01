@@ -44,6 +44,7 @@ class LogEntry(_typing.TypedDict):
 
     severity: _typing_extensions.Required[LogSeverity]
     message: _typing_extensions.NotRequired[str]
+    stack_trace: _typing_extensions.NotRequired[str]
 
 
 def _entry_from_args(severity: LogSeverity, *args, **kwargs) -> LogEntry:
