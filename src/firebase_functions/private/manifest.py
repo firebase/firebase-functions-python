@@ -19,12 +19,40 @@
 
 import dataclasses as _dataclasses
 import typing as _typing
+from collections.abc import Mapping as _Mapping
+from collections.abc import Sequence as _Sequence
 from enum import Enum as _Enum
 
 import typing_extensions as _typing_extensions
 
 import firebase_functions.params as _params
 import firebase_functions.private.util as _util
+
+ManifestParamBase = _params.Param | _params.SecretParam
+
+ManifestParam = (
+    _params.BoolParam
+    | _params.IntParam
+    | _params._FloatParam
+    | _params.ListParam
+    | _params.SecretParam
+    | _params.StringParam
+)
+
+SpecValue: _typing.TypeAlias = (
+    str
+    | int
+    | float
+    | bool
+    | _util.Sentinel
+    | list["SpecValue"]
+    | dict[str, "SpecValue"]
+    | None
+)
+
+
+class _DataclassInstance(_typing.Protocol):
+    __dataclass_fields__: _typing.ClassVar[dict[str, _dataclasses.Field[object]]]
 
 
 class SecretEnvironmentVariable(_typing.TypedDict):
@@ -180,7 +208,7 @@ class ManifestRequiredApi(_typing.TypedDict):
 class ManifestStack:
     endpoints: dict[str, ManifestEndpoint]
     specVersion: str = "v1alpha1"
-    params: list[_typing.Any] | None = _dataclasses.field(default_factory=list[_typing.Any])
+    params: _Sequence[ManifestParamBase] | None = _dataclasses.field(default_factory=list[ManifestParamBase])
     requiredAPIs: list[ManifestRequiredApi] = _dataclasses.field(
         default_factory=list[ManifestRequiredApi]
     )
@@ -191,7 +219,7 @@ def _param_input_to_spec(
     | _params.ResourceInput
     | _params.SelectInput
     | _params.MultiSelectInput,
-) -> dict[str, _typing.Any]:
+) -> dict[str, SpecValue]:
     if isinstance(param_input, _params.TextInput):
         return {
             "text": {
@@ -233,8 +261,8 @@ def _param_input_to_spec(
     return {}
 
 
-def _param_to_spec(param: _params.Param | _params.SecretParam) -> dict[str, _typing.Any]:
-    spec_dict: dict[str, _typing.Any] = {
+def _param_to_spec(param: ManifestParamBase) -> dict[str, SpecValue]:
+    spec_dict: dict[str, SpecValue] = {
         "name": param.name,
         "label": param.label,
         "description": param.description,
@@ -266,31 +294,37 @@ def _param_to_spec(param: _params.Param | _params.SecretParam) -> dict[str, _typ
     return _dict_to_spec(spec_dict)
 
 
-def _object_to_spec(data) -> object:
+def _object_to_spec(data: object) -> SpecValue:
     if isinstance(data, _Enum):
         return data.value
     elif isinstance(data, _params.Expression):
         return f"{data}"
     elif _dataclasses.is_dataclass(data):
-        return _dataclass_to_spec(data)
+        return _dataclass_to_spec(_typing.cast(_DataclassInstance, data))
     elif isinstance(data, list):
         return list(map(_object_to_spec, data))
     elif isinstance(data, dict):
         return _dict_to_spec(data)
-    else:
+    elif data is None:
+        return None
+    elif isinstance(data, _util.Sentinel):
         return data
+    elif isinstance(data, (str, int, float, bool)):
+        return data
+    else:
+        raise TypeError(f"Unsupported manifest spec value: {type(data)!r}")
 
 
-def _dict_factory(data: list[tuple[str, _typing.Any]]) -> dict:
-    out: dict = {}
+def _dict_factory(data: list[tuple[str, object]]) -> dict[str, SpecValue]:
+    out: dict[str, SpecValue] = {}
     for key, value in data:
         if value is not None:
             out[key] = _object_to_spec(value)
     return out
 
 
-def _dataclass_to_spec(data) -> dict:
-    out: dict = {}
+def _dataclass_to_spec(data: _DataclassInstance) -> dict[str, SpecValue]:
+    out: dict[str, SpecValue] = {}
     for field in _dataclasses.fields(data):
         value = _object_to_spec(getattr(data, field.name))
         if value is not None:
@@ -298,13 +332,13 @@ def _dataclass_to_spec(data) -> dict:
     return out
 
 
-def _dict_to_spec(data: dict) -> dict:
+def _dict_to_spec(data: _Mapping[str, object]) -> dict[str, SpecValue]:
     return _dict_factory(list(data.items()))
 
 
-def manifest_to_spec_dict(manifest: ManifestStack) -> dict:
+def manifest_to_spec_dict(manifest: ManifestStack) -> dict[str, SpecValue]:
     params = manifest.params
-    out: dict = _dataclass_to_spec(manifest)
+    out: dict[str, SpecValue] = _dataclass_to_spec(manifest)
     if params is not None:
         out["params"] = list(map(_param_to_spec, params))
     return out
