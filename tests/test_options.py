@@ -18,7 +18,12 @@ Options unit tests.
 from pytest import raises
 
 from firebase_functions import alerts_fn, https_fn, options, params
-from firebase_functions.alerts import app_distribution_fn, billing_fn, crashlytics_fn, performance_fn
+from firebase_functions.alerts import (
+    app_distribution_fn,
+    billing_fn,
+    crashlytics_fn,
+    performance_fn,
+)
 from firebase_functions.private.serving import functions_as_yaml, merge_required_apis
 
 # pylint: disable=protected-access
