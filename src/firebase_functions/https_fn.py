@@ -432,14 +432,19 @@ def on_request(**kwargs) -> _typing.Callable[[_C1], _C1]:
     options = HttpsOptions(**kwargs)
 
     def on_request_inner_decorator(func: _C1):
+        func_with_init = _core._with_init(func)
+
+        if options.cors is not None:
+            wrapped_function = _cross_origin(
+                methods=options.cors.cors_methods,
+                origins=options.cors.cors_origins,
+            )(func_with_init)
+        else:
+            wrapped_function = func_with_init
+
         @_functools.wraps(func)
         def on_request_wrapped(request: Request) -> Response:
-            if options.cors is not None:
-                return _cross_origin(
-                    methods=options.cors.cors_methods,
-                    origins=options.cors.cors_origins,
-                )(func)(request)
-            return _core._with_init(func)(request)
+            return wrapped_function(request)
 
         _util.set_func_endpoint_attr(
             on_request_wrapped,

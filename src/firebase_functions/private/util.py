@@ -348,80 +348,33 @@ def firebase_config() -> None | FirebaseConfig:
     return FirebaseConfig(storage_bucket=json_data.get("storageBucket"))
 
 
-def nanoseconds_timestamp_conversion(time: str) -> _dt.datetime:
-    """Converts a nanosecond timestamp and returns a datetime object of the current time in UTC"""
+def normalize_timestamp_string(time: str) -> str:
+    """Truncate sub-second precision to microseconds for standard datetime parsing."""
+    # Python's %z parser accepts uppercase "Z" for UTC, but not lowercase "z".
+    if time.endswith("z"):
+        time = time[:-1] + "Z"
 
-    # Separate the date and time part from the nanoseconds.
-    datetime_str, nanosecond_str = time.replace("Z", "").replace("z", "").split(".")
-    # Parse the date and time part of the string.
-    event_time = _dt.datetime.strptime(datetime_str, "%Y-%m-%dT%H:%M:%S")
-    # Add the microseconds and timezone.
-    event_time = event_time.replace(microsecond=int(nanosecond_str[:6]), tzinfo=_dt.timezone.utc)
+    # Whole-second timestamps already fit the standard parser.
+    if "." not in time:
+        return time
 
-    return event_time
+    # Split once so the suffix still contains both fraction and timezone.
+    prefix, suffix = time.split(".", 1)
+    # The suffix must start with fractional second digits, followed by a timezone.
+    if not (fraction_match := _re.match(r"(\d+)(.*)", suffix)):
+        raise ValueError(f"Invalid timestamp format: {time}")
 
-
-def second_timestamp_conversion(time: str) -> _dt.datetime:
-    """Converts a second timestamp and returns a datetime object of the current time in UTC"""
-    return _dt.datetime.strptime(
-        time,
-        "%Y-%m-%dT%H:%M:%S%z",
-    )
-
-
-class PrecisionTimestamp(_enum.Enum):
-    """
-    The status of a token.
-    """
-
-    NANOSECONDS = "NANOSECONDS"
-
-    MICROSECONDS = "MICROSECONDS"
-
-    SECONDS = "SECONDS"
-
-    def __str__(self) -> str:
-        return self.value
-
-
-def get_precision_timestamp(time: str) -> PrecisionTimestamp:
-    """Return a bool which indicates if the timestamp is in nanoseconds"""
-    # Split the string into date-time and fraction of second
-    try:
-        _, s_fraction = time.split(".")
-    except ValueError:
-        return PrecisionTimestamp.SECONDS
-
-    # Split the fraction from the timezone specifier ('Z' or 'z')
-    s_fraction, _ = s_fraction.split("Z") if "Z" in s_fraction else s_fraction.split("z")
-
-    # If the fraction is more than 6 digits long, it's a nanosecond timestamp
-    if len(s_fraction) > 6:
-        return PrecisionTimestamp.NANOSECONDS
-    else:
-        return PrecisionTimestamp.MICROSECONDS
+    # datetime only stores microseconds, so keep the first 6 fractional digits.
+    digits, timezone = fraction_match.groups()
+    return f"{prefix}.{digits[:6]}{timezone}"
 
 
 def timestamp_conversion(time: str) -> _dt.datetime:
-    """Converts a timestamp and returns a datetime object of the current time in UTC"""
-    precision_timestamp = get_precision_timestamp(time)
-
-    if precision_timestamp == PrecisionTimestamp.NANOSECONDS:
-        return nanoseconds_timestamp_conversion(time)
-    elif precision_timestamp == PrecisionTimestamp.MICROSECONDS:
-        return microsecond_timestamp_conversion(time)
-    elif precision_timestamp == PrecisionTimestamp.SECONDS:
-        return second_timestamp_conversion(time)
-
-    raise ValueError("Invalid timestamp")
-
-
-def microsecond_timestamp_conversion(time: str) -> _dt.datetime:
-    """Converts a microsecond timestamp and returns a datetime object of the current time in UTC"""
-    return _dt.datetime.strptime(
-        time,
-        "%Y-%m-%dT%H:%M:%S.%f%z",
-    )
+    """Converts an ISO 8601 timestamp and returns a timezone-aware datetime object."""
+    normalized_time = normalize_timestamp_string(time)
+    if "." not in normalized_time:
+        return _dt.datetime.strptime(normalized_time, "%Y-%m-%dT%H:%M:%S%z")
+    return _dt.datetime.strptime(normalized_time, "%Y-%m-%dT%H:%M:%S.%f%z")
 
 
 def normalize_path(path: str) -> str:

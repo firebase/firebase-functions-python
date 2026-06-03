@@ -19,15 +19,11 @@ import datetime as _dt
 from os import environ, path
 
 from firebase_functions.private.util import (
-    PrecisionTimestamp,
     _unsafe_decode_id_token,
     deep_merge,
     firebase_config,
-    get_precision_timestamp,
-    microsecond_timestamp_conversion,
-    nanoseconds_timestamp_conversion,
     normalize_path,
-    second_timestamp_conversion,
+    timestamp_conversion,
 )
 
 test_bucket = "python-functions-testing.appspot.com"
@@ -56,88 +52,70 @@ def test_firebase_config_loads_from_env_file():
     )
 
 
-def test_microsecond_conversion():
+def test_timestamp_conversion_supported_formats():
     """
-    Testing microsecond_timestamp_conversion works as intended
-    """
-    timestamps = [
-        ("2023-06-20T10:15:22.396358Z", "2023-06-20T10:15:22.396358Z"),
-        ("2021-02-20T11:23:45.987123Z", "2021-02-20T11:23:45.987123Z"),
-        ("2022-09-18T09:15:38.246824Z", "2022-09-18T09:15:38.246824Z"),
-        ("2010-09-18T09:15:38.246824Z", "2010-09-18T09:15:38.246824Z"),
-    ]
-
-    for input_timestamp, expected_output in timestamps:
-        expected_datetime = _dt.datetime.strptime(expected_output, "%Y-%m-%dT%H:%M:%S.%fZ")
-        expected_datetime = expected_datetime.replace(tzinfo=_dt.timezone.utc)
-        assert microsecond_timestamp_conversion(input_timestamp) == expected_datetime
-
-
-def test_nanosecond_conversion():
-    """
-    Testing nanoseconds_timestamp_conversion works as intended
+    Testing shared timestamp conversion handles supported RTDB and CloudEvent formats.
     """
     timestamps = [
-        ("2023-01-01T12:34:56.123456789Z", "2023-01-01T12:34:56.123456Z"),
-        ("2023-02-14T14:37:52.987654321Z", "2023-02-14T14:37:52.987654Z"),
-        ("2023-03-21T06:43:58.564738291Z", "2023-03-21T06:43:58.564738Z"),
-        ("2023-08-15T22:22:22.222222222Z", "2023-08-15T22:22:22.222222Z"),
+        (
+            "2024-04-10T12:00:00.000Z",
+            _dt.datetime(2024, 4, 10, 12, 0, tzinfo=_dt.timezone.utc),
+        ),
+        (
+            "2024-04-10T12:00:00.123456Z",
+            _dt.datetime(2024, 4, 10, 12, 0, 0, 123456, tzinfo=_dt.timezone.utc),
+        ),
+        (
+            "2024-04-10T12:00:00.123456+05:30",
+            _dt.datetime(
+                2024,
+                4,
+                10,
+                12,
+                0,
+                0,
+                123456,
+                tzinfo=_dt.timezone(_dt.timedelta(hours=5, minutes=30)),
+            ),
+        ),
+        (
+            "2024-04-10T12:00:00.123456-0700",
+            _dt.datetime(
+                2024,
+                4,
+                10,
+                12,
+                0,
+                0,
+                123456,
+                tzinfo=_dt.timezone(-_dt.timedelta(hours=7)),
+            ),
+        ),
+        (
+            "2023-01-01T12:34:56.123456789Z",
+            _dt.datetime(2023, 1, 1, 12, 34, 56, 123456, tzinfo=_dt.timezone.utc),
+        ),
+        (
+            "2023-01-01T12:34:56.123456789+05:30",
+            _dt.datetime(
+                2023,
+                1,
+                1,
+                12,
+                34,
+                56,
+                123456,
+                tzinfo=_dt.timezone(_dt.timedelta(hours=5, minutes=30)),
+            ),
+        ),
+        (
+            "2025-10-30T21:15:51Z",
+            _dt.datetime(2025, 10, 30, 21, 15, 51, tzinfo=_dt.timezone.utc),
+        ),
     ]
 
-    for input_timestamp, expected_output in timestamps:
-        expected_datetime = _dt.datetime.strptime(expected_output, "%Y-%m-%dT%H:%M:%S.%fZ")
-        expected_datetime = expected_datetime.replace(tzinfo=_dt.timezone.utc)
-        assert nanoseconds_timestamp_conversion(input_timestamp) == expected_datetime
-
-
-def test_second_conversion():
-    """
-    Testing seconds_timestamp_conversion works as intended
-    """
-    timestamps = [
-        ("2023-01-01T12:34:56Z", "2023-01-01T12:34:56Z"),
-        ("2023-02-14T14:37:52Z", "2023-02-14T14:37:52Z"),
-        ("2023-03-21T06:43:58Z", "2023-03-21T06:43:58Z"),
-        ("2023-10-06T07:00:00Z", "2023-10-06T07:00:00Z"),
-    ]
-
-    for input_timestamp, expected_output in timestamps:
-        expected_datetime = _dt.datetime.strptime(expected_output, "%Y-%m-%dT%H:%M:%SZ")
-        expected_datetime = expected_datetime.replace(tzinfo=_dt.timezone.utc)
-        assert second_timestamp_conversion(input_timestamp) == expected_datetime
-
-
-def test_is_nanoseconds_timestamp():
-    """
-    Testing is_nanoseconds_timestamp works as intended
-    """
-    microsecond_timestamp1 = "2023-06-20T10:15:22.396358Z"
-    microsecond_timestamp2 = "2021-02-20T11:23:45.987123Z"
-    microsecond_timestamp3 = "2022-09-18T09:15:38.246824Z"
-    microsecond_timestamp4 = "2010-09-18T09:15:38.246824Z"
-
-    nanosecond_timestamp1 = "2023-01-01T12:34:56.123456789Z"
-    nanosecond_timestamp2 = "2023-02-14T14:37:52.987654321Z"
-    nanosecond_timestamp3 = "2023-03-21T06:43:58.564738291Z"
-    nanosecond_timestamp4 = "2023-08-15T22:22:22.222222222Z"
-
-    second_timestamp1 = "2023-01-01T12:34:56Z"
-    second_timestamp2 = "2023-02-14T14:37:52Z"
-    second_timestamp3 = "2023-03-21T06:43:58Z"
-    second_timestamp4 = "2023-08-15T22:22:22Z"
-
-    assert get_precision_timestamp(microsecond_timestamp1) is PrecisionTimestamp.MICROSECONDS
-    assert get_precision_timestamp(microsecond_timestamp2) is PrecisionTimestamp.MICROSECONDS
-    assert get_precision_timestamp(microsecond_timestamp3) is PrecisionTimestamp.MICROSECONDS
-    assert get_precision_timestamp(microsecond_timestamp4) is PrecisionTimestamp.MICROSECONDS
-    assert get_precision_timestamp(nanosecond_timestamp1) is PrecisionTimestamp.NANOSECONDS
-    assert get_precision_timestamp(nanosecond_timestamp2) is PrecisionTimestamp.NANOSECONDS
-    assert get_precision_timestamp(nanosecond_timestamp3) is PrecisionTimestamp.NANOSECONDS
-    assert get_precision_timestamp(nanosecond_timestamp4) is PrecisionTimestamp.NANOSECONDS
-    assert get_precision_timestamp(second_timestamp1) is PrecisionTimestamp.SECONDS
-    assert get_precision_timestamp(second_timestamp2) is PrecisionTimestamp.SECONDS
-    assert get_precision_timestamp(second_timestamp3) is PrecisionTimestamp.SECONDS
-    assert get_precision_timestamp(second_timestamp4) is PrecisionTimestamp.SECONDS
+    for input_timestamp, expected_datetime in timestamps:
+        assert timestamp_conversion(input_timestamp) == expected_datetime
 
 
 def test_normalize_document_path():

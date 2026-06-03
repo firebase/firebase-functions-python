@@ -17,7 +17,6 @@ Module for Cloud Functions that are triggered by the Firebase Realtime Database.
 
 # pylint: disable=protected-access
 import dataclasses as _dataclass
-import datetime as _dt
 import functools as _functools
 import typing as _typing
 
@@ -33,6 +32,8 @@ _event_type_written = "google.firebase.database.ref.v1.written"
 _event_type_created = "google.firebase.database.ref.v1.created"
 _event_type_updated = "google.firebase.database.ref.v1.updated"
 _event_type_deleted = "google.firebase.database.ref.v1.deleted"
+
+AuthType = _typing.Literal["app_user", "admin", "unauthenticated", "unknown"]
 
 
 @_dataclass.dataclass(frozen=True)
@@ -65,6 +66,16 @@ class Event(_core.CloudEvent[T]):
     """
     A dict containing the values of the path patterns.
     Only named capture groups are populated - {key}, {key=*}, {key=**}
+    """
+
+    auth_type: AuthType
+    """
+    The type of principal that triggered the event.
+    """
+
+    auth_id: str | None
+    """
+    The unique identifier for the principal.
     """
 
 
@@ -104,6 +115,7 @@ def _db_endpoint_handler(
         **ref_pattern.extract_matches(event_ref),
         **instance_pattern.extract_matches(event_instance),
     }
+
     database_event = Event(
         firebase_database_host=event_attributes["firebasedatabasehost"],
         instance=event_instance,
@@ -113,13 +125,12 @@ def _db_endpoint_handler(
         id=event_attributes["id"],
         source=event_attributes["source"],
         type=event_attributes["type"],
-        time=_dt.datetime.strptime(
-            event_attributes["time"],
-            "%Y-%m-%dT%H:%M:%S.%f%z",
-        ),
+        time=_util.timestamp_conversion(event_attributes["time"]),
         data=database_event_data,
         subject=event_attributes["subject"],
         params=params,
+        auth_type=event_attributes.get("authtype", "unknown"),
+        auth_id=event_attributes.get("authid"),
     )
     _core._with_init(func)(database_event)
 
