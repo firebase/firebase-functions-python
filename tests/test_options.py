@@ -34,6 +34,15 @@ def asamplefunctionpreserved(_):
     return "hello world"
 
 
+@pytest.fixture(autouse=True)
+def _cleanup_global_options():
+    """Reset global options so each test runs with a clean state."""
+    original_options = options._GLOBAL_OPTIONS
+    options._GLOBAL_OPTIONS = options.RuntimeOptions()
+    yield
+    options._GLOBAL_OPTIONS = original_options
+
+
 def test_set_global_options():
     """
     Testing if setting a global option internally change the values.
@@ -54,6 +63,30 @@ def test_global_options_merged_with_provider_options():
     assert "options" not in pubsub_options_dict, "'options' key should not exist in dict"
     assert pubsub_options_dict["max_instances"] == 66, (
         "provider option did not update using the global option"
+    )
+
+
+@pytest.mark.parametrize(
+    "vpc_connector_expr_factory",
+    [
+        lambda: params.StringParam("VPC_CONNECTOR"),
+        lambda: params.BoolParam("USE_VPC").equals(True).then("my-vpc", ""),
+    ],
+)
+def test_set_global_options_accepts_vpc_connector_expression(vpc_connector_expr_factory):
+    vpc_connector_expr = vpc_connector_expr_factory()
+    options.set_global_options(vpc_connector=vpc_connector_expr)
+
+    assert options._GLOBAL_OPTIONS.vpc_connector == vpc_connector_expr, (
+        "global vpc_connector expression was not stored"
+    )
+
+    https_options = options.HttpsOptions()
+    endpoint = https_options._endpoint(func_name="test_vpc_global")
+
+    assert endpoint.vpc is not None, "vpc block was not set on endpoint"
+    assert endpoint.vpc["connector"] == str(vpc_connector_expr), (
+        "global vpc_connector Expression[str] was not applied to the endpoint"
     )
 
 
@@ -200,13 +233,14 @@ def test_invoker_with_no_element_throws():
 
 
 @pytest.mark.parametrize(
-    "vpc_connector_expr",
+    "vpc_connector_expr_factory",
     [
-        params.StringParam("VPC_CONNECTOR"),
-        params.BoolParam("USE_VPC").equals(True).then("my-vpc", ""),
+        lambda: params.StringParam("VPC_CONNECTOR"),
+        lambda: params.BoolParam("USE_VPC").equals(True).then("my-vpc", ""),
     ],
 )
-def test_vpc_connector_accepts_expression(vpc_connector_expr):
+def test_vpc_connector_accepts_expression(vpc_connector_expr_factory):
+    vpc_connector_expr = vpc_connector_expr_factory()
     https_options = options.HttpsOptions(vpc_connector=vpc_connector_expr)
     https_options_dict = https_options._asdict_with_global_options()
 
