@@ -74,7 +74,7 @@ def _entry_from_args(severity: LogSeverity, *args, **kwargs) -> LogEntry:
 
 
 def _exception_from_args(
-    exception: BaseException, refs: set[_typing.Any] | None = None
+    exception: BaseException, refs: set[int] | None = None
 ) -> dict[str, _typing.Any]:
     """
     Creates a JSON-safe representation of an exception.
@@ -108,7 +108,7 @@ def _safe_exception_string(exception: BaseException) -> str:
         return exception.__class__.__name__
 
 
-def _remove_circular(obj: _typing.Any, refs: set[_typing.Any] | None = None):
+def _remove_circular(obj: _typing.Any, refs: set[int] | None = None):
     """
     Removes circular references from the given object and replaces them with "[CIRCULAR]".
     """
