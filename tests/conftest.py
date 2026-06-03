@@ -17,7 +17,7 @@ Pytest configuration and shared fixtures for the test suite.
 
 import pytest
 
-from firebase_functions import options, params
+from firebase_functions import params
 
 # pylint: disable=protected-access
 
@@ -28,12 +28,3 @@ def _cleanup_params():
     params._params.clear()
     yield
     params._params.clear()
-
-
-@pytest.fixture(autouse=True)
-def _cleanup_global_options():
-    """Reset global options so each test runs with a clean state."""
-    original_options = options._GLOBAL_OPTIONS
-    options._GLOBAL_OPTIONS = options.RuntimeOptions()
-    yield
-    options._GLOBAL_OPTIONS = original_options
