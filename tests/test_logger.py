@@ -179,6 +179,22 @@ class TestLogger:
         assert log_output["error"]["type"] == "ValueError"
         assert log_output["error"]["args"] == [{repr(next(iter(payload.keys()))): "value"}]
 
+    def test_error_should_accept_exception_with_tuple_dict_key(
+        self, capsys: pytest.CaptureFixture[str]
+    ):
+        payload = {(1, "two"): "value"}
+        exception = ValueError(payload)
+
+        logger.error("failed", error=exception)
+
+        raw_log_output = capsys.readouterr().err
+        log_output = json.loads(raw_log_output)
+
+        assert log_output["severity"] == "ERROR"
+        assert log_output["message"] == "failed"
+        assert log_output["error"]["type"] == "ValueError"
+        assert log_output["error"]["args"] == [{"(1, 'two')": "value"}]
+
     def test_log_should_have_message(self, capsys: pytest.CaptureFixture[str]):
         logger.log("bar")
         raw_log_output = capsys.readouterr().out

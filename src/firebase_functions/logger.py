@@ -148,12 +148,27 @@ def _coerce_json_safe(obj: _typing.Any):
     if isinstance(obj, str | int | float | bool | type(None)):
         return obj
     if isinstance(obj, dict):
-        return {_coerce_json_safe(key): _coerce_json_safe(value) for key, value in obj.items()}
+        return {
+            _coerce_json_safe_dict_key(key): _coerce_json_safe(value) for key, value in obj.items()
+        }
     if isinstance(obj, list):
         return [_coerce_json_safe(item) for item in obj]
     if isinstance(obj, tuple):
         return tuple(_coerce_json_safe(item) for item in obj)
     return _safe_repr(obj)
+
+
+def _coerce_json_safe_dict_key(obj: _typing.Any):
+    """
+    Converts dictionary keys into values accepted by JSON object encoding.
+    """
+
+    if isinstance(obj, str | int | float | bool | type(None)):
+        return obj
+    coerced = _coerce_json_safe(obj)
+    if isinstance(coerced, str | int | float | bool | type(None)):
+        return coerced
+    return _safe_repr(coerced)
 
 
 def _safe_repr(obj: _typing.Any) -> str:
