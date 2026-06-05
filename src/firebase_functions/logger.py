@@ -148,9 +148,7 @@ def _coerce_json_safe(obj: _typing.Any):
     if isinstance(obj, str | int | float | bool | type(None)):
         return obj
     if isinstance(obj, dict):
-        return {
-            _coerce_json_safe(key): _coerce_json_safe(value) for key, value in obj.items()
-        }
+        return {_coerce_json_safe(key): _coerce_json_safe(value) for key, value in obj.items()}
     if isinstance(obj, list):
         return [_coerce_json_safe(item) for item in obj]
     if isinstance(obj, tuple):
