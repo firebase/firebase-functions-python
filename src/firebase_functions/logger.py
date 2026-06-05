@@ -85,7 +85,7 @@ def _exception_from_args(
         "message": _safe_exception_string(exception),
     }
     if exception.args:
-        details["args"] = _remove_circular(exception.args, refs)
+        details["args"] = _json_safe_exception_args(exception.args, refs)
     if exception.__traceback__ is not None:
         try:
             details["stack_trace"] = "".join(
@@ -130,6 +130,30 @@ def _safe_exception_string(exception: BaseException) -> str:
         return str(exception)
     except Exception:
         return exception.__class__.__name__
+
+
+def _json_safe_exception_args(args: tuple[_typing.Any, ...], refs: set[int] | None = None):
+    """
+    Returns exception args in a form that can be encoded as JSON.
+    """
+
+    return _coerce_json_safe(_remove_circular(args, refs))
+
+
+def _coerce_json_safe(obj: _typing.Any):
+    """
+    Converts values that survive circular-reference removal into JSON-safe values.
+    """
+
+    if isinstance(obj, str | int | float | bool | type(None)):
+        return obj
+    if isinstance(obj, dict):
+        return {key: _coerce_json_safe(value) for key, value in obj.items()}
+    if isinstance(obj, list):
+        return [_coerce_json_safe(item) for item in obj]
+    if isinstance(obj, tuple):
+        return tuple(_coerce_json_safe(item) for item in obj)
+    return repr(obj)
 
 
 def _remove_circular(obj: _typing.Any, refs: set[int] | None = None):
