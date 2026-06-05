@@ -97,6 +97,30 @@ def _exception_from_args(
     return details
 
 
+def _exception_type_from_args(
+    exception_type: type[BaseException],
+) -> dict[str, _typing.Any]:
+    """
+    Creates a JSON-safe representation of an exception class.
+
+    If the class matches the active exception from `sys.exc_info()`, include
+    the current exception message and stack trace as well.
+    """
+
+    details: dict[str, _typing.Any] = {
+        "type": exception_type.__name__,
+        "message": exception_type.__name__,
+    }
+    exc_type, exc_value, exc_traceback = _sys.exc_info()
+    if exc_type is exception_type and exc_value is not None:
+        details["message"] = _safe_exception_string(exc_value)
+        if exc_traceback is not None:
+            details["stack_trace"] = "".join(
+                _traceback.format_exception(exc_type, exc_value, exc_traceback)
+            )
+    return details
+
+
 def _safe_exception_string(exception: BaseException) -> str:
     """
     Returns a string representation of an exception without propagating repr/str errors.
@@ -128,6 +152,8 @@ def _remove_circular(obj: _typing.Any, refs: set[int] | None = None):
     result: _typing.Any
     if isinstance(obj, BaseException):
         result = _exception_from_args(obj, refs)
+    elif isinstance(obj, type) and issubclass(obj, BaseException):
+        result = _exception_type_from_args(obj)
     elif isinstance(obj, dict):
         result = {key: _remove_circular(value, refs) for key, value in obj.items()}
     elif isinstance(obj, list):

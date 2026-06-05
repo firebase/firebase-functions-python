@@ -4,6 +4,7 @@ Logger module tests.
 """
 
 import json
+import sys
 
 import pytest
 
@@ -74,6 +75,22 @@ class TestLogger:
         assert log_output["error"]["message"] == "boom"
         assert "stack_trace" in log_output["error"]
         assert "ValueError: boom" in log_output["error"]["stack_trace"]
+
+    def test_error_should_accept_exception_type(self, capsys: pytest.CaptureFixture[str]):
+        try:
+            raise TypeError("boom")
+        except TypeError:
+            logger.error("failed", error=sys.exc_info()[0])
+
+        raw_log_output = capsys.readouterr().err
+        log_output = json.loads(raw_log_output)
+
+        assert log_output["severity"] == "ERROR"
+        assert log_output["message"] == "failed"
+        assert log_output["error"]["type"] == "TypeError"
+        assert log_output["error"]["message"] == "boom"
+        assert "stack_trace" in log_output["error"]
+        assert "TypeError: boom" in log_output["error"]["stack_trace"]
 
     def test_error_should_accept_self_referential_exception(
         self, capsys: pytest.CaptureFixture[str]
