@@ -270,11 +270,12 @@ def exception(*args, **kwargs) -> None:
     """
     Logs an error message and includes the active stack trace.
     """
+    raw_error = kwargs.get("error")
     entry = _entry_from_args(LogSeverity.ERROR, *args, **kwargs)
     exc_type, exc_value, exc_traceback = _sys.exc_info()
     if exc_type is not None and exc_value is not None and exc_traceback is not None:
-        error = entry.get("error")
-        if not isinstance(error, dict) or "stack_trace" not in error:
+        uses_active_error_traceback = raw_error is exc_value or raw_error is exc_type
+        if not uses_active_error_traceback:
             entry["stack_trace"] = "".join(
                 _traceback.format_exception(exc_type, exc_value, exc_traceback)
             )

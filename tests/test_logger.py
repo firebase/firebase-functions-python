@@ -266,6 +266,23 @@ class TestLogger:
         assert "stack_trace" in log_output["error"]
         assert "TypeError: boom" in log_output["error"]["stack_trace"]
 
+    def test_exception_should_include_active_stack_trace_for_error_dict(
+        self, capsys: pytest.CaptureFixture[str]
+    ):
+        try:
+            raise ValueError("boom")
+        except ValueError:
+            logger.exception("failed", error={"stack_trace": "custom traceback"})
+
+        raw_log_output = capsys.readouterr().err
+        log_output = json.loads(raw_log_output)
+
+        assert log_output["severity"] == "ERROR"
+        assert log_output["message"] == "failed"
+        assert log_output["error"] == {"stack_trace": "custom traceback"}
+        assert "stack_trace" in log_output
+        assert "ValueError: boom" in log_output["stack_trace"]
+
     def test_remove_circular_references(self, capsys: pytest.CaptureFixture[str]):
         # Create an object with a circular reference.
         circ = {"b": "foo"}
