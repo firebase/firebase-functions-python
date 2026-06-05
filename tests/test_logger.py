@@ -144,6 +144,41 @@ class TestLogger:
         assert log_output["error"]["type"] == "ValueError"
         assert log_output["error"]["args"] == [repr(payload)]
 
+    def test_error_should_accept_exception_with_repr_raising_arg(
+        self, capsys: pytest.CaptureFixture[str]
+    ):
+        class BadRepr:
+            def __repr__(self):
+                raise RuntimeError("boom")
+
+        exception = ValueError(BadRepr())
+
+        logger.error("failed", error=exception)
+
+        raw_log_output = capsys.readouterr().err
+        log_output = json.loads(raw_log_output)
+
+        assert log_output["severity"] == "ERROR"
+        assert log_output["message"] == "failed"
+        assert log_output["error"]["type"] == "ValueError"
+        assert log_output["error"]["args"] == ["BadRepr"]
+
+    def test_error_should_accept_exception_with_non_json_serializable_dict_key(
+        self, capsys: pytest.CaptureFixture[str]
+    ):
+        payload = {object(): "value"}
+        exception = ValueError(payload)
+
+        logger.error("failed", error=exception)
+
+        raw_log_output = capsys.readouterr().err
+        log_output = json.loads(raw_log_output)
+
+        assert log_output["severity"] == "ERROR"
+        assert log_output["message"] == "failed"
+        assert log_output["error"]["type"] == "ValueError"
+        assert log_output["error"]["args"] == [{repr(next(iter(payload.keys()))): "value"}]
+
     def test_log_should_have_message(self, capsys: pytest.CaptureFixture[str]):
         logger.log("bar")
         raw_log_output = capsys.readouterr().out

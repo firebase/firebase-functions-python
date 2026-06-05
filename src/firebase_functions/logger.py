@@ -148,12 +148,25 @@ def _coerce_json_safe(obj: _typing.Any):
     if isinstance(obj, str | int | float | bool | type(None)):
         return obj
     if isinstance(obj, dict):
-        return {key: _coerce_json_safe(value) for key, value in obj.items()}
+        return {
+            _coerce_json_safe(key): _coerce_json_safe(value) for key, value in obj.items()
+        }
     if isinstance(obj, list):
         return [_coerce_json_safe(item) for item in obj]
     if isinstance(obj, tuple):
         return tuple(_coerce_json_safe(item) for item in obj)
-    return repr(obj)
+    return _safe_repr(obj)
+
+
+def _safe_repr(obj: _typing.Any) -> str:
+    """
+    Returns a repr without propagating repr errors.
+    """
+
+    try:
+        return repr(obj)
+    except Exception:
+        return obj.__class__.__name__
 
 
 def _remove_circular(obj: _typing.Any, refs: set[int] | None = None):
