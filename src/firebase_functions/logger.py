@@ -258,7 +258,9 @@ def exception(*args, **kwargs) -> None:
     entry = _entry_from_args(LogSeverity.ERROR, *args, **kwargs)
     exc_type, exc_value, exc_traceback = _sys.exc_info()
     if exc_type is not None and exc_value is not None and exc_traceback is not None:
-        entry["stack_trace"] = "".join(
-            _traceback.format_exception(exc_type, exc_value, exc_traceback)
-        )
+        error = entry.get("error")
+        if not isinstance(error, dict) or "stack_trace" not in error:
+            entry["stack_trace"] = "".join(
+                _traceback.format_exception(exc_type, exc_value, exc_traceback)
+            )
     write(entry)

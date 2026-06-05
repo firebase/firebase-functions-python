@@ -212,6 +212,44 @@ class TestLogger:
         assert "stack_trace" in log_output
         assert "ValueError: boom" in log_output["stack_trace"]
 
+    def test_exception_should_not_duplicate_stack_trace_for_exception_error(
+        self, capsys: pytest.CaptureFixture[str]
+    ):
+        try:
+            raise ValueError("boom")
+        except ValueError as exception:
+            logger.exception("failed", error=exception)
+
+        raw_log_output = capsys.readouterr().err
+        log_output = json.loads(raw_log_output)
+
+        assert log_output["severity"] == "ERROR"
+        assert log_output["message"] == "failed"
+        assert "stack_trace" not in log_output
+        assert log_output["error"]["type"] == "ValueError"
+        assert log_output["error"]["message"] == "boom"
+        assert "stack_trace" in log_output["error"]
+        assert "ValueError: boom" in log_output["error"]["stack_trace"]
+
+    def test_exception_should_not_duplicate_stack_trace_for_exception_type_error(
+        self, capsys: pytest.CaptureFixture[str]
+    ):
+        try:
+            raise TypeError("boom")
+        except TypeError:
+            logger.exception("failed", error=sys.exc_info()[0])
+
+        raw_log_output = capsys.readouterr().err
+        log_output = json.loads(raw_log_output)
+
+        assert log_output["severity"] == "ERROR"
+        assert log_output["message"] == "failed"
+        assert "stack_trace" not in log_output
+        assert log_output["error"]["type"] == "TypeError"
+        assert log_output["error"]["message"] == "boom"
+        assert "stack_trace" in log_output["error"]
+        assert "TypeError: boom" in log_output["error"]["stack_trace"]
+
     def test_remove_circular_references(self, capsys: pytest.CaptureFixture[str]):
         # Create an object with a circular reference.
         circ = {"b": "foo"}
