@@ -672,6 +672,7 @@ class AppDistributionOptions(EventHandlerOptions):
         return FirebaseAlertOptions(
             alert_type=kwargs["alert_type"],
             app_id=self.app_id,
+            **self._asdict_with_global_options()
         )._endpoint(**kwargs)
 
 
@@ -695,6 +696,7 @@ class PerformanceOptions(EventHandlerOptions):
         return FirebaseAlertOptions(
             alert_type=kwargs["alert_type"],
             app_id=self.app_id,
+            **self._asdict_with_global_options()
         )._endpoint(**kwargs)
 
 
@@ -718,6 +720,7 @@ class CrashlyticsOptions(EventHandlerOptions):
         return FirebaseAlertOptions(
             alert_type=kwargs["alert_type"],
             app_id=self.app_id,
+            **self._asdict_with_global_options()
         )._endpoint(**kwargs)
 
 
@@ -735,6 +738,7 @@ class BillingOptions(EventHandlerOptions):
         assert kwargs["alert_type"] is not None
         return FirebaseAlertOptions(
             alert_type=kwargs["alert_type"],
+            **self._asdict_with_global_options()
         )._endpoint(**kwargs)
 
 
