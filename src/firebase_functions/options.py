@@ -655,8 +655,8 @@ class FirebaseAlertOptions(EventHandlerOptions):
 def _alert_options_to_firebase_alert_options(
     options: EventHandlerOptions,
     alert_type: str | AlertType,
-    app_id: str | None = None,
 ) -> FirebaseAlertOptions:
+    app_id = getattr(options, "app_id", None)
     option_values = {
         field.name: getattr(options, field.name)
         for field in _dataclasses.fields(options)
@@ -689,7 +689,6 @@ class AppDistributionOptions(EventHandlerOptions):
         return _alert_options_to_firebase_alert_options(
             self,
             kwargs["alert_type"],
-            self.app_id,
         )._endpoint(**kwargs)
 
 
@@ -713,7 +712,6 @@ class PerformanceOptions(EventHandlerOptions):
         return _alert_options_to_firebase_alert_options(
             self,
             kwargs["alert_type"],
-            self.app_id,
         )._endpoint(**kwargs)
 
 
@@ -737,7 +735,6 @@ class CrashlyticsOptions(EventHandlerOptions):
         return _alert_options_to_firebase_alert_options(
             self,
             kwargs["alert_type"],
-            self.app_id,
         )._endpoint(**kwargs)
 
 
