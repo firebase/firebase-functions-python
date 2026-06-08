@@ -106,7 +106,9 @@ def _stack_trace_from_exception_type(exception_type: type[BaseException]) -> str
     return None
 
 
-def _stack_trace_from_args(args: tuple[_typing.Any, ...], kwargs: dict[str, _typing.Any]) -> str | None:
+def _stack_trace_from_args(
+    args: tuple[_typing.Any, ...], kwargs: dict[str, _typing.Any]
+) -> str | None:
     """
     Returns the first available stack trace from logger arguments or active exception state.
     """
