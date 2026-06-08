@@ -254,7 +254,7 @@ class RuntimeOptions:
     to the value "gcf_gen1"
     """
 
-    vpc_connector: str | _util.Sentinel | None = None
+    vpc_connector: str | Expression[str] | _util.Sentinel | None = None
     """
     Connect function to specified VPC connector.
     A value of ``RESET_VALUE`` removes the VPC connector.
@@ -1232,8 +1232,8 @@ def set_global_options(
     max_instances: int | Expression[int] | _util.Sentinel | None = None,
     concurrency: int | Expression[int] | _util.Sentinel | None = None,
     cpu: int | _typing.Literal["gcf_gen1"] | _util.Sentinel = "gcf_gen1",
-    vpc_connector: str | None = None,
-    vpc_connector_egress_settings: VpcEgressSetting | None = None,
+    vpc_connector: str | Expression[str] | _util.Sentinel | None = None,
+    vpc_connector_egress_settings: VpcEgressSetting | _util.Sentinel | None = None,
     service_account: str | _util.Sentinel | None = None,
     ingress: IngressSetting | _util.Sentinel | None = None,
     labels: dict[str, str] | None = None,
