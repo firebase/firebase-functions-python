@@ -42,7 +42,7 @@ dynamic = ["version"]
 
 [dependency-groups]
 dev = [
-  "pytest>=7.1.2,<9",
+  "pytest>=7.1.2,<10",
   "setuptools>=63.4.2",
   "pytest-cov>=3.0.0",
   "mypy>=1.0.0",
