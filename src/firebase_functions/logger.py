@@ -5,6 +5,7 @@ Logger module for Firebase Functions.
 import enum as _enum
 import json as _json
 import sys as _sys
+import traceback as _traceback
 import typing as _typing
 
 import typing_extensions as _typing_extensions
@@ -43,6 +44,7 @@ class LogEntry(_typing.TypedDict):
 
     severity: _typing_extensions.Required[LogSeverity]
     message: _typing_extensions.NotRequired[str]
+    stack_trace: _typing_extensions.NotRequired[str]
 
 
 def _entry_from_args(severity: LogSeverity, *args, **kwargs) -> LogEntry:
@@ -54,24 +56,134 @@ def _entry_from_args(severity: LogSeverity, *args, **kwargs) -> LogEntry:
         [
             value
             if isinstance(value, str)
-            else _json.dumps(_remove_circular(value), ensure_ascii=False)
+            else _json.dumps(_coerce_json_safe(_remove_circular(value)), ensure_ascii=False)
             for value in args
         ]
     )
 
     other: dict[str, _typing.Any] = {
-        key: value if isinstance(value, str) else _remove_circular(value)
+        key: value if isinstance(value, str) else _coerce_json_safe(_remove_circular(value))
         for key, value in kwargs.items()
     }
 
     entry: dict[str, _typing.Any] = {"severity": severity, **other}
     if message:
         entry["message"] = message
+    if severity == LogSeverity.ERROR:
+        stack_trace = _stack_trace_from_args(args, kwargs)
+        if stack_trace is not None:
+            entry["stack_trace"] = stack_trace
 
     return _typing.cast(LogEntry, entry)
 
 
-def _remove_circular(obj: _typing.Any, refs: set[_typing.Any] | None = None):
+def _stack_trace_from_exception(exception: BaseException) -> str | None:
+    """
+    Returns a formatted stack trace for an exception when available.
+    """
+
+    if exception.__traceback__ is not None:
+        try:
+            return "".join(
+                _traceback.format_exception(exception.__class__, exception, exception.__traceback__)
+            )
+        except Exception:
+            stack_trace = "".join(_traceback.format_tb(exception.__traceback__))
+            stack_trace += f"{exception.__class__.__name__}: {_safe_exception_string(exception)}\n"
+            return stack_trace
+    return None
+
+
+def _stack_trace_from_exception_type(exception_type: type[BaseException]) -> str | None:
+    """
+    Returns the active stack trace when the given type matches the current exception.
+    """
+
+    exc_type, exc_value, exc_traceback = _sys.exc_info()
+    if exc_type is exception_type and exc_value is not None:
+        if exc_traceback is not None:
+            return "".join(_traceback.format_exception(exc_type, exc_value, exc_traceback))
+    return None
+
+
+def _stack_trace_from_args(
+    args: tuple[_typing.Any, ...], kwargs: dict[str, _typing.Any]
+) -> str | None:
+    """
+    Returns the first available stack trace from logger arguments or active exception state.
+    """
+
+    for value in (*args, *kwargs.values()):
+        if isinstance(value, BaseException):
+            stack_trace = _stack_trace_from_exception(value)
+            if stack_trace is not None:
+                return stack_trace
+        elif isinstance(value, type) and issubclass(value, BaseException):
+            stack_trace = _stack_trace_from_exception_type(value)
+            if stack_trace is not None:
+                return stack_trace
+
+    exc_type, exc_value, exc_traceback = _sys.exc_info()
+    if exc_type is not None and exc_value is not None and exc_traceback is not None:
+        return "".join(_traceback.format_exception(exc_type, exc_value, exc_traceback))
+
+    return None
+
+
+def _safe_exception_string(exception: BaseException) -> str:
+    """
+    Returns a string representation of an exception without propagating repr/str errors.
+    """
+
+    try:
+        return str(exception)
+    except Exception:
+        return exception.__class__.__name__
+
+
+def _coerce_json_safe(obj: _typing.Any):
+    """
+    Converts values that survive circular-reference removal into JSON-safe values.
+    """
+
+    if isinstance(obj, str | int | float | bool | type(None)):
+        return obj
+    if isinstance(obj, dict):
+        return {
+            _coerce_json_safe_dict_key(key): _coerce_json_safe(value) for key, value in obj.items()
+        }
+    if isinstance(obj, list):
+        return [_coerce_json_safe(item) for item in obj]
+    if isinstance(obj, tuple):
+        return tuple(_coerce_json_safe(item) for item in obj)
+    return _safe_repr(obj)
+
+
+def _coerce_json_safe_dict_key(obj: _typing.Any):
+    """
+    Converts dictionary keys into values accepted by JSON object encoding.
+    """
+
+    if isinstance(obj, str | int | float | bool | type(None)):
+        return obj
+    coerced = _coerce_json_safe(obj)
+    if isinstance(coerced, str | int | float | bool | type(None)):
+        return coerced
+    return _safe_repr(coerced)
+
+
+def _safe_repr(obj: _typing.Any) -> str:
+    """
+    Returns a repr without propagating repr errors.
+    """
+
+    try:
+        return repr(obj)
+    except Exception:
+        return obj.__class__.__name__
+
+
+def _remove_circular(obj: _typing.Any, refs: set[int] | None = None):
     """
     Removes circular references from the given object and replaces them with "[CIRCULAR]".
     """
