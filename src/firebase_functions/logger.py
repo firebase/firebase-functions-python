@@ -56,69 +56,76 @@ def _entry_from_args(severity: LogSeverity, *args, **kwargs) -> LogEntry:
         [
             value
             if isinstance(value, str)
-            else _json.dumps(_remove_circular(value), ensure_ascii=False)
+            else _json.dumps(_coerce_json_safe(_remove_circular(value)), ensure_ascii=False)
             for value in args
         ]
     )
 
     other: dict[str, _typing.Any] = {
-        key: value if isinstance(value, str) else _remove_circular(value)
+        key: value if isinstance(value, str) else _coerce_json_safe(_remove_circular(value))
         for key, value in kwargs.items()
     }
 
     entry: dict[str, _typing.Any] = {"severity": severity, **other}
     if message:
         entry["message"] = message
+    if severity == LogSeverity.ERROR:
+        stack_trace = _stack_trace_from_args(args, kwargs)
+        if stack_trace is not None:
+            entry["stack_trace"] = stack_trace
 
     return _typing.cast(LogEntry, entry)
 
 
-def _exception_from_args(
-    exception: BaseException, refs: set[int] | None = None
-) -> dict[str, _typing.Any]:
+def _stack_trace_from_exception(exception: BaseException) -> str | None:
     """
-    Creates a JSON-safe representation of an exception.
+    Returns a formatted stack trace for an exception when available.
     """
 
-    details: dict[str, _typing.Any] = {
-        "type": exception.__class__.__name__,
-        "message": _safe_exception_string(exception),
-    }
-    if exception.args:
-        details["args"] = _json_safe_exception_args(exception.args, refs)
     if exception.__traceback__ is not None:
         try:
-            details["stack_trace"] = "".join(
+            return "".join(
                 _traceback.format_exception(exception.__class__, exception, exception.__traceback__)
             )
         except Exception:
-            details["stack_trace"] = "".join(_traceback.format_tb(exception.__traceback__))
-            details["stack_trace"] += f"{exception.__class__.__name__}: {details['message']}\n"
-    return details
+            stack_trace = "".join(_traceback.format_tb(exception.__traceback__))
+            stack_trace += f"{exception.__class__.__name__}: {_safe_exception_string(exception)}\n"
+            return stack_trace
+    return None
 
 
-def _exception_type_from_args(
-    exception_type: type[BaseException],
-) -> dict[str, _typing.Any]:
+def _stack_trace_from_exception_type(exception_type: type[BaseException]) -> str | None:
     """
-    Creates a JSON-safe representation of an exception class.
-
-    If the class matches the active exception from `sys.exc_info()`, include
-    the current exception message and stack trace as well.
+    Returns the active stack trace when the given type matches the current exception.
     """
 
-    details: dict[str, _typing.Any] = {
-        "type": exception_type.__name__,
-        "message": exception_type.__name__,
-    }
     exc_type, exc_value, exc_traceback = _sys.exc_info()
     if exc_type is exception_type and exc_value is not None:
-        details["message"] = _safe_exception_string(exc_value)
         if exc_traceback is not None:
-            details["stack_trace"] = "".join(
-                _traceback.format_exception(exc_type, exc_value, exc_traceback)
-            )
-    return details
+            return "".join(_traceback.format_exception(exc_type, exc_value, exc_traceback))
+    return None
+
+
+def _stack_trace_from_args(args: tuple[_typing.Any, ...], kwargs: dict[str, _typing.Any]) -> str | None:
+    """
+    Returns the first available stack trace from logger arguments or active exception state.
+    """
+
+    for value in (*args, *kwargs.values()):
+        if isinstance(value, BaseException):
+            stack_trace = _stack_trace_from_exception(value)
+            if stack_trace is not None:
+                return stack_trace
+        elif isinstance(value, type) and issubclass(value, BaseException):
+            stack_trace = _stack_trace_from_exception_type(value)
+            if stack_trace is not None:
+                return stack_trace
+
+    exc_type, exc_value, exc_traceback = _sys.exc_info()
+    if exc_type is not None and exc_value is not None and exc_traceback is not None:
+        return "".join(_traceback.format_exception(exc_type, exc_value, exc_traceback))
+
+    return None
 
 
 def _safe_exception_string(exception: BaseException) -> str:
@@ -130,14 +137,6 @@ def _safe_exception_string(exception: BaseException) -> str:
         return str(exception)
     except Exception:
         return exception.__class__.__name__
-
-
-def _json_safe_exception_args(args: tuple[_typing.Any, ...], refs: set[int] | None = None):
-    """
-    Returns exception args in a form that can be encoded as JSON.
-    """
-
-    return _coerce_json_safe(_remove_circular(args, refs))
 
 
 def _coerce_json_safe(obj: _typing.Any):
@@ -200,11 +199,7 @@ def _remove_circular(obj: _typing.Any, refs: set[int] | None = None):
 
     # Recursively process the object based on its type
     result: _typing.Any
-    if isinstance(obj, BaseException):
-        result = _exception_from_args(obj, refs)
-    elif isinstance(obj, type) and issubclass(obj, BaseException):
-        result = _exception_type_from_args(obj)
-    elif isinstance(obj, dict):
+    if isinstance(obj, dict):
         result = {key: _remove_circular(value, refs) for key, value in obj.items()}
     elif isinstance(obj, list):
         result = [_remove_circular(item, refs) for item in obj]
@@ -264,19 +259,3 @@ def error(*args, **kwargs) -> None:
     Logs an error message.
     """
     write(_entry_from_args(LogSeverity.ERROR, *args, **kwargs))
-
-
-def exception(*args, **kwargs) -> None:
-    """
-    Logs an error message and includes the active stack trace.
-    """
-    raw_error = kwargs.get("error")
-    entry = _entry_from_args(LogSeverity.ERROR, *args, **kwargs)
-    exc_type, exc_value, exc_traceback = _sys.exc_info()
-    if exc_type is not None and exc_value is not None and exc_traceback is not None:
-        uses_active_error_traceback = raw_error is exc_value or raw_error is exc_type
-        if not uses_active_error_traceback:
-            entry["stack_trace"] = "".join(
-                _traceback.format_exception(exc_type, exc_value, exc_traceback)
-            )
-    write(entry)

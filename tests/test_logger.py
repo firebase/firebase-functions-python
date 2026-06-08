@@ -71,10 +71,11 @@ class TestLogger:
 
         assert log_output["severity"] == "ERROR"
         assert log_output["message"] == "failed"
-        assert log_output["error"]["type"] == "ValueError"
-        assert log_output["error"]["message"] == "boom"
-        assert "stack_trace" in log_output["error"]
-        assert "ValueError: boom" in log_output["error"]["stack_trace"]
+        assert isinstance(log_output["error"], str)
+        assert "ValueError" in log_output["error"]
+        assert "boom" in log_output["error"]
+        assert "stack_trace" in log_output
+        assert "ValueError: boom" in log_output["stack_trace"]
 
     def test_error_should_accept_exception_type(self, capsys: pytest.CaptureFixture[str]):
         try:
@@ -87,10 +88,10 @@ class TestLogger:
 
         assert log_output["severity"] == "ERROR"
         assert log_output["message"] == "failed"
-        assert log_output["error"]["type"] == "TypeError"
-        assert log_output["error"]["message"] == "boom"
-        assert "stack_trace" in log_output["error"]
-        assert "TypeError: boom" in log_output["error"]["stack_trace"]
+        assert isinstance(log_output["error"], str)
+        assert "TypeError" in log_output["error"]
+        assert "stack_trace" in log_output
+        assert "TypeError: boom" in log_output["stack_trace"]
 
     def test_error_should_accept_self_referential_exception(
         self, capsys: pytest.CaptureFixture[str]
@@ -108,8 +109,8 @@ class TestLogger:
 
         assert log_output["severity"] == "ERROR"
         assert log_output["message"] == "failed"
-        assert log_output["error"]["type"] == "SelfArgError"
-        assert log_output["error"]["args"] == ["[CIRCULAR]"]
+        assert isinstance(log_output["error"], str)
+        assert "SelfArgError" in log_output["error"]
 
     def test_error_should_accept_exception_with_cyclic_payload(
         self, capsys: pytest.CaptureFixture[str]
@@ -125,8 +126,9 @@ class TestLogger:
 
         assert log_output["severity"] == "ERROR"
         assert log_output["message"] == "failed"
-        assert log_output["error"]["type"] == "ValueError"
-        assert log_output["error"]["args"] == [{"self": "[CIRCULAR]"}]
+        assert isinstance(log_output["error"], str)
+        assert "ValueError" in log_output["error"]
+        assert "stack_trace" not in log_output
 
     def test_error_should_accept_exception_with_non_json_serializable_args(
         self, capsys: pytest.CaptureFixture[str]
@@ -141,8 +143,8 @@ class TestLogger:
 
         assert log_output["severity"] == "ERROR"
         assert log_output["message"] == "failed"
-        assert log_output["error"]["type"] == "ValueError"
-        assert log_output["error"]["args"] == [repr(payload)]
+        assert isinstance(log_output["error"], str)
+        assert "ValueError" in log_output["error"]
 
     def test_error_should_accept_exception_with_repr_raising_arg(
         self, capsys: pytest.CaptureFixture[str]
@@ -160,8 +162,8 @@ class TestLogger:
 
         assert log_output["severity"] == "ERROR"
         assert log_output["message"] == "failed"
-        assert log_output["error"]["type"] == "ValueError"
-        assert log_output["error"]["args"] == ["BadRepr"]
+        assert isinstance(log_output["error"], str)
+        assert "ValueError" in log_output["error"]
 
     def test_error_should_accept_exception_with_non_json_serializable_dict_key(
         self, capsys: pytest.CaptureFixture[str]
@@ -176,8 +178,8 @@ class TestLogger:
 
         assert log_output["severity"] == "ERROR"
         assert log_output["message"] == "failed"
-        assert log_output["error"]["type"] == "ValueError"
-        assert log_output["error"]["args"] == [{repr(next(iter(payload.keys()))): "value"}]
+        assert isinstance(log_output["error"], str)
+        assert "ValueError" in log_output["error"]
 
     def test_error_should_accept_exception_with_tuple_dict_key(
         self, capsys: pytest.CaptureFixture[str]
@@ -192,8 +194,8 @@ class TestLogger:
 
         assert log_output["severity"] == "ERROR"
         assert log_output["message"] == "failed"
-        assert log_output["error"]["type"] == "ValueError"
-        assert log_output["error"]["args"] == [{"(1, 'two')": "value"}]
+        assert isinstance(log_output["error"], str)
+        assert "ValueError" in log_output["error"]
 
     def test_log_should_have_message(self, capsys: pytest.CaptureFixture[str]):
         logger.log("bar")
@@ -214,11 +216,11 @@ class TestLogger:
         log_output = json.loads(raw_log_output)
         assert log_output["message"] == expected_message
 
-    def test_exception_should_include_stack_trace(self, capsys: pytest.CaptureFixture[str]):
+    def test_error_should_include_active_stack_trace(self, capsys: pytest.CaptureFixture[str]):
         try:
             raise ValueError("boom")
         except ValueError:
-            logger.exception("failed")
+            logger.error("failed")
 
         raw_log_output = capsys.readouterr().err
         log_output = json.loads(raw_log_output)
@@ -228,51 +230,49 @@ class TestLogger:
         assert "stack_trace" in log_output
         assert "ValueError: boom" in log_output["stack_trace"]
 
-    def test_exception_should_not_duplicate_stack_trace_for_exception_error(
+    def test_error_should_surface_top_level_stack_trace_for_exception_error(
         self, capsys: pytest.CaptureFixture[str]
     ):
         try:
             raise ValueError("boom")
         except ValueError as exception:
-            logger.exception("failed", error=exception)
+            logger.error("failed", error=exception)
 
         raw_log_output = capsys.readouterr().err
         log_output = json.loads(raw_log_output)
 
         assert log_output["severity"] == "ERROR"
         assert log_output["message"] == "failed"
-        assert "stack_trace" not in log_output
-        assert log_output["error"]["type"] == "ValueError"
-        assert log_output["error"]["message"] == "boom"
-        assert "stack_trace" in log_output["error"]
-        assert "ValueError: boom" in log_output["error"]["stack_trace"]
+        assert "stack_trace" in log_output
+        assert "ValueError: boom" in log_output["stack_trace"]
+        assert isinstance(log_output["error"], str)
+        assert "ValueError" in log_output["error"]
 
-    def test_exception_should_not_duplicate_stack_trace_for_exception_type_error(
+    def test_error_should_surface_top_level_stack_trace_for_exception_type_error(
         self, capsys: pytest.CaptureFixture[str]
     ):
         try:
             raise TypeError("boom")
         except TypeError:
-            logger.exception("failed", error=sys.exc_info()[0])
+            logger.error("failed", error=sys.exc_info()[0])
 
         raw_log_output = capsys.readouterr().err
         log_output = json.loads(raw_log_output)
 
         assert log_output["severity"] == "ERROR"
         assert log_output["message"] == "failed"
-        assert "stack_trace" not in log_output
-        assert log_output["error"]["type"] == "TypeError"
-        assert log_output["error"]["message"] == "boom"
-        assert "stack_trace" in log_output["error"]
-        assert "TypeError: boom" in log_output["error"]["stack_trace"]
+        assert "stack_trace" in log_output
+        assert "TypeError: boom" in log_output["stack_trace"]
+        assert isinstance(log_output["error"], str)
+        assert "TypeError" in log_output["error"]
 
-    def test_exception_should_include_active_stack_trace_for_error_dict(
+    def test_error_should_not_add_nested_trace_to_error_dict(
         self, capsys: pytest.CaptureFixture[str]
     ):
         try:
             raise ValueError("boom")
         except ValueError:
-            logger.exception("failed", error={"stack_trace": "custom traceback"})
+            logger.error("failed", error={"stack_trace": "custom traceback"})
 
         raw_log_output = capsys.readouterr().err
         log_output = json.loads(raw_log_output)
