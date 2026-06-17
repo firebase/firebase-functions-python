@@ -657,10 +657,14 @@ def _alert_options_to_firebase_alert_options(
     alert_type: str | AlertType,
 ) -> FirebaseAlertOptions:
     app_id = getattr(options, "app_id", None)
+
+    # Restrict to fields supported by FirebaseAlertOptions
+    allowed_fields = {f.name for f in _dataclasses.fields(FirebaseAlertOptions)}
+
     option_values = {
         field.name: getattr(options, field.name)
         for field in _dataclasses.fields(options)
-        if field.name not in {"alert_type", "app_id"}
+        if field.name in allowed_fields and field.name not in {"alert_type", "app_id"}
     }
     return FirebaseAlertOptions(
         **option_values,
