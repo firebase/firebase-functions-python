@@ -17,10 +17,18 @@ Options unit tests.
 
 from pytest import raises
 
-from firebase_functions import https_fn, options, params
+from firebase_functions import alerts_fn, https_fn, options, params
+from firebase_functions.alerts import (
+    app_distribution_fn,
+    billing_fn,
+    crashlytics_fn,
+    performance_fn,
+)
 from firebase_functions.private.serving import functions_as_yaml, merge_required_apis
 
 # pylint: disable=protected-access
+
+ALERT_SECRET = params.SecretParam("GITLAB_PERSONAL_ACCESS_TOKEN")
 
 
 @https_fn.on_call()
@@ -196,3 +204,104 @@ def test_invoker_with_no_element_throws():
         AssertionError, match="HttpsOptions: Invalid option for invoker - must be a non-empty list."
     ):
         options.HttpsOptions(invoker=[])._endpoint(func_name="test")
+
+
+def _assert_alert_endpoint_options(endpoint, expected_alert_type, expect_app_id: str | None = None):
+    assert endpoint.region == ["europe-west1"]
+    assert endpoint.maxInstances == 1
+    assert endpoint.secretEnvironmentVariables == [{"key": "GITLAB_PERSONAL_ACCESS_TOKEN"}]
+    assert endpoint.eventTrigger["retry"] is True
+    assert endpoint.eventTrigger["eventFilters"]["alerttype"] == expected_alert_type
+    if expect_app_id is None:
+        assert "appid" not in endpoint.eventTrigger["eventFilters"]
+    else:
+        assert endpoint.eventTrigger["eventFilters"]["appid"] == expect_app_id
+
+
+def test_crashlytics_options_preserved_in_alert_endpoint():
+    @crashlytics_fn.on_new_fatal_issue_published(
+        secrets=[ALERT_SECRET],
+        region="europe-west1",
+        max_instances=1,
+        retry=True,
+        app_id="app-123",
+    )
+    def sample(_event):
+        return None
+
+    _assert_alert_endpoint_options(
+        sample.__firebase_endpoint__,
+        "crashlytics.newFatalIssue",
+        expect_app_id="app-123",
+    )
+
+
+def test_app_distribution_options_preserved_in_alert_endpoint():
+    @app_distribution_fn.on_new_tester_ios_device_published(
+        secrets=[ALERT_SECRET],
+        region="europe-west1",
+        max_instances=1,
+        retry=True,
+        app_id="app-123",
+    )
+    def sample(_event):
+        return None
+
+    _assert_alert_endpoint_options(
+        sample.__firebase_endpoint__,
+        "appDistribution.newTesterIosDevice",
+        expect_app_id="app-123",
+    )
+
+
+def test_performance_options_preserved_in_alert_endpoint():
+    @performance_fn.on_threshold_alert_published(
+        secrets=[ALERT_SECRET],
+        region="europe-west1",
+        max_instances=1,
+        retry=True,
+        app_id="app-123",
+    )
+    def sample(_event):
+        return None
+
+    _assert_alert_endpoint_options(
+        sample.__firebase_endpoint__,
+        "performance.threshold",
+        expect_app_id="app-123",
+    )
+
+
+def test_billing_options_preserved_in_alert_endpoint():
+    @billing_fn.on_plan_update_published(
+        secrets=[ALERT_SECRET],
+        region="europe-west1",
+        max_instances=1,
+        retry=True,
+    )
+    def sample(_event):
+        return None
+
+    _assert_alert_endpoint_options(
+        sample.__firebase_endpoint__,
+        "billing.planUpdate",
+    )
+
+
+def test_firebase_alert_options_preserved_in_alert_endpoint():
+    @alerts_fn.on_alert_published(
+        alert_type=alerts_fn.AlertType.CRASHLYTICS_NEW_FATAL_ISSUE,
+        secrets=[ALERT_SECRET],
+        region="europe-west1",
+        max_instances=1,
+        retry=True,
+        app_id="app-123",
+    )
+    def sample(_event):
+        return None
+
+    _assert_alert_endpoint_options(
+        sample.__firebase_endpoint__,
+        "crashlytics.newFatalIssue",
+        expect_app_id="app-123",
+    )
