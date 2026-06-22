@@ -905,7 +905,7 @@ class ScheduleOptions(RuntimeOptions):
 
 
 @_dataclasses.dataclass(frozen=True, kw_only=True)
-class StorageOptions(RuntimeOptions):
+class StorageOptions(EventHandlerOptions):
     """
     Options specific to Cloud Storage function types.
     Internal use only.
@@ -937,19 +937,19 @@ class StorageOptions(RuntimeOptions):
         }
         event_trigger = _manifest.EventTrigger(
             eventType=kwargs["event_type"],
-            retry=False,
+            retry=self.retry if self.retry is not None else False,
             eventFilters=event_filters,
         )
 
         kwargs_merged = {
-            **_dataclasses.asdict(super()._endpoint(**kwargs)),
+            **_dataclasses.asdict(RuntimeOptions._endpoint(self, **kwargs)),
             "eventTrigger": event_trigger,
         }
         return _manifest.ManifestEndpoint(**_typing.cast(dict, kwargs_merged))
 
 
 @_dataclasses.dataclass(frozen=True, kw_only=True)
-class DatabaseOptions(RuntimeOptions):
+class DatabaseOptions(EventHandlerOptions):
     """
     Options specific to Realtime Database function types.
     Internal use only.
@@ -990,13 +990,13 @@ class DatabaseOptions(RuntimeOptions):
 
         event_trigger = _manifest.EventTrigger(
             eventType=kwargs["event_type"],
-            retry=False,
+            retry=self.retry if self.retry is not None else False,
             eventFilters=event_filters,
             eventFilterPathPatterns=event_filters_path_patterns,
         )
 
         kwargs_merged = {
-            **_dataclasses.asdict(super()._endpoint(**kwargs)),
+            **_dataclasses.asdict(RuntimeOptions._endpoint(self, **kwargs)),
             "eventTrigger": event_trigger,
         }
         return _manifest.ManifestEndpoint(**_typing.cast(dict, kwargs_merged))
@@ -1055,7 +1055,7 @@ class BlockingOptions(RuntimeOptions):
 
 
 @_dataclasses.dataclass(frozen=True, kw_only=True)
-class FirestoreOptions(RuntimeOptions):
+class FirestoreOptions(EventHandlerOptions):
     """
     Options specific to Firestore function types.
     Internal use only.
@@ -1097,13 +1097,13 @@ class FirestoreOptions(RuntimeOptions):
             event_filters["document"] = event_filter_document
         event_trigger = _manifest.EventTrigger(
             eventType=kwargs["event_type"],
-            retry=False,
+            retry=self.retry if self.retry is not None else False,
             eventFilters=event_filters,
             eventFilterPathPatterns=event_filters_path_patterns,
         )
 
         kwargs_merged = {
-            **_dataclasses.asdict(super()._endpoint(**kwargs)),
+            **_dataclasses.asdict(RuntimeOptions._endpoint(self, **kwargs)),
             "eventTrigger": event_trigger,
         }
         return _manifest.ManifestEndpoint(**_typing.cast(dict, kwargs_merged))

@@ -15,6 +15,24 @@ class TestStorage(unittest.TestCase):
     Storage function tests.
     """
 
+    def test_storage_decorator_retry_option(self):
+        func = Mock(__name__="example_func")
+        decorated_func = storage_fn.on_object_finalized(bucket="bucket", retry=True)(func)
+
+        endpoint = decorated_func.__firebase_endpoint__
+
+        self.assertIsNotNone(endpoint.eventTrigger)
+        self.assertTrue(endpoint.eventTrigger["retry"])
+
+    def test_storage_decorator_retry_defaults_false(self):
+        func = Mock(__name__="example_func")
+        decorated_func = storage_fn.on_object_finalized(bucket="bucket")(func)
+
+        endpoint = decorated_func.__firebase_endpoint__
+
+        self.assertIsNotNone(endpoint.eventTrigger)
+        self.assertFalse(endpoint.eventTrigger["retry"])
+
     def test_calls_init(self):
         hello = None
 
