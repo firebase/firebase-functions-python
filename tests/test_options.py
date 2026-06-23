@@ -15,9 +15,10 @@
 Options unit tests.
 """
 
-from pytest import raises
+from pytest import mark, raises
 
 from firebase_functions import alerts_fn, https_fn, options, params
+import firebase_functions.private.manifest as _manifest
 from firebase_functions.alerts import (
     app_distribution_fn,
     billing_fn,
@@ -29,6 +30,30 @@ from firebase_functions.private.serving import functions_as_yaml, merge_required
 # pylint: disable=protected-access
 
 ALERT_SECRET = params.SecretParam("GITLAB_PERSONAL_ACCESS_TOKEN")
+
+
+class _UnsupportedManifestValue:
+    pass
+
+
+class _FakePattern:
+    def __init__(self, value, has_wildcards=False):
+        self.value = value
+        self.has_wildcards = has_wildcards
+
+
+def _assert_endpoint_manifest_type_error(endpoint):
+    with raises(TypeError, match="Unsupported manifest spec value"):
+        _manifest.manifest_to_spec_dict(_manifest.ManifestStack(endpoints={"test": endpoint}))
+
+
+def _assert_option_builder_type_error(builder):
+    try:
+        endpoint = builder()
+    except TypeError as exc:
+        assert "Unsupported manifest spec value" in str(exc)
+    else:
+        _assert_endpoint_manifest_type_error(endpoint)
 
 
 @https_fn.on_call()
@@ -305,3 +330,104 @@ def test_firebase_alert_options_preserved_in_alert_endpoint():
         "crashlytics.newFatalIssue",
         expect_app_id="app-123",
     )
+
+
+@mark.parametrize(
+    ("builder"),
+    [
+        lambda: options.RuntimeOptions(region=_UnsupportedManifestValue())._endpoint(
+            func_name="test"
+        ),
+        lambda: options.EventHandlerOptions(retry=_UnsupportedManifestValue())._endpoint(
+            func_name="test",
+            event_filters={},
+            event_type="google.cloud.pubsub.topic.v1.messagePublished",
+        ),
+        lambda: options.TaskQueueOptions(
+            retry_config=options.RetryConfig(max_attempts=_UnsupportedManifestValue())
+        )._endpoint(func_name="test"),
+        lambda: options.PubSubOptions(topic=_UnsupportedManifestValue())._endpoint(
+            func_name="test"
+        ),
+        lambda: options.FirebaseAlertOptions(alert_type=_UnsupportedManifestValue())._endpoint(
+            func_name="test"
+        ),
+        lambda: options.AppDistributionOptions(app_id=_UnsupportedManifestValue())._endpoint(
+            func_name="test",
+            alert_type=options.AlertType.APP_DISTRIBUTION_NEW_TESTER_IOS_DEVICE,
+        ),
+        lambda: options.PerformanceOptions(app_id=_UnsupportedManifestValue())._endpoint(
+            func_name="test",
+            alert_type=options.AlertType.PERFORMANCE_THRESHOLD,
+        ),
+        lambda: options.CrashlyticsOptions(app_id=_UnsupportedManifestValue())._endpoint(
+            func_name="test",
+            alert_type=options.AlertType.CRASHLYTICS_NEW_FATAL_ISSUE,
+        ),
+        lambda: options.BillingOptions()._endpoint(
+            func_name="test",
+            alert_type=_UnsupportedManifestValue(),
+        ),
+        lambda: options.EventarcTriggerOptions(
+            event_type="firebase.extensions.storage-resize-images.v1.complete",
+            filters={"subject": _UnsupportedManifestValue()},
+        )._endpoint(func_name="test"),
+        lambda: options.ScheduleOptions(schedule=_UnsupportedManifestValue())._endpoint(
+            func_name="test"
+        ),
+        lambda: options.StorageOptions(bucket=_UnsupportedManifestValue())._endpoint(
+            func_name="test",
+            event_type="google.cloud.storage.object.v1.finalized",
+        ),
+        lambda: options.DatabaseOptions(reference="/foo/{bar}")._endpoint(
+            func_name="test",
+            event_type="google.firebase.database.ref.v1.written",
+            instance_pattern=_FakePattern(_UnsupportedManifestValue()),
+        ),
+        lambda: options.BlockingOptions(id_token=_UnsupportedManifestValue())._endpoint(
+            func_name="test",
+            event_type="providers/cloud.auth/eventTypes/user.beforeSignIn",
+        ),
+        lambda: options.FirestoreOptions(document="foo/{bar}")._endpoint(
+            func_name="test",
+            event_type="google.cloud.firestore.document.v1.written",
+            document_pattern=_FakePattern(_UnsupportedManifestValue(), has_wildcards=True),
+        ),
+        lambda: options.HttpsOptions(invoker=[_UnsupportedManifestValue()])._endpoint(
+            func_name="test"
+        ),
+        lambda: options.HttpsOptions(labels={"broken": _UnsupportedManifestValue()})._endpoint(
+            func_name="test",
+            callable=True,
+        ),
+        lambda: options.DataConnectOptions(service="service")._endpoint(
+            func_name="test",
+            event_type="google.firebase.dataconnect.connector.v1.mutationExecuted",
+            service_pattern=_FakePattern(_UnsupportedManifestValue()),
+            connector_pattern=_FakePattern("connector"),
+            operation_pattern=_FakePattern("operation"),
+        ),
+    ],
+    ids=[
+        "runtime",
+        "event_handler",
+        "task_queue",
+        "pubsub",
+        "firebase_alert",
+        "app_distribution",
+        "performance",
+        "crashlytics",
+        "billing",
+        "eventarc",
+        "schedule",
+        "storage",
+        "database",
+        "blocking",
+        "firestore",
+        "https",
+        "callable_https",
+        "dataconnect",
+    ],
+)
+def test_manifest_to_spec_rejects_unsupported_values_across_option_types(builder):
+    _assert_option_builder_type_error(builder)
