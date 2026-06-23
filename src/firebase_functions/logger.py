@@ -88,6 +88,13 @@ def _stack_trace_from_exception(exception: BaseException) -> str | None:
                 _traceback.format_exception(exception.__class__, exception, exception.__traceback__)
             )
         except Exception:
+
+            # We intentionally divergence from the JS SDK here:
+            # JS stores error traces in `message`, but Python emits a top-level `stack_trace`
+            # because Google Cloud Error Reporting only inspects top-level error fields
+            # (`stack_trace`, `exception`, `message`). Do not move this trace under `error`
+            # or fold it back into nested payloads, or Error Reporting may stop detecting it.
+
             stack_trace = "".join(_traceback.format_tb(exception.__traceback__))
             stack_trace += f"{exception.__class__.__name__}: {_safe_exception_string(exception)}\n"
             return stack_trace
@@ -104,6 +111,7 @@ def _stack_trace_from_exception_type(exception_type: type[BaseException]) -> str
         if exc_traceback is not None:
             return "".join(_traceback.format_exception(exc_type, exc_value, exc_traceback))
     return None
+
 
 
 def _stack_trace_from_args(
