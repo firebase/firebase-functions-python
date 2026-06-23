@@ -652,6 +652,27 @@ class FirebaseAlertOptions(EventHandlerOptions):
         )
 
 
+def _alert_options_to_firebase_alert_options(
+    options: EventHandlerOptions,
+    alert_type: str | AlertType,
+) -> FirebaseAlertOptions:
+    app_id = getattr(options, "app_id", None)
+
+    # Restrict to fields supported by FirebaseAlertOptions
+    allowed_fields = {f.name for f in _dataclasses.fields(FirebaseAlertOptions)}
+
+    option_values = {
+        field.name: getattr(options, field.name)
+        for field in _dataclasses.fields(options)
+        if field.name in allowed_fields and field.name not in {"alert_type", "app_id"}
+    }
+    return FirebaseAlertOptions(
+        **option_values,
+        alert_type=alert_type,
+        app_id=app_id,
+    )
+
+
 @_dataclasses.dataclass(frozen=True, kw_only=True)
 class AppDistributionOptions(EventHandlerOptions):
     """
@@ -669,9 +690,9 @@ class AppDistributionOptions(EventHandlerOptions):
         **kwargs,
     ) -> _manifest.ManifestEndpoint:
         assert kwargs["alert_type"] is not None
-        return FirebaseAlertOptions(
-            alert_type=kwargs["alert_type"],
-            app_id=self.app_id,
+        return _alert_options_to_firebase_alert_options(
+            self,
+            kwargs["alert_type"],
         )._endpoint(**kwargs)
 
 
@@ -692,9 +713,9 @@ class PerformanceOptions(EventHandlerOptions):
         **kwargs,
     ) -> _manifest.ManifestEndpoint:
         assert kwargs["alert_type"] is not None
-        return FirebaseAlertOptions(
-            alert_type=kwargs["alert_type"],
-            app_id=self.app_id,
+        return _alert_options_to_firebase_alert_options(
+            self,
+            kwargs["alert_type"],
         )._endpoint(**kwargs)
 
 
@@ -715,9 +736,9 @@ class CrashlyticsOptions(EventHandlerOptions):
         **kwargs,
     ) -> _manifest.ManifestEndpoint:
         assert kwargs["alert_type"] is not None
-        return FirebaseAlertOptions(
-            alert_type=kwargs["alert_type"],
-            app_id=self.app_id,
+        return _alert_options_to_firebase_alert_options(
+            self,
+            kwargs["alert_type"],
         )._endpoint(**kwargs)
 
 
@@ -733,8 +754,9 @@ class BillingOptions(EventHandlerOptions):
         **kwargs,
     ) -> _manifest.ManifestEndpoint:
         assert kwargs["alert_type"] is not None
-        return FirebaseAlertOptions(
-            alert_type=kwargs["alert_type"],
+        return _alert_options_to_firebase_alert_options(
+            self,
+            kwargs["alert_type"],
         )._endpoint(**kwargs)
 
 
