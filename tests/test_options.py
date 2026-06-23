@@ -262,6 +262,9 @@ def test_vpc_connector_accepts_expression(vpc_connector_expr_factory):
     assert endpoint.vpc is not None, "vpc block was not set on endpoint"
     assert endpoint.vpc["connector"] == str(vpc_connector_expr), (
         "vpc connector was not set from vpc_connector Expression[str]"
+    )
+
+
 def _assert_alert_endpoint_options(endpoint, expected_alert_type, expect_app_id: str | None = None):
     assert endpoint.region == ["europe-west1"]
     assert endpoint.maxInstances == 1
