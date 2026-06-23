@@ -17,8 +17,8 @@ Options unit tests.
 
 from pytest import mark, raises
 
-from firebase_functions import alerts_fn, https_fn, options, params
 import firebase_functions.private.manifest as _manifest
+from firebase_functions import alerts_fn, https_fn, options, params
 from firebase_functions.alerts import (
     app_distribution_fn,
     billing_fn,
