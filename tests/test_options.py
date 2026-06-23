@@ -15,6 +15,8 @@
 Options unit tests.
 """
 
+import typing as _typing
+
 from pytest import mark, raises
 
 import firebase_functions.private.manifest as _manifest
@@ -335,47 +337,59 @@ def test_firebase_alert_options_preserved_in_alert_endpoint():
 @mark.parametrize(
     ("builder"),
     [
-        lambda: options.RuntimeOptions(region=_UnsupportedManifestValue())._endpoint(
-            func_name="test"
-        ),
-        lambda: options.EventHandlerOptions(retry=_UnsupportedManifestValue())._endpoint(
+        lambda: options.RuntimeOptions(
+            region=_typing.cast(str, _UnsupportedManifestValue())
+        )._endpoint(func_name="test"),
+        lambda: options.EventHandlerOptions(
+            retry=_typing.cast(bool, _UnsupportedManifestValue())
+        )._endpoint(
             func_name="test",
             event_filters={},
             event_type="google.cloud.pubsub.topic.v1.messagePublished",
         ),
         lambda: options.TaskQueueOptions(
-            retry_config=options.RetryConfig(max_attempts=_UnsupportedManifestValue())
+            retry_config=options.RetryConfig(
+                max_attempts=_typing.cast(int, _UnsupportedManifestValue())
+            )
         )._endpoint(func_name="test"),
-        lambda: options.PubSubOptions(topic=_UnsupportedManifestValue())._endpoint(
-            func_name="test"
-        ),
-        lambda: options.FirebaseAlertOptions(alert_type=_UnsupportedManifestValue())._endpoint(
-            func_name="test"
-        ),
-        lambda: options.AppDistributionOptions(app_id=_UnsupportedManifestValue())._endpoint(
+        lambda: options.PubSubOptions(
+            topic=_typing.cast(str, _UnsupportedManifestValue())
+        )._endpoint(func_name="test"),
+        lambda: options.FirebaseAlertOptions(
+            alert_type=_typing.cast(str, _UnsupportedManifestValue())
+        )._endpoint(func_name="test"),
+        lambda: options.AppDistributionOptions(
+            app_id=_typing.cast(str, _UnsupportedManifestValue())
+        )._endpoint(
             func_name="test",
             alert_type=options.AlertType.APP_DISTRIBUTION_NEW_TESTER_IOS_DEVICE,
         ),
-        lambda: options.PerformanceOptions(app_id=_UnsupportedManifestValue())._endpoint(
+        lambda: options.PerformanceOptions(
+            app_id=_typing.cast(str, _UnsupportedManifestValue())
+        )._endpoint(
             func_name="test",
             alert_type=options.AlertType.PERFORMANCE_THRESHOLD,
         ),
-        lambda: options.CrashlyticsOptions(app_id=_UnsupportedManifestValue())._endpoint(
+        lambda: options.CrashlyticsOptions(
+            app_id=_typing.cast(str, _UnsupportedManifestValue())
+        )._endpoint(
             func_name="test",
             alert_type=options.AlertType.CRASHLYTICS_NEW_FATAL_ISSUE,
         ),
         lambda: options.BillingOptions()._endpoint(
             func_name="test",
-            alert_type=_UnsupportedManifestValue(),
+            alert_type=_typing.cast(str, _UnsupportedManifestValue()),
         ),
         lambda: options.EventarcTriggerOptions(
             event_type="firebase.extensions.storage-resize-images.v1.complete",
-            filters={"subject": _UnsupportedManifestValue()},
+            filters={"subject": _typing.cast(str, _UnsupportedManifestValue())},
         )._endpoint(func_name="test"),
-        lambda: options.ScheduleOptions(schedule=_UnsupportedManifestValue())._endpoint(
-            func_name="test"
-        ),
-        lambda: options.StorageOptions(bucket=_UnsupportedManifestValue())._endpoint(
+        lambda: options.ScheduleOptions(
+            schedule=_typing.cast(str, _UnsupportedManifestValue())
+        )._endpoint(func_name="test"),
+        lambda: options.StorageOptions(
+            bucket=_typing.cast(str, _UnsupportedManifestValue())
+        )._endpoint(
             func_name="test",
             event_type="google.cloud.storage.object.v1.finalized",
         ),
@@ -384,7 +398,9 @@ def test_firebase_alert_options_preserved_in_alert_endpoint():
             event_type="google.firebase.database.ref.v1.written",
             instance_pattern=_FakePattern(_UnsupportedManifestValue()),
         ),
-        lambda: options.BlockingOptions(id_token=_UnsupportedManifestValue())._endpoint(
+        lambda: options.BlockingOptions(
+            id_token=_typing.cast(bool, _UnsupportedManifestValue())
+        )._endpoint(
             func_name="test",
             event_type="providers/cloud.auth/eventTypes/user.beforeSignIn",
         ),
@@ -393,10 +409,12 @@ def test_firebase_alert_options_preserved_in_alert_endpoint():
             event_type="google.cloud.firestore.document.v1.written",
             document_pattern=_FakePattern(_UnsupportedManifestValue(), has_wildcards=True),
         ),
-        lambda: options.HttpsOptions(invoker=[_UnsupportedManifestValue()])._endpoint(
-            func_name="test"
-        ),
-        lambda: options.HttpsOptions(labels={"broken": _UnsupportedManifestValue()})._endpoint(
+        lambda: options.HttpsOptions(
+            invoker=[_typing.cast(str, _UnsupportedManifestValue())]
+        )._endpoint(func_name="test"),
+        lambda: options.HttpsOptions(
+            labels={"broken": _typing.cast(str, _UnsupportedManifestValue())}
+        )._endpoint(
             func_name="test",
             callable=True,
         ),
