@@ -31,15 +31,6 @@ import firebase_functions.private.util as _util
 
 ManifestParamBase = _params.Param | _params.SecretParam
 
-ManifestParam = (
-    _params.BoolParam
-    | _params.IntParam
-    | _params._FloatParam
-    | _params.ListParam
-    | _params.SecretParam
-    | _params.StringParam
-)
-
 SpecValue: _typing.TypeAlias = (
     str | int | float | bool | _util.Sentinel | list["SpecValue"] | dict[str, "SpecValue"] | None
 )
