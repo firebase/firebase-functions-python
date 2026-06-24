@@ -138,9 +138,18 @@ class BlockingTrigger(_typing.TypedDict):
     options: _typing_extensions.NotRequired[BlockingTriggerOptions]
 
 
+class VpcNetworkInterface(_typing.TypedDict):
+    network: _typing_extensions.NotRequired[str | _params.Expression[str] | _util.Sentinel]
+    subnetwork: _typing_extensions.NotRequired[str | _params.Expression[str] | _util.Sentinel]
+    tags: _typing_extensions.NotRequired[
+        str | list[str] | _params.Expression[str] | _params.Expression[list] | _util.Sentinel
+    ]
+
+
 class VpcSettings(_typing.TypedDict):
-    connector: _typing_extensions.Required[str]
+    connector: _typing_extensions.NotRequired[str]
     egressSettings: _typing_extensions.NotRequired[str | _util.Sentinel]
+    networkInterfaces: _typing_extensions.NotRequired[list[VpcNetworkInterface] | _util.Sentinel]
 
 
 @_dataclasses.dataclass(frozen=True)
@@ -157,7 +166,7 @@ class ManifestEndpoint:
     serviceAccountEmail: str | _util.Sentinel | None = None
     timeoutSeconds: int | _params.Expression[int] | _util.Sentinel | None = None
     cpu: int | str | _util.Sentinel | None = None
-    vpc: VpcSettings | None = None
+    vpc: VpcSettings | _util.Sentinel | None = None
     labels: dict[str, str] | None = None
     ingressSettings: str | None | _util.Sentinel = None
     secretEnvironmentVariables: list[SecretEnvironmentVariable] | _util.Sentinel | None = (

@@ -86,6 +86,69 @@ def test_options_asdict_uses_cel_representation():
     )
 
 
+def test_vpc_connector_endpoint_unchanged():
+    endpoint = options.HttpsOptions(
+        vpc_connector="projects/test/locations/us-central1/connectors/test",
+        vpc_connector_egress_settings=options.VpcEgressSetting.ALL_TRAFFIC,
+    )._endpoint(func_name="test")
+
+    assert endpoint.vpc == {
+        "connector": "projects/test/locations/us-central1/connectors/test",
+        "egressSettings": "ALL_TRAFFIC",
+    }
+
+
+def test_network_interface_endpoint():
+    endpoint = options.HttpsOptions(
+        network_interface=options.NetworkInterface(
+            network="default",
+            tags=["internal", "egress"],
+        ),
+        vpc_egress=options.VpcEgressSetting.PRIVATE_RANGES_ONLY,
+    )._endpoint(func_name="test")
+
+    assert endpoint.vpc == {
+        "networkInterfaces": [
+            {
+                "network": "default",
+                "tags": ["internal", "egress"],
+            }
+        ],
+        "egressSettings": "PRIVATE_RANGES_ONLY",
+    }
+
+
+def test_vpc_egress_alias_takes_precedence():
+    endpoint = options.HttpsOptions(
+        vpc_connector="projects/test/locations/us-central1/connectors/test",
+        vpc_connector_egress_settings=options.VpcEgressSetting.ALL_TRAFFIC,
+        vpc_egress=options.VpcEgressSetting.PRIVATE_RANGES_ONLY,
+    )._endpoint(func_name="test")
+
+    assert endpoint.vpc == {
+        "connector": "projects/test/locations/us-central1/connectors/test",
+        "egressSettings": "PRIVATE_RANGES_ONLY",
+    }
+
+
+def test_network_interface_requires_network_or_subnetwork():
+    with raises(
+        ValueError,
+        match="At least one of network or subnetwork must be specified in network_interface.",
+    ):
+        options.HttpsOptions(
+            network_interface=options.NetworkInterface(),
+        )._endpoint(func_name="test")
+
+
+def test_vpc_connector_and_network_interface_are_mutually_exclusive():
+    with raises(ValueError, match="Cannot set both vpc_connector and network_interface"):
+        options.HttpsOptions(
+            vpc_connector="projects/test/locations/us-central1/connectors/test",
+            network_interface=options.NetworkInterface(network="default"),
+        )._endpoint(func_name="test")
+
+
 def test_options_preserve_external_changes():
     """
     Testing if setting a global option internally change the values.
@@ -100,6 +163,10 @@ def test_options_preserve_external_changes():
     options_asdict = options._GLOBAL_OPTIONS._asdict_with_global_options()
     assert options_asdict["max_instances"] is options.RESET_VALUE, "option should be RESET_VALUE"
     assert options_asdict["min_instances"] == 5, "option should be set"
+    assert options_asdict["network_interface"] is options.RESET_VALUE, (
+        "network_interface should be RESET_VALUE"
+    )
+    assert options_asdict["vpc_egress"] is options.RESET_VALUE, "vpc_egress should be RESET_VALUE"
 
     firebase_functions = {
         "asamplefunction": asamplefunction,
@@ -109,6 +176,7 @@ def test_options_preserve_external_changes():
     # where we expect.
     assert "    availableMemoryMb: null\n" in yaml, "availableMemoryMb not in yaml"
     assert "    serviceAccountEmail: null\n" in yaml, "serviceAccountEmail not in yaml"
+    assert "    vpc: null\n" in yaml, "vpc not in yaml"
 
     firebase_functions2 = {
         "asamplefunctionpreserved": asamplefunctionpreserved,
@@ -116,6 +184,38 @@ def test_options_preserve_external_changes():
     yaml = functions_as_yaml(firebase_functions2)
     assert "    availableMemoryMb: null\n" not in yaml, "availableMemoryMb found in yaml"
     assert "    serviceAccountEmail: null\n" not in yaml, "serviceAccountEmail found in yaml"
+
+
+def test_network_interface_reset_sets_vpc_reset():
+    endpoint = options.HttpsOptions(
+        network_interface=options.RESET_VALUE,
+    )._endpoint(func_name="test")
+
+    assert endpoint.vpc == options.RESET_VALUE, "vpc should be RESET_VALUE"
+
+
+def test_global_options_support_network_interface():
+    previous_options = options._GLOBAL_OPTIONS
+    try:
+        options.set_global_options(
+            network_interface=options.NetworkInterface(
+                subnetwork="projects/test/regions/us-central1/subnetworks/test"
+            ),
+            vpc_egress=options.VpcEgressSetting.ALL_TRAFFIC,
+        )
+
+        endpoint = options.HttpsOptions()._endpoint(func_name="test")
+
+        assert endpoint.vpc == {
+            "networkInterfaces": [
+                {
+                    "subnetwork": "projects/test/regions/us-central1/subnetworks/test",
+                }
+            ],
+            "egressSettings": "ALL_TRAFFIC",
+        }
+    finally:
+        options._GLOBAL_OPTIONS = previous_options
 
 
 def test_merge_apis_empty_input():
