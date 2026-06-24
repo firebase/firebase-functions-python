@@ -480,11 +480,7 @@ class RuntimeOptions:
                         )
                     if network_interface_dict.get("tags") is not None:
                         network_interface_spec["tags"] = _typing.cast(
-                            str
-                            | list[str]
-                            | Expression[str]
-                            | Expression[list]
-                            | _util.Sentinel,
+                            str | list[str] | Expression[str] | Expression[list] | _util.Sentinel,
                             network_interface_dict["tags"],
                         )
                     vpc["networkInterfaces"] = [network_interface_spec]
