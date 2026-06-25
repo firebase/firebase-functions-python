@@ -935,17 +935,7 @@ class StorageOptions(EventHandlerOptions):
         event_filters: _typing.Any = {
             "bucket": bucket,
         }
-        event_trigger = _manifest.EventTrigger(
-            eventType=kwargs["event_type"],
-            retry=self.retry if self.retry is not None else False,
-            eventFilters=event_filters,
-        )
-
-        kwargs_merged = {
-            **_dataclasses.asdict(RuntimeOptions._endpoint(self, **kwargs)),
-            "eventTrigger": event_trigger,
-        }
-        return _manifest.ManifestEndpoint(**_typing.cast(dict, kwargs_merged))
+        return super()._endpoint(**kwargs, event_filters=event_filters)
 
 
 @_dataclasses.dataclass(frozen=True, kw_only=True)
