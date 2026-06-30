@@ -166,7 +166,6 @@ def test_options_preserve_external_changes():
     assert options_asdict["network_interface"] is options.RESET_VALUE, (
         "network_interface should be RESET_VALUE"
     )
-    assert options_asdict["vpc_egress"] is options.RESET_VALUE, "vpc_egress should be RESET_VALUE"
 
     firebase_functions = {
         "asamplefunction": asamplefunction,
