@@ -375,7 +375,6 @@ class RuntimeOptions:
             "service_account",
             "vpc_connector",
             "vpc_connector_egress_settings",
-            "vpc_egress",
             "network_interface",
         ]
         if not preserve_external_changes:
@@ -420,9 +419,7 @@ class RuntimeOptions:
 
         vpc: _manifest.VpcSettings | _util.Sentinel | None = None
         vpc_egress = options.vpc_connector_egress_settings
-        if options.vpc_egress is not None and (
-            not isinstance(options.vpc_egress, _util.Sentinel) or vpc_egress is None
-        ):
+        if options.vpc_egress is not None:
             vpc_egress = options.vpc_egress
 
         connector = options.vpc_connector
