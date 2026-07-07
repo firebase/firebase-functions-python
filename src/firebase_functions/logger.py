@@ -145,7 +145,7 @@ def _safe_exception_string(exception: BaseException) -> str:
         return exception.__class__.__name__
 
 
-def _coerce_json_safe(obj: _typing.Any):
+def _coerce_json_safe(obj: _typing.Any) -> _typing.Any:
     """
     Converts values that survive circular-reference removal into JSON-safe values.
     """
@@ -163,7 +163,7 @@ def _coerce_json_safe(obj: _typing.Any):
     return _safe_repr(obj)
 
 
-def _coerce_json_safe_dict_key(obj: _typing.Any):
+def _coerce_json_safe_dict_key(obj: _typing.Any) -> _typing.Any:
     """
     Converts dictionary keys into values accepted by JSON object encoding.
     """
@@ -229,7 +229,7 @@ def _get_write_file(severity: LogSeverity) -> _typing.TextIO:
 
 def write(entry: LogEntry) -> None:
     write_file = _get_write_file(entry["severity"])
-    print(_json.dumps(_remove_circular(entry), ensure_ascii=False), file=write_file)
+    print(_json.dumps(_coerce_json_safe(_remove_circular(entry)), ensure_ascii=False), file=write_file)
 
 
 def debug(*args, **kwargs) -> None:
