@@ -346,6 +346,35 @@ class TestLogger:
         }
         assert log_output == expected
 
+    def test_stack_trace_fallback_when_format_exception_raises(
+        self, monkeypatch: pytest.MonkeyPatch
+    ):
+        def bad_format_exception(*args, **kwargs):
+            raise RuntimeError("format_exception exploded")
+
+        monkeypatch.setattr(logger._traceback, "format_exception", bad_format_exception)
+
+        try:
+            raise ValueError("boom")
+        except ValueError as exception:
+            result = logger._stack_trace_from_exception(exception)
+
+        assert result is not None
+        assert "ValueError" in result
+
+    def test_write_should_coerce_non_json_safe_values(self, capsys: pytest.CaptureFixture[str]):
+        entry = {
+            "severity": logger.LogSeverity.ERROR,
+            "message": "test",
+            "custom": object(),
+        }
+        logger.write(entry)
+        raw_log_output = capsys.readouterr().err
+        log_output = json.loads(raw_log_output)
+        assert log_output["severity"] == "ERROR"
+        assert log_output["message"] == "test"
+        assert isinstance(log_output["custom"], str)
+
     def test_no_false_circular_in_array_duplicates(self, capsys: pytest.CaptureFixture[str]):
         # Ensure that duplicate objects in arrays are not falsely detected as circular.
         obj = {"a": "foo"}
