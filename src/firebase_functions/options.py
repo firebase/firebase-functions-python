@@ -257,7 +257,8 @@ class RuntimeOptions:
     vpc_connector: str | Expression[str] | _util.Sentinel | None = None
     """
     Connect function to specified VPC connector.
-    A value of ``RESET_VALUE`` removes the VPC connector.
+    Accepts a plain string, an ``Expression[str]`` (e.g. a ``StringParam`` or
+    ternary expression), or ``RESET_VALUE`` to remove the VPC connector.
     """
 
     vpc_connector_egress_settings: VpcEgressSetting | _util.Sentinel | None = None
