@@ -229,7 +229,9 @@ def _get_write_file(severity: LogSeverity) -> _typing.TextIO:
 
 def write(entry: LogEntry) -> None:
     write_file = _get_write_file(entry["severity"])
-    print(_json.dumps(_coerce_json_safe(_remove_circular(entry)), ensure_ascii=False), file=write_file)
+    print(
+        _json.dumps(_coerce_json_safe(_remove_circular(entry)), ensure_ascii=False), file=write_file
+    )
 
 
 def debug(*args, **kwargs) -> None:
