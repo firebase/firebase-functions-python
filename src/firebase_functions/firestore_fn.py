@@ -113,16 +113,12 @@ def _firestore_endpoint_handler(
 ) -> None:
     event_attributes = raw._get_attributes()
     event_data: _typing.Any = raw.get_data()
-    firestore_event_data: _firestore.DocumentEventData
+    proto_event_data: _firestore.DocumentEventData
     content_type: str = event_attributes["datacontenttype"]
     if "application/json" in content_type or isinstance(event_data, dict):
-        firestore_event_data = _typing.cast(
-            _firestore.DocumentEventData, _firestore.DocumentEventData.from_json(event_data)
-        )
+        proto_event_data = _firestore.DocumentEventData.from_json(event_data)
     elif "application/protobuf" in content_type or isinstance(event_data, bytes):
-        firestore_event_data = _typing.cast(
-            _firestore.DocumentEventData, _firestore.DocumentEventData.deserialize(event_data)
-        )
+        proto_event_data = _firestore.DocumentEventData.deserialize(event_data)
     else:
         actual_type = type(event_data)
         raise TypeError(
@@ -147,47 +143,45 @@ def _firestore_endpoint_handler(
     value_snapshot: DocumentSnapshot | None = None
     old_value_snapshot: DocumentSnapshot | None = None
 
-    if firestore_event_data.value:
+    if proto_event_data.value:
         document_dict = _firestore_helpers.decode_dict(
-            firestore_event_data.value.fields, firestore_client
+            proto_event_data.value.fields, firestore_client
         )
         value_snapshot = _firestore_v1.DocumentSnapshot(
             firestore_ref,
             document_dict,
             True,
             _datetime_to_pb_timestamp(event_time),
-            firestore_event_data.value.create_time,
-            firestore_event_data.value.update_time,
+            proto_event_data.value.create_time,
+            proto_event_data.value.update_time,
         )
-    if firestore_event_data.old_value:
+    if proto_event_data.old_value:
         document_dict = _firestore_helpers.decode_dict(
-            firestore_event_data.old_value.fields, firestore_client
+            proto_event_data.old_value.fields, firestore_client
         )
         old_value_snapshot = _firestore_v1.DocumentSnapshot(
             firestore_ref,
             document_dict,
             True,
             _datetime_to_pb_timestamp(event_time),
-            firestore_event_data.old_value.create_time,
-            firestore_event_data.old_value.update_time,
+            proto_event_data.old_value.create_time,
+            proto_event_data.old_value.update_time,
         )
 
+    domain_event_data: DocumentSnapshot | Change[DocumentSnapshot | None] | None
     if event_type in (_event_type_deleted, _event_type_deleted_with_auth_context):
-        firestore_event_data = _typing.cast(_firestore.DocumentEventData, old_value_snapshot)
-    if event_type in (_event_type_created, _event_type_created_with_auth_context):
-        firestore_event_data = _typing.cast(_firestore.DocumentEventData, value_snapshot)
-    if event_type in (
+        domain_event_data = old_value_snapshot
+    elif event_type in (_event_type_created, _event_type_created_with_auth_context):
+        domain_event_data = value_snapshot
+    elif event_type in (
         _event_type_written,
         _event_type_updated,
         _event_type_written_with_auth_context,
         _event_type_updated_with_auth_context,
     ):
-        firestore_event_data = _typing.cast(
-            _firestore.DocumentEventData,
-            Change(
-                before=old_value_snapshot,
-                after=value_snapshot,
-            ),
+        domain_event_data = Change(
+            before=old_value_snapshot,
+            after=value_snapshot,
         )
 
     params: dict[str, str] = {
@@ -205,7 +199,7 @@ def _firestore_endpoint_handler(
         source=event_attributes["source"],
         type=event_attributes["type"],
         time=event_time,
-        data=firestore_event_data,
+        data=domain_event_data,
         subject=event_attributes["subject"],
         params=params,
     )
@@ -220,8 +214,7 @@ def _firestore_endpoint_handler(
         )
         func(database_event_with_auth_context)
     else:
-        # mypy cannot infer that the event type is correct, hence the cast
-        _typing.cast(_C1 | _C2, func)(database_event)  # type: ignore[arg-type]
+        func(database_event)
 
 
 @_util.copy_func_kwargs(FirestoreOptions)
