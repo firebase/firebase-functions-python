@@ -59,6 +59,29 @@ class IngressSetting(str, _enum.Enum):
 
 
 @_dataclasses.dataclass(frozen=True)
+class NetworkInterface:
+    """
+    Interface for a direct VPC network connection.
+    At least one of ``network`` or ``subnetwork`` must be specified.
+    """
+
+    network: str | Expression[str] | _util.Sentinel | None = None
+    """
+    Network to use for Direct VPC Egress.
+    """
+
+    subnetwork: str | Expression[str] | _util.Sentinel | None = None
+    """
+    Subnetwork to use for Direct VPC Egress.
+    """
+
+    tags: str | list[str] | Expression[str] | Expression[list] | _util.Sentinel | None = None
+    """
+    Optional tags to apply to Direct VPC Egress traffic.
+    """
+
+
+@_dataclasses.dataclass(frozen=True)
 class CorsOptions:
     """
     CORS options for HTTP functions.
@@ -257,6 +280,7 @@ class RuntimeOptions:
     vpc_connector: str | _util.Sentinel | None = None
     """
     Connect function to specified VPC connector.
+    Mutually exclusive with ``network_interface``.
     A value of ``RESET_VALUE`` removes the VPC connector.
     """
 
@@ -264,6 +288,18 @@ class RuntimeOptions:
     """
     Egress settings for VPC connector.
     A value of ``RESET_VALUE`` turns off VPC connector egress settings.
+    """
+
+    vpc_egress: VpcEgressSetting | _util.Sentinel | None = None
+    """
+    Alias for ``vpc_connector_egress_settings``.
+    """
+
+    network_interface: NetworkInterface | _util.Sentinel | None = None
+    """
+    Direct VPC Egress network interface settings.
+    Mutually exclusive with ``vpc_connector``.
+    A value of ``RESET_VALUE`` removes Direct VPC Egress settings.
     """
 
     service_account: str | _util.Sentinel | None = None
@@ -339,6 +375,7 @@ class RuntimeOptions:
             "service_account",
             "vpc_connector",
             "vpc_connector_egress_settings",
+            "network_interface",
         ]
         if not preserve_external_changes:
             for option in resettable_options:
@@ -380,18 +417,70 @@ class RuntimeOptions:
         elif options.region is not None:
             region = [_typing.cast(str, options.region)]
 
-        vpc: _manifest.VpcSettings | None = None
-        if isinstance(options.vpc_connector, str):
-            vpc = (
-                {
-                    "connector": options.vpc_connector,
-                    "egressSettings": options.vpc_connector_egress_settings.value
-                    if isinstance(options.vpc_connector_egress_settings, VpcEgressSetting)
-                    else options.vpc_connector_egress_settings,
-                }
-                if options.vpc_connector_egress_settings is not None
-                else {"connector": options.vpc_connector}
-            )
+        vpc: _manifest.VpcSettings | _util.Sentinel | None = None
+        vpc_egress = options.vpc_connector_egress_settings
+        if options.vpc_egress is not None:
+            vpc_egress = options.vpc_egress
+
+        connector = options.vpc_connector
+        has_connector = isinstance(connector, str)
+        reset_connector = isinstance(connector, _util.Sentinel)
+
+        raw_network_interface = options_dict.get("network_interface")
+        has_network_interface = isinstance(raw_network_interface, dict)
+        reset_network_interface = isinstance(raw_network_interface, _util.Sentinel)
+
+        if has_network_interface:
+            network_interface_dict = _typing.cast(dict[str, object], raw_network_interface)
+            if (
+                network_interface_dict.get("network") is None
+                and network_interface_dict.get("subnetwork") is None
+            ):
+                raise ValueError(
+                    "At least one of network or subnetwork must be specified in network_interface."
+                )
+
+        if has_connector and has_network_interface:
+            raise ValueError("Cannot set both vpc_connector and network_interface")
+
+        if (
+            has_connector
+            or vpc_egress is not None
+            or has_network_interface
+            or reset_connector
+            or reset_network_interface
+        ):
+            if (reset_connector and not has_network_interface) or (
+                reset_network_interface and not has_connector
+            ):
+                vpc = RESET_VALUE
+            else:
+                vpc = {}
+                if has_connector:
+                    vpc["connector"] = _typing.cast(str, connector)
+                if vpc_egress is not None:
+                    vpc["egressSettings"] = (
+                        vpc_egress.value if isinstance(vpc_egress, VpcEgressSetting) else vpc_egress
+                    )
+                if has_network_interface:
+                    network_interface_dict = _typing.cast(dict[str, object], raw_network_interface)
+                    network_interface_spec: _manifest.VpcNetworkInterface = {}
+                    if network_interface_dict.get("network") is not None:
+                        network_interface_spec["network"] = _typing.cast(
+                            str | Expression[str] | _util.Sentinel,
+                            network_interface_dict["network"],
+                        )
+                    if network_interface_dict.get("subnetwork") is not None:
+                        network_interface_spec["subnetwork"] = _typing.cast(
+                            str | Expression[str] | _util.Sentinel,
+                            network_interface_dict["subnetwork"],
+                        )
+                    if network_interface_dict.get("tags") is not None:
+                        network_interface_spec["tags"] = _typing.cast(
+                            str | list[str] | Expression[str] | Expression[list] | _util.Sentinel,
+                            network_interface_dict["tags"],
+                        )
+                    vpc["networkInterfaces"] = [network_interface_spec]
 
         endpoint = _manifest.ManifestEndpoint(
             entryPoint=kwargs["func_name"],
@@ -1254,8 +1343,10 @@ def set_global_options(
     max_instances: int | Expression[int] | _util.Sentinel | None = None,
     concurrency: int | Expression[int] | _util.Sentinel | None = None,
     cpu: int | _typing.Literal["gcf_gen1"] | _util.Sentinel = "gcf_gen1",
-    vpc_connector: str | None = None,
-    vpc_connector_egress_settings: VpcEgressSetting | None = None,
+    vpc_connector: str | _util.Sentinel | None = None,
+    vpc_connector_egress_settings: VpcEgressSetting | _util.Sentinel | None = None,
+    vpc_egress: VpcEgressSetting | _util.Sentinel | None = None,
+    network_interface: NetworkInterface | _util.Sentinel | None = None,
     service_account: str | _util.Sentinel | None = None,
     ingress: IngressSetting | _util.Sentinel | None = None,
     labels: dict[str, str] | None = None,
@@ -1277,6 +1368,8 @@ def set_global_options(
         cpu=cpu,
         vpc_connector=vpc_connector,
         vpc_connector_egress_settings=vpc_connector_egress_settings,
+        vpc_egress=vpc_egress,
+        network_interface=network_interface,
         service_account=service_account,
         ingress=ingress,
         labels=labels,
