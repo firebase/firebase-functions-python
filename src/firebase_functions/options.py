@@ -501,10 +501,16 @@ class EventHandlerOptions(RuntimeOptions):
         assert kwargs["event_filters"] is not None
         assert kwargs["event_type"] is not None
 
+        event_filters_path_patterns = kwargs.get("event_filters_path_patterns") or None
         event_trigger = _manifest.EventTrigger(
             eventType=kwargs["event_type"],
             retry=self.retry if self.retry is not None else False,
             eventFilters=kwargs["event_filters"],
+            **(
+                {"eventFilterPathPatterns": event_filters_path_patterns}
+                if event_filters_path_patterns is not None
+                else {}
+            ),
         )
 
         kwargs_merged = {
@@ -978,18 +984,11 @@ class DatabaseOptions(EventHandlerOptions):
         else:
             event_filters["instance"] = event_filter_instance
 
-        event_trigger = _manifest.EventTrigger(
-            eventType=kwargs["event_type"],
-            retry=self.retry if self.retry is not None else False,
-            eventFilters=event_filters,
-            eventFilterPathPatterns=event_filters_path_patterns,
+        return super()._endpoint(
+            **kwargs,
+            event_filters=event_filters,
+            event_filters_path_patterns=event_filters_path_patterns,
         )
-
-        kwargs_merged = {
-            **_dataclasses.asdict(RuntimeOptions._endpoint(self, **kwargs)),
-            "eventTrigger": event_trigger,
-        }
-        return _manifest.ManifestEndpoint(**_typing.cast(dict, kwargs_merged))
 
 
 @_dataclasses.dataclass(frozen=True, kw_only=True)
@@ -1085,18 +1084,11 @@ class FirestoreOptions(EventHandlerOptions):
             event_filters_path_patterns["document"] = event_filter_document
         else:
             event_filters["document"] = event_filter_document
-        event_trigger = _manifest.EventTrigger(
-            eventType=kwargs["event_type"],
-            retry=self.retry if self.retry is not None else False,
-            eventFilters=event_filters,
-            eventFilterPathPatterns=event_filters_path_patterns,
+        return super()._endpoint(
+            **kwargs,
+            event_filters=event_filters,
+            event_filters_path_patterns=event_filters_path_patterns,
         )
-
-        kwargs_merged = {
-            **_dataclasses.asdict(RuntimeOptions._endpoint(self, **kwargs)),
-            "eventTrigger": event_trigger,
-        }
-        return _manifest.ManifestEndpoint(**_typing.cast(dict, kwargs_merged))
 
 
 @_dataclasses.dataclass(frozen=True, kw_only=True)
