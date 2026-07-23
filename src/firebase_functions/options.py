@@ -481,7 +481,6 @@ class TaskQueueOptions(RuntimeOptions):
         ]
 
 
-# TODO refactor Storage & Database options to use this base class.
 @_dataclasses.dataclass(frozen=True, kw_only=True)
 class EventHandlerOptions(RuntimeOptions):
     """
@@ -502,16 +501,20 @@ class EventHandlerOptions(RuntimeOptions):
         assert kwargs["event_type"] is not None
 
         event_filters_path_patterns = kwargs.get("event_filters_path_patterns") or None
-        event_trigger = _manifest.EventTrigger(
-            eventType=kwargs["event_type"],
-            retry=self.retry if self.retry is not None else False,
-            eventFilters=kwargs["event_filters"],
-            **(
-                {"eventFilterPathPatterns": event_filters_path_patterns}
-                if event_filters_path_patterns is not None
-                else {}
-            ),
-        )
+        retry = self.retry if self.retry is not None else False
+        if event_filters_path_patterns is not None:
+            event_trigger = _manifest.EventTrigger(
+                eventType=kwargs["event_type"],
+                retry=retry,
+                eventFilters=kwargs["event_filters"],
+                eventFilterPathPatterns=event_filters_path_patterns,
+            )
+        else:
+            event_trigger = _manifest.EventTrigger(
+                eventType=kwargs["event_type"],
+                retry=retry,
+                eventFilters=kwargs["event_filters"],
+            )
 
         kwargs_merged = {
             **_dataclasses.asdict(super()._endpoint(**kwargs)),
