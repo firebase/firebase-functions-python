@@ -45,6 +45,18 @@ class TestFirestore(TestCase):
             self.assertIsNotNone(endpoint.eventTrigger)
             self.assertFalse(endpoint.eventTrigger["retry"])
 
+    def test_firestore_decorator_omits_empty_path_patterns(self):
+        with patch.dict("sys.modules", mocked_modules):
+            from firebase_functions import firestore_fn
+
+            func = Mock(__name__="example_func")
+            decorated_func = firestore_fn.on_document_created(document="/foo/bar")(func)
+
+            endpoint = decorated_func.__firebase_endpoint__
+
+            self.assertIsNotNone(endpoint.eventTrigger)
+            self.assertNotIn("eventFilterPathPatterns", endpoint.eventTrigger)
+
     def test_firestore_endpoint_handler_calls_function_with_correct_args(self):
         with patch.dict("sys.modules", mocked_modules):
             from cloudevents.http import CloudEvent
