@@ -118,7 +118,7 @@ jobs:
     - name: Create release tag
       # Skip creating a release tag for prereleases
       if: (!contains(github.event.pull_request.labels.*.name, 'release:prerelease'))
-      uses: fleskesvor/create-release@1a72e235c178bf2ae6c51a8ae36febc24568c5fe # 1a72e235c178bf2ae6c51a8ae36febc24568c5fe
+      uses: fleskesvor/create-release@1a72e235c178bf2ae6c51a8ae36febc24568c5fe # zizmor: ignore[unpinned-uses]
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
@@ -129,4 +129,4 @@ jobs:
         prerelease: false
 
     - name: Publish to Pypi
-      uses: pypa/gh-action-pypi-publish@c03e7fc4fb68e760409a4eb05a41050da01d8412 # v1.12.3
+      uses: pypa/gh-action-pypi-publish@67339c736fd9354cd4f8cb0b744f2b82a74b5c70 # v1.12.3
