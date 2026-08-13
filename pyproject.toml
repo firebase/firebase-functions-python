@@ -28,7 +28,7 @@ dependencies = [
   "cloudevents>=1.2.0,<2.0.0",
   "flask-cors>=3.0.10",
   "pyjwt[crypto]>=2.5.0",
-  "google-events==0.5.0",
+  "google-events>=0.5.0,<1.0.0",
   "google-cloud-firestore>=2.11.0",
   "tzdata>=2024.1",
 ]
