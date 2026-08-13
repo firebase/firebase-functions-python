@@ -16,6 +16,24 @@ class TestDb(unittest.TestCase):
     Tests for the db module.
     """
 
+    def test_database_decorator_retry_option(self):
+        func = mock.Mock(__name__="example_func")
+        decorated_func = db_fn.on_value_written(reference="/items/{itemId}", retry=True)(func)
+
+        endpoint = decorated_func.__firebase_endpoint__
+
+        self.assertIsNotNone(endpoint.eventTrigger)
+        self.assertTrue(endpoint.eventTrigger["retry"])
+
+    def test_database_decorator_retry_defaults_false(self):
+        func = mock.Mock(__name__="example_func")
+        decorated_func = db_fn.on_value_written(reference="/items/{itemId}")(func)
+
+        endpoint = decorated_func.__firebase_endpoint__
+
+        self.assertIsNotNone(endpoint.eventTrigger)
+        self.assertFalse(endpoint.eventTrigger["retry"])
+
     def test_calls_init_function(self):
         hello = None
 
