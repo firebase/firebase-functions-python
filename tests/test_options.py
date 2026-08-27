@@ -15,6 +15,7 @@
 Options unit tests.
 """
 
+import re
 import typing as _typing
 
 from pytest import mark, raises
@@ -97,6 +98,18 @@ def test_https_options_removes_cors():
     """
     https_options = options.HttpsOptions(cors=options.CorsOptions(cors_origins="*"))
     assert https_options.cors.cors_origins == "*", "cors options were not set"
+    https_options_dict = https_options._asdict_with_global_options()
+    assert "cors" not in https_options_dict, "'cors' key should not exist in dict"
+
+
+def test_https_options_allows_regex_cors_origins():
+    """
+    Testing 'cors' is excluded before serialization, so origin types with no
+    manifest representation do not reach the spec converter.
+    """
+    https_options = options.HttpsOptions(
+        cors=options.CorsOptions(cors_origins=[re.compile(r"firebase\.com$"), "https://a.com"])
+    )
     https_options_dict = https_options._asdict_with_global_options()
     assert "cors" not in https_options_dict, "'cors' key should not exist in dict"
 
