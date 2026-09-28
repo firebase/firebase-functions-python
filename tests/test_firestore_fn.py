@@ -328,3 +328,44 @@ class TestFirestore(TestCase):
                 ("project-id", "projects/project-id/databases/(default)"),
                 firestore_fn._firestore_clients,
             )
+
+    @patch.dict("os.environ", {"FIRESTORE_EMULATOR_HOST": "localhost:8080"})
+    def test_firestore_client_emulator_skips_credentials(self):
+        with patch.dict("sys.modules", mocked_modules):
+            from cloudevents.http import CloudEvent
+            from firebase_functions import firestore_fn
+
+            firestore_fn._firestore_clients.clear()
+
+            func = Mock(__name__="example_func")
+            attributes = {
+                "specversion": "1.0",
+                "type": firestore_fn._event_type_created,
+                "source": "https://example.com/testevent",
+                "time": "2023-03-11T13:25:37.403Z",
+                "subject": "test_subject",
+                "datacontenttype": "application/json",
+                "location": "projects/project-id/databases/(default)/documents/foo/bar",
+                "project": "project-id",
+                "namespace": "(default)",
+                "document": "foo/bar",
+                "database": "projects/project-id/databases/(default)",
+                "authtype": "unauthenticated",
+                "authid": "foo",
+            }
+            raw_event = CloudEvent(attributes=attributes, data=json.dumps({}))
+            decorated_func = firestore_fn.on_document_created(document="/foo/{bar}")(func)
+
+            mock_client_cls = mocked_modules["google.cloud.firestore_v1"].Client
+            mock_client_cls.reset_mock()
+            app = mocked_modules["firebase_admin"].get_app()
+            app.credential.get_credential.reset_mock()
+
+            decorated_func(raw_event)
+
+            self.assertEqual(mock_client_cls.call_count, 1)
+            mock_client_cls.assert_called_with(
+                project=app.project_id,
+                database="projects/project-id/databases/(default)",
+            )
+            app.credential.get_credential.assert_not_called()

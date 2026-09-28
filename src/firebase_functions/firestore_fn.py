@@ -18,6 +18,7 @@ Module for Cloud Functions that are triggered by Firestore.
 # pylint: disable=protected-access
 import dataclasses as _dataclass
 import functools as _functools
+import os as _os
 import threading as _threading
 import typing as _typing
 
@@ -151,11 +152,13 @@ def _firestore_endpoint_handler(
     if client_key not in _firestore_clients:
         with _firestore_clients_lock:
             if client_key not in _firestore_clients:
-                _firestore_clients[client_key] = _firestore_v1.Client(
-                    project=app.project_id,
-                    database=event_database,
-                    credentials=app.credential.get_credential(),
-                )
+                client_kwargs = {
+                    "project": app.project_id,
+                    "database": event_database,
+                }
+                if not _os.environ.get("FIRESTORE_EMULATOR_HOST"):
+                    client_kwargs["credentials"] = app.credential.get_credential()
+                _firestore_clients[client_key] = _firestore_v1.Client(**client_kwargs)
     firestore_client = _firestore_clients[client_key]
 
     firestore_ref: DocumentReference = firestore_client.document(event_document)
