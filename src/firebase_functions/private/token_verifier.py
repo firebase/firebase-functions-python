@@ -46,7 +46,7 @@ class _JWTVerifier:
         self.url = kwargs.pop("doc_url")
         self.cert_url = kwargs.pop("cert_url")
         self.issuer = kwargs.pop("issuer")
-        self.expected_audience = kwargs.pop("expected_audience")
+        self.expected_audiences = kwargs.pop("expected_audiences")
         if self.short_name[0].lower() in "aeiou":
             self.articled_short_name = f"an {self.short_name}"
         else:
@@ -102,12 +102,17 @@ class _JWTVerifier:
                     self.short_name, header.get("alg"), verify_id_token_msg
                 )
             )
-        elif not emulated and self.expected_audience and self.expected_audience not in audience:
+        elif (
+            not emulated
+            and self.expected_audiences
+            and not any(expected in audience for expected in self.expected_audiences)
+        ):
+            expected = " or ".join(f'"{expected}"' for expected in self.expected_audiences)
             error_message = (
-                f'Firebase {self.short_name} has incorrect "aud" (audience) claim. Expected "{self.expected_audience}" but '
+                f'Firebase {self.short_name} has incorrect "aud" (audience) claim. Expected {expected} but '
                 f'got "{audience}". {project_id_match_msg} {verify_id_token_msg}'
             )
-        elif not emulated and not self.expected_audience and audience != self.project_id:
+        elif not emulated and not self.expected_audiences and audience != self.project_id:
             error_message = (
                 f'Firebase {self.short_name} has incorrect "aud" (audience) claim. Expected "{self.project_id}" but '
                 f'got "{audience}". {project_id_match_msg} {verify_id_token_msg}'
@@ -136,9 +141,9 @@ class _JWTVerifier:
                 verified_claims = google.oauth2.id_token.verify_token(
                     token,
                     request=request,
-                    # If expected_audience is set then we have already verified
+                    # If expected_audiences is set then we have already verified
                     # the audience above.
-                    audience=(None if self.expected_audience else self.project_id),
+                    audience=(None if self.expected_audiences else self.project_id),
                     certs_url=self.cert_url,
                 )
             verified_claims["uid"] = verified_claims["sub"]
@@ -189,7 +194,13 @@ class AuthBlockingTokenVerifier(_token_gen.TokenVerifier):
             issuer=_token_gen.ID_TOKEN_ISSUER_PREFIX,
             invalid_token_error=InvalidAuthBlockingTokenError,
             expired_token_error=ExpiredAuthBlockingTokenError,
-            expected_audience="run.app",  # v2 only
+            # firebase-tools registers the cloudfunctions.net URL when it creates a
+            # blocking function and the run.app URL when it updates one, so a token's
+            # audience is either form depending on how the function was last deployed.
+            expected_audiences=[
+                "run.app",
+                f"{app.project_id}.cloudfunctions.net/",
+            ],
         )
 
     def verify_auth_blocking_token(self, auth_blocking_token):

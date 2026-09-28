@@ -9,6 +9,7 @@ from flask import Flask, Request
 from werkzeug.test import EnvironBuilder
 
 from firebase_functions import core, identity_fn
+from firebase_functions.private import _identity_fn
 
 token_verifier_mock = MagicMock()
 token_verifier_mock.verify_auth_blocking_token = Mock(
@@ -20,9 +21,8 @@ token_verifier_mock.verify_auth_blocking_token = Mock(
         "iat": 0,
     }
 )
-mocked_modules = {
-    "firebase_functions.private.token_verifier": token_verifier_mock,
-}
+# Patch the reference _identity_fn holds rather than the sys.modules entry, which
+# `import ... as` bypasses once anything else has imported the real module.
 
 
 class TestIdentity(unittest.TestCase):
@@ -38,7 +38,7 @@ class TestIdentity(unittest.TestCase):
             nonlocal hello
             hello = "world"
 
-        with patch.dict("sys.modules", mocked_modules):
+        with patch.object(_identity_fn, "_token_verifier", token_verifier_mock):
             app = Flask(__name__)
 
             func = Mock(__name__="example_func", return_value=identity_fn.BeforeSignInResponse())
