@@ -3,6 +3,7 @@ This module contains tests for the firestore_fn module.
 """
 
 import json
+import os
 from unittest import TestCase
 from unittest.mock import MagicMock, Mock, patch
 
@@ -103,7 +104,9 @@ class TestFirestore(TestCase):
 
             self.assertEqual(hello, "world")
 
+    @patch.dict(os.environ, clear=False)
     def test_firestore_client_is_cached(self):
+        os.environ.pop("FIRESTORE_EMULATOR_HOST", None)
         with patch.dict("sys.modules", mocked_modules):
             from cloudevents.http import CloudEvent
 
@@ -144,7 +147,9 @@ class TestFirestore(TestCase):
                 credentials=mocked_modules["firebase_admin"].get_app().credential.get_credential(),
             )
 
+    @patch.dict(os.environ, clear=False)
     def test_firestore_client_is_cached_concurrent(self):
+        os.environ.pop("FIRESTORE_EMULATOR_HOST", None)
         with patch.dict("sys.modules", mocked_modules):
             import threading
 
@@ -204,7 +209,10 @@ class TestFirestore(TestCase):
             t2 = threading.Thread(target=thread_task)
 
             t1.start()
-            t1_in_critical_section.wait(timeout=5.0)
+            self.assertTrue(
+                t1_in_critical_section.wait(timeout=5.0),
+                "Thread 1 failed to reach the critical section",
+            )
 
             t2.start()
             raced = t2_in_critical_section.wait(timeout=0.5)
@@ -223,7 +231,9 @@ class TestFirestore(TestCase):
             )
             self.assertEqual(mock_client_cls.call_count, 1)
 
+    @patch.dict(os.environ, clear=False)
     def test_firestore_client_cache_isolation(self):
+        os.environ.pop("FIRESTORE_EMULATOR_HOST", None)
         with patch.dict("sys.modules", mocked_modules):
             from cloudevents.http import CloudEvent
 
@@ -257,6 +267,8 @@ class TestFirestore(TestCase):
             mock_client_cls.reset_mock()
 
             app = mocked_modules["firebase_admin"].get_app()
+            original_project_id = app.project_id
+            self.addCleanup(lambda: setattr(app, "project_id", original_project_id))
 
             # Project A, Database (default)
             app.project_id = "project-A"
@@ -275,7 +287,9 @@ class TestFirestore(TestCase):
 
             self.assertEqual(mock_client_cls.call_count, 3)
 
+    @patch.dict(os.environ, clear=False)
     def test_firestore_client_creation_failure_does_not_poison_cache(self):
+        os.environ.pop("FIRESTORE_EMULATOR_HOST", None)
         with patch.dict("sys.modules", mocked_modules):
             from cloudevents.http import CloudEvent
 
@@ -310,8 +324,9 @@ class TestFirestore(TestCase):
                 pass
 
             mock_client_cls.side_effect = InitializationError("Initialization failed")
+            self.addCleanup(lambda: setattr(mock_client_cls, "side_effect", None))
 
-            with self.assertRaises(InitializationError, msg="Initialization failed"):
+            with self.assertRaises(InitializationError):
                 decorated_func(raw_event)
 
             self.assertNotIn(
@@ -333,6 +348,7 @@ class TestFirestore(TestCase):
     def test_firestore_client_emulator_skips_credentials(self):
         with patch.dict("sys.modules", mocked_modules):
             from cloudevents.http import CloudEvent
+
             from firebase_functions import firestore_fn
 
             firestore_fn._firestore_clients.clear()
