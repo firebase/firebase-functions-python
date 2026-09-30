@@ -34,7 +34,7 @@ from google.auth import jwt
 # mypy: ignore-errors
 # TODO remove once firebase-admin supports this directly.
 # Modified from src/firebase_admin/_token_gen.py to add
-# support for app_check tokens (expected_audience kwarg and
+# support for app_check tokens (expected_audiences kwarg and
 # usage are new, plus None for audience on google.oauth2.id_token.verify_token call)
 class _JWTVerifier:
     """Verifies Firebase JWTs (ID tokens or session cookies)."""
@@ -105,7 +105,10 @@ class _JWTVerifier:
         elif (
             not emulated
             and self.expected_audiences
-            and not any(expected in audience for expected in self.expected_audiences)
+            and not (
+                isinstance(audience, str)
+                and any(expected in audience for expected in self.expected_audiences)
+            )
         ):
             expected = " or ".join(f'"{expected}"' for expected in self.expected_audiences)
             error_message = (

@@ -21,8 +21,6 @@ token_verifier_mock.verify_auth_blocking_token = Mock(
         "iat": 0,
     }
 )
-# Patch the reference _identity_fn holds rather than the sys.modules entry, which
-# `import ... as` bypasses once anything else has imported the real module.
 
 
 class TestIdentity(unittest.TestCase):

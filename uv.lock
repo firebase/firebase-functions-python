@@ -472,6 +472,7 @@ dependencies = [
 [package.dev-dependencies]
 dev = [
     { name = "build" },
+    { name = "cryptography" },
     { name = "google-cloud-tasks" },
     { name = "mypy" },
     { name = "pytest" },
@@ -502,6 +503,7 @@ requires-dist = [
 [package.metadata.requires-dev]
 dev = [
     { name = "build", specifier = ">=1.0.0" },
+    { name = "cryptography", specifier = ">=3.4.0" },
     { name = "google-cloud-tasks", specifier = ">=2.13.1" },
     { name = "mypy", specifier = ">=1.0.0" },
     { name = "pytest", specifier = ">=7.1.2,<10" },
