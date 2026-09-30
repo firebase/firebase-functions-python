@@ -92,8 +92,23 @@ def _verify(app, token: str):
     return token_verifier.AuthBlockingTokenVerifier(app).verify_auth_blocking_token(token)
 
 
-@pytest.mark.parametrize("audience", [RUN_APP_AUDIENCE, CLOUDFUNCTIONS_AUDIENCE])
-def test_accepts_both_audience_forms(app, signing_key, audience):
+@pytest.mark.parametrize(
+    "audience",
+    [
+        RUN_APP_AUDIENCE,
+        CLOUDFUNCTIONS_AUDIENCE,
+        # Run hosts: the current form carries the project number, the legacy form a
+        # hash, and a revision tag prefixes the service with `tag---`.
+        "https://beforecreate-123456789.us-central1.run.app",
+        "https://tag---beforecreate-123456789.us-central1.run.app",
+        # Regions the SupportedRegion enum predates, and a hypothetical shape with
+        # more than one hyphen, since the region is matched by shape.
+        f"https://northamerica-northeast1-{PROJECT_ID}.cloudfunctions.net/before_create",
+        f"https://me-west1-{PROJECT_ID}.cloudfunctions.net/before_create",
+        f"https://us-far-west1-{PROJECT_ID}.cloudfunctions.net/before_create",
+    ],
+)
+def test_accepts_function_url_audiences(app, signing_key, audience):
     assert _verify(app, _token(signing_key, audience))["uid"] == "uid123"
 
 
@@ -101,13 +116,30 @@ def test_accepts_both_audience_forms(app, signing_key, audience):
     "audience",
     [
         "https://us-east1-other-project.cloudfunctions.net/before_create",
-        f"https://us-east1-{PROJECT_ID}.cloudfunctions.net.example.com/before_create",
         "https://example.com/before_create",
+        # A project id ending with this one must not be accepted as a suffix.
+        f"https://us-east1-other-{PROJECT_ID}.cloudfunctions.net/before_create",
+        f"https://us-east1-x1-{PROJECT_ID}.cloudfunctions.net/before_create",
+        f"https://us-east1-a-{PROJECT_ID}.cloudfunctions.net/before_create",
+        # The expected host must be the host, not text anywhere in the URL.
+        f"https://us-east1-{PROJECT_ID}.cloudfunctions.net.example.com/before_create",
+        f"https://example.com/{PROJECT_ID}.cloudfunctions.net/before_create",
+        f"https://example.com#us-east1-{PROJECT_ID}.cloudfunctions.net/",
+        "https://example.com/?x=run.app",
+        "https://run.app.example.com/before_create",
+        f"http://us-east1-{PROJECT_ID}.cloudfunctions.net/before_create",
     ],
 )
 def test_rejects_foreign_audience(app, signing_key, audience):
     with pytest.raises(token_verifier.InvalidAuthBlockingTokenError, match='"aud"'):
         _verify(app, _token(signing_key, audience))
+
+
+def test_accepts_any_run_host(app, signing_key):
+    """The run.app form is not project-scoped; `iss` is what pins the project."""
+    assert _verify(app, _token(signing_key, "https://svc-999.us-central1.run.app"))["uid"] == (
+        "uid123"
+    )
 
 
 def test_rejects_wrong_issuer(app, signing_key):

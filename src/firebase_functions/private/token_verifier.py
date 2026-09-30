@@ -15,6 +15,9 @@
 Module for internal token verification.
 """
 
+import re
+from urllib.parse import urlsplit
+
 import google.auth.exceptions
 import google.oauth2.id_token
 import google.oauth2.service_account
@@ -29,12 +32,48 @@ from firebase_admin import (
 )
 from google.auth import jwt
 
+_CLOUD_RUN_HOST_SUFFIX = ".run.app"
+
+
+def _blocking_audience_matcher(project_id):
+    """Builds the `audience_matcher` for auth blocking tokens.
+
+    A blocking token's `aud` is the function's own URL. firebase-tools registers the
+    cloudfunctions.net URL when it creates a blocking function and the run.app URL
+    when it updates one, so either host has to be accepted.
+
+    The gen-1 host is matched as `<region>-<project-id>.cloudfunctions.net` with the
+    region pinned to its naming shape, so a project id that merely ends with this one
+    (`other-my-project` against `my-project`) is not accepted as a suffix. Matching
+    the parsed host rather than a substring of the URL also keeps the expected text
+    from being smuggled in via a path, query or fragment.
+
+    Deliberately stricter than firebase-admin-node, which substring-matches `aud`.
+
+    The run.app host is not project-scoped: any Cloud Run URL satisfies it, as in the
+    Node SDK. The `iss` check is what ties the token to this project.
+    """
+    cloudfunctions_host = re.compile(
+        rf"[a-z]+(?:-[a-z]+)*\d+-{re.escape(project_id)}\.cloudfunctions\.net"
+    )
+
+    def matches(audience):
+        if not isinstance(audience, str):
+            return False
+        parts = urlsplit(audience)
+        if parts.scheme != "https":
+            return False
+        host = parts.hostname or ""
+        return host.endswith(_CLOUD_RUN_HOST_SUFFIX) or bool(cloudfunctions_host.fullmatch(host))
+
+    return matches
+
 
 # pylint: disable=consider-using-f-string
 # mypy: ignore-errors
 # TODO remove once firebase-admin supports this directly.
 # Modified from src/firebase_admin/_token_gen.py to add
-# support for app_check tokens (expected_audiences kwarg and
+# support for app_check tokens (audience_matcher kwarg and
 # usage are new, plus None for audience on google.oauth2.id_token.verify_token call)
 class _JWTVerifier:
     """Verifies Firebase JWTs (ID tokens or session cookies)."""
@@ -46,7 +85,8 @@ class _JWTVerifier:
         self.url = kwargs.pop("doc_url")
         self.cert_url = kwargs.pop("cert_url")
         self.issuer = kwargs.pop("issuer")
-        self.expected_audiences = kwargs.pop("expected_audiences")
+        self.audience_matcher = kwargs.pop("audience_matcher", None)
+        self.expected_audience_msg = kwargs.pop("expected_audience_msg", None)
         if self.short_name[0].lower() in "aeiou":
             self.articled_short_name = f"an {self.short_name}"
         else:
@@ -102,20 +142,12 @@ class _JWTVerifier:
                     self.short_name, header.get("alg"), verify_id_token_msg
                 )
             )
-        elif (
-            not emulated
-            and self.expected_audiences
-            and not (
-                isinstance(audience, str)
-                and any(expected in audience for expected in self.expected_audiences)
-            )
-        ):
-            expected = " or ".join(f'"{expected}"' for expected in self.expected_audiences)
+        elif not emulated and self.audience_matcher and not self.audience_matcher(audience):
             error_message = (
-                f'Firebase {self.short_name} has incorrect "aud" (audience) claim. Expected {expected} but '
+                f'Firebase {self.short_name} has incorrect "aud" (audience) claim. Expected {self.expected_audience_msg} but '
                 f'got "{audience}". {project_id_match_msg} {verify_id_token_msg}'
             )
-        elif not emulated and not self.expected_audiences and audience != self.project_id:
+        elif not emulated and not self.audience_matcher and audience != self.project_id:
             error_message = (
                 f'Firebase {self.short_name} has incorrect "aud" (audience) claim. Expected "{self.project_id}" but '
                 f'got "{audience}". {project_id_match_msg} {verify_id_token_msg}'
@@ -144,9 +176,9 @@ class _JWTVerifier:
                 verified_claims = google.oauth2.id_token.verify_token(
                     token,
                     request=request,
-                    # If expected_audiences is set then we have already verified
+                    # If audience_matcher is set then we have already verified
                     # the audience above.
-                    audience=(None if self.expected_audiences else self.project_id),
+                    audience=(None if self.audience_matcher else self.project_id),
                     certs_url=self.cert_url,
                 )
             verified_claims["uid"] = verified_claims["sub"]
@@ -197,13 +229,11 @@ class AuthBlockingTokenVerifier(_token_gen.TokenVerifier):
             issuer=_token_gen.ID_TOKEN_ISSUER_PREFIX,
             invalid_token_error=InvalidAuthBlockingTokenError,
             expired_token_error=ExpiredAuthBlockingTokenError,
-            # firebase-tools registers the cloudfunctions.net URL when it creates a
-            # blocking function and the run.app URL when it updates one, so a token's
-            # audience is either form depending on how the function was last deployed.
-            expected_audiences=[
-                "run.app",
-                f"{app.project_id}.cloudfunctions.net/",
-            ],
+            audience_matcher=_blocking_audience_matcher(app.project_id),
+            expected_audience_msg=(
+                "a https://*.run.app or "
+                f"https://<region>-{app.project_id}.cloudfunctions.net/ function URL"
+            ),
         )
 
     def verify_auth_blocking_token(self, auth_blocking_token):
