@@ -148,16 +148,24 @@ def _firestore_endpoint_handler(
         initialize_app()
     app = get_app()
 
-    client_key = (app.project_id, event_database)
+    emulator_host = _os.environ.get("FIRESTORE_EMULATOR_HOST")
+    if emulator_host:
+        project_id = app.options.get("projectId") or event_project
+        credential = None
+    else:
+        project_id = app.project_id or event_project
+        credential = app.credential
+
+    client_key = (project_id, event_database, emulator_host, credential)
     if client_key not in _firestore_clients:
         with _firestore_clients_lock:
             if client_key not in _firestore_clients:
                 client_kwargs = {
-                    "project": app.project_id,
+                    "project": project_id,
                     "database": event_database,
                 }
-                if not _os.environ.get("FIRESTORE_EMULATOR_HOST"):
-                    client_kwargs["credentials"] = app.credential.get_credential()
+                if credential is not None:
+                    client_kwargs["credentials"] = credential.get_credential()
                 _firestore_clients[client_key] = _firestore_v1.Client(**client_kwargs)
     firestore_client = _firestore_clients[client_key]
 
