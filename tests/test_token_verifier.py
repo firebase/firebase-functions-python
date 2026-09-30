@@ -118,5 +118,5 @@ def test_rejects_wrong_issuer(app, signing_key):
 
 def test_rejects_token_signed_by_another_key(app):
     other_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
-    with pytest.raises(token_verifier.InvalidAuthBlockingTokenError):
+    with pytest.raises(token_verifier.InvalidAuthBlockingTokenError, match="signature"):
         _verify(app, _token(other_key, CLOUDFUNCTIONS_AUDIENCE))
