@@ -17,6 +17,7 @@ class TestFirestore(TestCase):
 
     def setUp(self):
         from firebase_functions import firestore_fn
+
         firestore_fn._firestore_clients.clear()
 
     def _create_event(self, project: str = "project-id", database: str = "(default)"):
