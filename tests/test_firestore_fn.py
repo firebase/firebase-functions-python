@@ -5,6 +5,7 @@ This module contains tests for the firestore_fn module.
 import json
 import os
 import threading
+import time
 from unittest import TestCase
 from unittest.mock import MagicMock, Mock, patch
 
@@ -223,7 +224,6 @@ class TestFirestore(TestCase):
             t2.start()
 
             # Ensure t2 actually contends on the lock while t1 is inside mock_client_init
-            import time
             time.sleep(0.1)
             t2_can_proceed.set()
 
