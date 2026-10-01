@@ -15,7 +15,8 @@ class TestFirestore(TestCase):
     """
 
     def setUp(self):
-        pass
+        from firebase_functions import firestore_fn
+        firestore_fn._firestore_clients.clear()
 
     def _create_event(self, project: str = "project-id", database: str = "(default)"):
         from cloudevents.http import CloudEvent
@@ -154,8 +155,6 @@ class TestFirestore(TestCase):
             app.credential = MagicMock()
             mock_get_app.return_value = app
 
-            firestore_fn._firestore_clients.clear()
-
             func = Mock(__name__="example_func")
             raw_event = self._create_event()
             decorated_func = firestore_fn.on_document_created(document="/foo/{bar}")(func)
@@ -164,6 +163,11 @@ class TestFirestore(TestCase):
             decorated_func(raw_event)
 
             self.assertEqual(mock_client_cls.call_count, 1)
+            mock_client_cls.assert_called_once_with(
+                project="project-id",
+                database="(default)",
+                credentials=app.credential.get_credential(),
+            )
             self.assertIn(
                 ("project-id", "(default)", None, app.credential),
                 firestore_fn._firestore_clients,
@@ -183,8 +187,6 @@ class TestFirestore(TestCase):
             app.project_id = "project-id"
             app.credential = MagicMock()
             mock_get_app.return_value = app
-
-            firestore_fn._firestore_clients.clear()
 
             func = Mock(__name__="example_func")
             raw_event = self._create_event()
@@ -220,6 +222,9 @@ class TestFirestore(TestCase):
             t2 = threading.Thread(target=run_func)
             t2.start()
 
+            # Ensure t2 actually contends on the lock while t1 is inside mock_client_init
+            import time
+            time.sleep(0.1)
             t2_can_proceed.set()
 
             t1.join(timeout=5)
