@@ -46,7 +46,7 @@ _event_type_created_with_auth_context = "google.cloud.firestore.document.v1.crea
 _event_type_updated_with_auth_context = "google.cloud.firestore.document.v1.updated.withAuthContext"
 _event_type_deleted_with_auth_context = "google.cloud.firestore.document.v1.deleted.withAuthContext"
 
-_firestore_clients: dict[tuple[str, str], _firestore_v1.Client] = {}
+_firestore_clients: dict[tuple[str, str, str | None, _typing.Any], _firestore_v1.Client] = {}
 _firestore_clients_lock = _threading.Lock()
 
 
