@@ -101,11 +101,7 @@ def _verify(app, token: str):
         # hash, and a revision tag prefixes the service with `tag---`.
         "https://beforecreate-123456789.us-central1.run.app",
         "https://tag---beforecreate-123456789.us-central1.run.app",
-        # Regions the SupportedRegion enum predates, and a hypothetical shape with
-        # more than one hyphen, since the region is matched by shape.
         f"https://northamerica-northeast1-{PROJECT_ID}.cloudfunctions.net/before_create",
-        f"https://me-west1-{PROJECT_ID}.cloudfunctions.net/before_create",
-        f"https://us-far-west1-{PROJECT_ID}.cloudfunctions.net/before_create",
     ],
 )
 def test_accepts_function_url_audiences(app, signing_key, audience):
@@ -115,12 +111,9 @@ def test_accepts_function_url_audiences(app, signing_key, audience):
 @pytest.mark.parametrize(
     "audience",
     [
-        "https://us-east1-other-project.cloudfunctions.net/before_create",
+        # A regular Firebase ID token for the same project.
+        PROJECT_ID,
         "https://example.com/before_create",
-        # A project id ending with this one must not be accepted as a suffix.
-        f"https://us-east1-other-{PROJECT_ID}.cloudfunctions.net/before_create",
-        f"https://us-east1-x1-{PROJECT_ID}.cloudfunctions.net/before_create",
-        f"https://us-east1-a-{PROJECT_ID}.cloudfunctions.net/before_create",
         # The expected host must be the host, not text anywhere in the URL.
         f"https://us-east1-{PROJECT_ID}.cloudfunctions.net.example.com/before_create",
         f"https://example.com/{PROJECT_ID}.cloudfunctions.net/before_create",
@@ -135,15 +128,16 @@ def test_rejects_foreign_audience(app, signing_key, audience):
         _verify(app, _token(signing_key, audience))
 
 
-def test_accepts_any_run_host(app, signing_key):
-    """The run.app form is not project-scoped; `iss` is what pins the project."""
-    assert _verify(app, _token(signing_key, "https://svc-999.us-central1.run.app"))["uid"] == (
-        "uid123"
+@pytest.mark.parametrize(
+    "other_project",
+    ["other-project", f"other-{PROJECT_ID}", f"x1-{PROJECT_ID}", f"a-{PROJECT_ID}"],
+)
+def test_rejects_function_url_from_another_project(app, signing_key, other_project):
+    token = _token(
+        signing_key,
+        f"https://us-east1-{other_project}.cloudfunctions.net/before_create",
+        issuer=f"https://securetoken.google.com/{other_project}",
     )
-
-
-def test_rejects_wrong_issuer(app, signing_key):
-    token = _token(signing_key, RUN_APP_AUDIENCE, issuer="https://securetoken.google.com/other")
     with pytest.raises(token_verifier.InvalidAuthBlockingTokenError, match='"iss"'):
         _verify(app, token)
 

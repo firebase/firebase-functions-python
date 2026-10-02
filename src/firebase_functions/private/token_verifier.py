@@ -15,7 +15,6 @@
 Module for internal token verification.
 """
 
-import re
 from urllib.parse import urlsplit
 
 import google.auth.exceptions
@@ -32,41 +31,25 @@ from firebase_admin import (
 )
 from google.auth import jwt
 
-_CLOUD_RUN_HOST_SUFFIX = ".run.app"
+_BLOCKING_HOST_SUFFIXES = (".run.app", ".cloudfunctions.net")
 
 
-def _blocking_audience_matcher(project_id):
-    """Builds the `audience_matcher` for auth blocking tokens.
+def _blocking_audience_matcher(audience):
+    """The `audience_matcher` for auth blocking tokens.
 
     A blocking token's `aud` is the function's own URL. firebase-tools registers the
     cloudfunctions.net URL when it creates a blocking function and the run.app URL
     when it updates one, so either host has to be accepted.
 
-    The gen-1 host is matched as `<region>-<project-id>.cloudfunctions.net` with the
-    region pinned to its naming shape, so a project id that merely ends with this one
-    (`other-my-project` against `my-project`) is not accepted as a suffix. Matching
-    the parsed host rather than a substring of the URL also keeps the expected text
-    from being smuggled in via a path, query or fragment.
-
-    Deliberately stricter than firebase-admin-node, which substring-matches `aud`.
-
-    The run.app host is not project-scoped: any Cloud Run URL satisfies it, as in the
-    Node SDK. The `iss` check is what ties the token to this project.
+    Neither host is project-scoped: `iss` ties the token to this project. The `aud`
+    check only has to separate blocking tokens from regular ID tokens, whose `aud` is
+    the bare project id.
     """
-    cloudfunctions_host = re.compile(
-        rf"[a-z]+(?:-[a-z]+)*\d+-{re.escape(project_id)}\.cloudfunctions\.net"
-    )
-
-    def matches(audience):
-        if not isinstance(audience, str):
-            return False
-        parts = urlsplit(audience)
-        if parts.scheme != "https":
-            return False
-        host = parts.hostname or ""
-        return host.endswith(_CLOUD_RUN_HOST_SUFFIX) or bool(cloudfunctions_host.fullmatch(host))
-
-    return matches
+    if not isinstance(audience, str):
+        return False
+    parts = urlsplit(audience)
+    host = parts.hostname or ""
+    return parts.scheme == "https" and host.endswith(_BLOCKING_HOST_SUFFIXES)
 
 
 # pylint: disable=consider-using-f-string
@@ -229,11 +212,8 @@ class AuthBlockingTokenVerifier(_token_gen.TokenVerifier):
             issuer=_token_gen.ID_TOKEN_ISSUER_PREFIX,
             invalid_token_error=InvalidAuthBlockingTokenError,
             expired_token_error=ExpiredAuthBlockingTokenError,
-            audience_matcher=_blocking_audience_matcher(app.project_id),
-            expected_audience_msg=(
-                "a https://*.run.app or "
-                f"https://<region>-{app.project_id}.cloudfunctions.net/ function URL"
-            ),
+            audience_matcher=_blocking_audience_matcher,
+            expected_audience_msg="a https://*.run.app or https://*.cloudfunctions.net function URL",
         )
 
     def verify_auth_blocking_token(self, auth_blocking_token):
