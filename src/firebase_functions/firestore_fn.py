@@ -18,6 +18,8 @@ Module for Cloud Functions that are triggered by Firestore.
 # pylint: disable=protected-access
 import dataclasses as _dataclass
 import functools as _functools
+import os as _os
+import threading as _threading
 import typing as _typing
 
 import cloudevents.http as _ce
@@ -43,6 +45,9 @@ _event_type_written_with_auth_context = "google.cloud.firestore.document.v1.writ
 _event_type_created_with_auth_context = "google.cloud.firestore.document.v1.created.withAuthContext"
 _event_type_updated_with_auth_context = "google.cloud.firestore.document.v1.updated.withAuthContext"
 _event_type_deleted_with_auth_context = "google.cloud.firestore.document.v1.deleted.withAuthContext"
+
+_firestore_clients: dict[tuple[str, str, str | None, _typing.Any], _firestore_v1.Client] = {}
+_firestore_clients_lock = _threading.Lock()
 
 
 @_dataclass.dataclass(frozen=True)
@@ -142,7 +147,28 @@ def _firestore_endpoint_handler(
     if _DEFAULT_APP_NAME not in _apps:
         initialize_app()
     app = get_app()
-    firestore_client = _firestore_v1.Client(project=app.project_id, database=event_database)
+
+    emulator_host = _os.environ.get("FIRESTORE_EMULATOR_HOST")
+    if emulator_host:
+        project_id = app.options.get("projectId") or event_project
+        credential = None
+    else:
+        project_id = app.project_id or event_project
+        credential = app.credential
+
+    client_key = (project_id, event_database, emulator_host, credential)
+    if client_key not in _firestore_clients:
+        with _firestore_clients_lock:
+            if client_key not in _firestore_clients:
+                client_kwargs = {
+                    "project": project_id,
+                    "database": event_database,
+                }
+                if credential is not None:
+                    client_kwargs["credentials"] = credential.get_credential()
+                _firestore_clients[client_key] = _firestore_v1.Client(**client_kwargs)
+    firestore_client = _firestore_clients[client_key]
+
     firestore_ref: DocumentReference = firestore_client.document(event_document)
     value_snapshot: DocumentSnapshot | None = None
     old_value_snapshot: DocumentSnapshot | None = None

@@ -24,6 +24,7 @@ If the official documentation doesn't help, try asking through our official supp
 from firebase_functions import db_fn
 from notify_users import api
 
+
 @db_fn.on_value_created(reference="/posts/{post_id}")
 def new_post(event):
     print(f"Received new post with ID: {event.params.get('post_id')}")
