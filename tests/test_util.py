@@ -58,6 +58,14 @@ def test_timestamp_conversion_supported_formats():
     """
     timestamps = [
         (
+            {"seconds": 1712750400, "nanos": 0},
+            _dt.datetime(2024, 4, 10, 12, 0, tzinfo=_dt.timezone.utc),
+        ),
+        (
+            {"seconds": 1712750400, "nanos": 123456000},
+            _dt.datetime(2024, 4, 10, 12, 0, 0, 123456, tzinfo=_dt.timezone.utc),
+        ),
+        (
             "2024-04-10T12:00:00.000Z",
             _dt.datetime(2024, 4, 10, 12, 0, tzinfo=_dt.timezone.utc),
         ),
