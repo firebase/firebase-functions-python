@@ -309,6 +309,9 @@ class RuntimeOptions:
     may inadvertently be wiped out.
     """
 
+    _client_only_fields: _typing.ClassVar[frozenset[str]] = frozenset()
+    """Fields consumed locally by the functions framework, never sent to the manifest."""
+
     def _asdict_with_global_options(self) -> dict:
         """
         Returns the provider options merged with globally defined options.
@@ -318,7 +321,13 @@ class RuntimeOptions:
         # we don't want that since we want to represent certain dataclasses
         # (such as params) differently (not as a dict) when converting to
         # a manifest representation.
-        provider_options = _manifest._dict_to_spec(self.__dict__)
+        provider_options = _manifest._dict_to_spec(
+            {
+                key: value
+                for key, value in self.__dict__.items()
+                if key not in self._client_only_fields
+            }
+        )
         global_options = _manifest._dict_to_spec(_GLOBAL_OPTIONS.__dict__)
         merged_options: dict = {**global_options, **provider_options}
 
@@ -1127,17 +1136,9 @@ class HttpsOptions(RuntimeOptions):
     Optionally set CORS options for HTTP functions.
     """
 
-    def _asdict_with_global_options(self) -> dict:
-        """
-        Returns the HTTP options merged with globally defined options and
-        client-only options like "cors" removed.
-        """
-        merged_options = super()._asdict_with_global_options()
-        # "cors" is only used locally by the functions framework
-        # and is not used in the manifest or in global options.
-        if "cors" in merged_options:
-            del merged_options["cors"]
-        return merged_options
+    # "cors" is consumed by the functions framework at request time and has no
+    # manifest representation, so it must not reach the spec serializer.
+    _client_only_fields = frozenset({"cors"})
 
     def _endpoint(
         self,

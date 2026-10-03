@@ -13,8 +13,32 @@
 # limitations under the License.
 """Manifest unit tests."""
 
+from collections.abc import Mapping as _Mapping
+from zoneinfo import ZoneInfo
+
+from pytest import raises
+
 import firebase_functions.params as _params
 import firebase_functions.private.manifest as _manifest
+
+
+class _CustomMapping(_Mapping):
+    def __init__(self, data):
+        self._data = data
+
+    def __getitem__(self, key):
+        return self._data[key]
+
+    def __iter__(self):
+        return iter(self._data)
+
+    def __len__(self):
+        return len(self._data)
+
+
+class _UnsupportedManifestValue:
+    pass
+
 
 full_endpoint = _manifest.ManifestEndpoint(
     platform="gcfv2",
@@ -160,3 +184,23 @@ class TestManifestEndpoint:
         assert expressions_actual_dict == expressions_expected_dict, (
             "Generated endpoint spec dict does not match expected dict."
         )
+
+    def test_object_to_spec_converts_tuple_to_list(self):
+        """Check tuple values are converted to manifest lists."""
+        actual = _manifest._object_to_spec(("hello", 1, True))
+        assert actual == ["hello", 1, True]
+
+    def test_object_to_spec_converts_custom_mapping_to_dict(self):
+        """Check Mapping implementations are converted via dict serialization."""
+        actual = _manifest._object_to_spec(_CustomMapping({"hello": "world"}))
+        assert actual == {"hello": "world"}
+
+    def test_object_to_spec_converts_zoneinfo_to_key(self):
+        """Check ZoneInfo values serialize to their key."""
+        actual = _manifest._object_to_spec(ZoneInfo("America/Los_Angeles"))
+        assert actual == "America/Los_Angeles"
+
+    def test_object_to_spec_raises_for_unsupported_value(self):
+        """Check unsupported values fail fast."""
+        with raises(TypeError, match="Unsupported manifest spec value"):
+            _manifest._object_to_spec(_UnsupportedManifestValue())
