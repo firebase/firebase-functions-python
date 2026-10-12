@@ -381,3 +381,26 @@ def test_firebase_alert_options_preserved_in_alert_endpoint():
         "crashlytics.newFatalIssue",
         expect_app_id="app-123",
     )
+
+
+def test_auth_options_preserved_in_endpoint():
+    from firebase_functions import identity_fn
+
+    @identity_fn.on_user_created(
+        secrets=[ALERT_SECRET],
+        region="europe-west1",
+        max_instances=1,
+        retry=True,
+        tenant_id="tenant-123",
+    )
+    def sample(_event):
+        return None
+
+    endpoint = sample.__firebase_endpoint__
+    assert endpoint.region == ["europe-west1"]
+    assert endpoint.maxInstances == 1
+    assert endpoint.secretEnvironmentVariables == [{"key": "GITLAB_PERSONAL_ACCESS_TOKEN"}]
+    assert endpoint.eventTrigger["retry"] is True
+    assert endpoint.eventTrigger["region"] == "global"
+    assert endpoint.eventTrigger["eventType"] == "google.firebase.auth.user.v2.created"
+    assert endpoint.eventTrigger["eventFilters"]["tenantid"] == "tenant-123"

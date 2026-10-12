@@ -2,14 +2,17 @@
 Identity function tests.
 """
 
+import datetime as dt
 import unittest
 from unittest.mock import MagicMock, Mock, patch
 
+import yaml
+from cloudevents.http import CloudEvent
 from flask import Flask, Request
 from werkzeug.test import EnvironBuilder
 
-from firebase_functions import core, identity_fn
-from firebase_functions.private import _identity_fn
+from firebase_functions import core, identity_fn, params
+from firebase_functions.private import _identity_fn, serving
 
 token_verifier_mock = MagicMock()
 token_verifier_mock.verify_auth_blocking_token = Mock(
@@ -27,6 +30,10 @@ class TestIdentity(unittest.TestCase):
     """
     Identity function tests.
     """
+
+    def tearDown(self) -> None:
+        core._init_callback = None
+        core._did_init = False
 
     def test_calls_init_function(self):
         hello = None
@@ -53,3 +60,273 @@ class TestIdentity(unittest.TestCase):
                 decorated_func(request)
 
         self.assertEqual("world", hello)
+
+    def test_on_user_created_endpoint_metadata(self) -> None:
+        @identity_fn.on_user_created()
+        def example(_event: identity_fn.AuthEvent) -> None:
+            pass
+
+        endpoint = getattr(example, "__firebase_endpoint__", None)
+        self.assertIsNotNone(endpoint)
+        assert endpoint is not None
+        self.assertEqual(endpoint.entryPoint, "example")
+        self.assertEqual(
+            endpoint.eventTrigger,
+            {
+                "eventType": "google.firebase.auth.user.v2.created",
+                "eventFilters": {},
+                "retry": False,
+                "region": "global",
+            },
+        )
+
+    def test_on_user_deleted_endpoint_metadata(self) -> None:
+        @identity_fn.on_user_deleted()
+        def example(_event: identity_fn.AuthEvent) -> None:
+            pass
+
+        endpoint = getattr(example, "__firebase_endpoint__", None)
+        self.assertIsNotNone(endpoint)
+        assert endpoint is not None
+        self.assertEqual(endpoint.entryPoint, "example")
+        self.assertEqual(
+            endpoint.eventTrigger,
+            {
+                "eventType": "google.firebase.auth.user.v2.deleted",
+                "eventFilters": {},
+                "retry": False,
+                "region": "global",
+            },
+        )
+
+    def test_on_user_created_tenant_id_filter(self) -> None:
+        @identity_fn.on_user_created(tenant_id="my-tenant")
+        def example(_event: identity_fn.AuthEvent) -> None:
+            pass
+
+        endpoint = getattr(example, "__firebase_endpoint__", None)
+        assert endpoint is not None
+        self.assertEqual(endpoint.eventTrigger["eventFilters"], {"tenantid": "my-tenant"})
+
+    def test_on_user_created_tenant_id_expression(self) -> None:
+        tenant_param = params.StringParam("MY_TENANT")
+
+        @identity_fn.on_user_created(tenant_id=tenant_param)
+        def example(_event: identity_fn.AuthEvent) -> None:
+            pass
+
+        endpoint = getattr(example, "__firebase_endpoint__", None)
+        assert endpoint is not None
+        self.assertEqual(endpoint.eventTrigger["eventFilters"], {"tenantid": tenant_param})
+
+        rendered_yaml = yaml.safe_load(serving.functions_as_yaml({"example": example}))
+        self.assertEqual(
+            rendered_yaml["endpoints"]["example"]["eventTrigger"]["eventFilters"],
+            {"tenantid": "{{ params.MY_TENANT }}"},
+        )
+
+    def test_on_user_created_unpacks_eventarc_value_envelope(self) -> None:
+        captured_event: identity_fn.AuthEvent | None = None
+
+        @identity_fn.on_user_created()
+        def example(event: identity_fn.AuthEvent) -> None:
+            nonlocal captured_event
+            captured_event = event
+
+        raw_ce = CloudEvent(
+            attributes={
+                "specversion": "1.0",
+                "id": "event-id-123",
+                "source": "//identitytoolkit.googleapis.com/projects/my-project",
+                "type": "google.firebase.auth.user.v2.created",
+                "time": "2023-01-01T00:00:00Z",
+                "tenantid": "my-tenant",
+            },
+            data={
+                "value": {
+                    "uid": "1qEveruhwnbiG1B9taHIBMmOVE83",
+                    "email": "testuser@example.com",
+                    "emailVerified": True,
+                    "displayName": "Test User",
+                    "photoUrl": "http://example.com/photo.jpg",
+                    "phoneNumber": "+15555550100",
+                    "disabled": False,
+                    "metadata": {
+                        "createTime": "2023-01-01T00:00:00Z",
+                        "lastSignInTime": "2023-01-02T12:30:00Z",
+                    },
+                    "providerData": [
+                        {
+                            "uid": "google-uid",
+                            "providerId": "google.com",
+                            "displayName": "Google User",
+                            "email": "testuser@example.com",
+                            "photoUrl": "http://example.com/google.jpg",
+                        }
+                    ],
+                    "customClaims": {"admin": True},
+                    "tenantId": "my-tenant",
+                }
+            },
+        )
+
+        example(raw_ce)  # type: ignore[arg-type]
+        self.assertIsNotNone(captured_event)
+        assert captured_event is not None
+        self.assertEqual(captured_event.project, "my-project")
+        self.assertEqual(captured_event.tenant_id, "my-tenant")
+        self.assertIsNotNone(captured_event.data)
+        assert captured_event.data is not None
+        self.assertEqual(captured_event.data.uid, "1qEveruhwnbiG1B9taHIBMmOVE83")
+        self.assertEqual(captured_event.data.email, "testuser@example.com")
+        self.assertTrue(captured_event.data.email_verified)
+        self.assertEqual(captured_event.data.display_name, "Test User")
+        self.assertEqual(captured_event.data.photo_url, "http://example.com/photo.jpg")
+        self.assertEqual(captured_event.data.phone_number, "+15555550100")
+        self.assertFalse(captured_event.data.disabled)
+        self.assertEqual(
+            captured_event.data.metadata.creation_time,
+            dt.datetime(2023, 1, 1, 0, 0, 0, tzinfo=dt.timezone.utc),
+        )
+        self.assertEqual(
+            captured_event.data.metadata.last_sign_in_time,
+            dt.datetime(2023, 1, 2, 12, 30, 0, tzinfo=dt.timezone.utc),
+        )
+        self.assertEqual(len(captured_event.data.provider_data), 1)
+        self.assertEqual(captured_event.data.provider_data[0].provider_id, "google.com")
+        self.assertEqual(captured_event.data.custom_claims, {"admin": True})
+        self.assertEqual(captured_event.data.tenant_id, "my-tenant")
+
+    def test_on_user_deleted_unpacks_old_value_envelope(self) -> None:
+        captured_event: identity_fn.AuthEvent | None = None
+
+        @identity_fn.on_user_deleted()
+        def example(event: identity_fn.AuthEvent) -> None:
+            nonlocal captured_event
+            captured_event = event
+
+        raw_ce = CloudEvent(
+            attributes={
+                "specversion": "1.0",
+                "id": "event-id-del",
+                "source": "//identitytoolkit.googleapis.com/projects/my-project",
+                "type": "google.firebase.auth.user.v2.deleted",
+                "time": "2023-01-01T00:00:00Z",
+            },
+            data={
+                "value": None,
+                "oldValue": {
+                    "uid": "deleted-user-uid",
+                    "email": "deleted@example.com",
+                    "photoURL": "http://example.com/legacy-photo.jpg",
+                },
+            },
+        )
+
+        example(raw_ce)  # type: ignore[arg-type]
+        self.assertIsNotNone(captured_event)
+        assert captured_event is not None
+        self.assertEqual(captured_event.project, "my-project")
+        self.assertIsNone(captured_event.tenant_id)
+        assert captured_event.data is not None
+        self.assertEqual(captured_event.data.uid, "deleted-user-uid")
+        self.assertEqual(captured_event.data.email, "deleted@example.com")
+        self.assertEqual(captured_event.data.photo_url, "http://example.com/legacy-photo.jpg")
+
+    def test_handles_null_or_empty_data_gracefully(self) -> None:
+        captured_events: list[identity_fn.AuthEvent] = []
+
+        @identity_fn.on_user_created()
+        def example(event: identity_fn.AuthEvent) -> None:
+            captured_events.append(event)
+
+        raw_null_ce = CloudEvent(
+            attributes={
+                "specversion": "1.0",
+                "id": "event-null",
+                "source": "//identitytoolkit.googleapis.com/something-else",
+                "type": "google.firebase.auth.user.v2.created",
+                "time": "2023-01-01T00:00:00Z",
+            },
+            data=None,
+        )
+        raw_null_value_ce = CloudEvent(
+            attributes={
+                "specversion": "1.0",
+                "id": "event-null-value",
+                "source": "//identitytoolkit.googleapis.com/projects/my-project",
+                "type": "google.firebase.auth.user.v2.created",
+                "time": "2023-01-01T00:00:00Z",
+            },
+            data={"value": None},
+        )
+
+        example(raw_null_ce)  # type: ignore[arg-type]
+        example(raw_null_value_ce)  # type: ignore[arg-type]
+        self.assertEqual(len(captured_events), 2)
+        self.assertIsNone(captured_events[0].project)
+        self.assertEqual(captured_events[0].data.uid, "")
+        self.assertFalse(captured_events[0].data.disabled)
+        self.assertEqual(
+            captured_events[0].data.metadata.creation_time,
+            dt.datetime(1970, 1, 1, 0, 0, 0, tzinfo=dt.timezone.utc),
+        )
+        self.assertEqual(captured_events[1].project, "my-project")
+        self.assertEqual(captured_events[1].data.uid, "")
+
+    def test_on_user_created_mfa_and_string_custom_claims(self) -> None:
+        captured_event: identity_fn.AuthEvent | None = None
+
+        @identity_fn.on_user_created()
+        def example(event: identity_fn.AuthEvent) -> None:
+            nonlocal captured_event
+            captured_event = event
+
+        raw_ce = CloudEvent(
+            attributes={
+                "specversion": "1.0",
+                "id": "event-mfa",
+                "source": "//identitytoolkit.googleapis.com/projects/my-project",
+                "type": "google.firebase.auth.user.v2.created",
+                "time": "2023-01-01T02:00:00+02:00",
+            },
+            data={
+                "value": {
+                    "uid": "mfa-user",
+                    "customClaims": '{"role": "editor"}',
+                    "multiFactor": {
+                        "enrolledFactors": [
+                            {
+                                "uid": "factor-1",
+                                "displayName": "Personal Phone",
+                                "phoneNumber": "+15555550199",
+                                "enrollmentTime": "2023-01-01T00:00:00",
+                            },
+                            {
+                                "uid": "factor-2",
+                                "displayName": "Authenticator App",
+                                "factorId": "totp",
+                            },
+                        ]
+                    },
+                }
+            },
+        )
+
+        example(raw_ce)  # type: ignore[arg-type]
+        assert captured_event is not None
+        self.assertEqual(
+            captured_event.time,
+            dt.datetime(2023, 1, 1, 0, 0, 0, tzinfo=dt.timezone.utc),
+        )
+        self.assertEqual(captured_event.data.custom_claims, {"role": "editor"})
+        assert captured_event.data.multi_factor is not None
+        factors = captured_event.data.multi_factor.enrolled_factors
+        self.assertEqual(len(factors), 2)
+        self.assertEqual(factors[0].factor_id, "phone")
+        self.assertEqual(factors[0].phone_number, "+15555550199")
+        self.assertEqual(
+            factors[0].enrollment_time,
+            dt.datetime(2023, 1, 1, 0, 0, 0, tzinfo=dt.timezone.utc),
+        )
+        self.assertEqual(factors[1].factor_id, "totp")
