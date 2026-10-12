@@ -36,7 +36,10 @@ class TestIdentity(unittest.TestCase):
             nonlocal hello
             hello = "world"
 
-        with patch.object(_identity_fn, "_token_verifier", token_verifier_mock):
+        with (
+            patch.object(_identity_fn, "_token_verifier", token_verifier_mock),
+            patch.object(_identity_fn._firebase_admin, "get_app", return_value=app_mock),
+        ):
             app = Flask(__name__)
 
             func = Mock(__name__="example_func", return_value=identity_fn.BeforeSignInResponse())
