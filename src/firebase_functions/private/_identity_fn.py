@@ -15,6 +15,7 @@
 
 # pylint: disable=protected-access
 import datetime as _dt
+import email.utils as _email_utils
 import json as _json
 import re as _re
 import time as _time
@@ -35,6 +36,7 @@ from flask import (
 )
 from functions_framework import logging as _logging
 
+import firebase_functions.options as _options
 import firebase_functions.private.token_verifier as _token_verifier
 import firebase_functions.private.util as _util
 from firebase_functions.core import _with_init
@@ -390,7 +392,8 @@ def _ensure_utc(value: _dt.datetime) -> _dt.datetime:
 def _parse_auth_timestamp(value: _typing.Any) -> _dt.datetime | None:
     """
     Normalizes Auth event timestamps to timezone-aware UTC datetimes.
-    Supports epoch milliseconds (int, float, or numeric str) and ISO-8601 strings.
+    Supports epoch milliseconds (int, float, or numeric str), ISO-8601 strings
+    (production Eventarc), and RFC-2822 strings (emitted by the Firebase Auth Emulator).
     """
     if isinstance(value, _dt.datetime):
         return _ensure_utc(value)
@@ -403,10 +406,14 @@ def _parse_auth_timestamp(value: _typing.Any) -> _dt.datetime | None:
         except (OverflowError, OSError, ValueError):
             return None
     if isinstance(value, str) and value:
-        for parser in (_util.timestamp_conversion, _dt.datetime.fromisoformat):
+        for parser in (
+            _util.timestamp_conversion,
+            _dt.datetime.fromisoformat,
+            _email_utils.parsedate_to_datetime,
+        ):
             try:
                 return _ensure_utc(parser(value))
-            except ValueError:
+            except (ValueError, TypeError):
                 continue
     return None
 
@@ -611,10 +618,19 @@ def _auth_event_from_ce(raw: _ce.CloudEvent):
 def user_event_handler(
     func: _typing.Callable,
     raw: _ce.CloudEvent,
+    options: _options.AuthOptions | None = None,
 ) -> None:
     """
     Runtime handler invoked by functions-framework for v2 Auth triggers
     (on_user_created and on_user_deleted).
     """
     event = _auth_event_from_ce(raw)
+    # Eventarc cannot filter for the absence of a tenant attribute, so when
+    # tenant_id=IS_NOT_TENANT we drop events belonging to any tenant at runtime.
+    if (
+        options is not None
+        and options.tenant_id == _options.IS_NOT_TENANT
+        and event.tenant_id is not None
+    ):
+        return
     _with_init(func)(event)

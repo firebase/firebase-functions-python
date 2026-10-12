@@ -36,6 +36,11 @@ RESET_VALUE = _util.Sentinel(
 )
 """Special configuration value to reset configuration to platform default."""
 
+IS_NOT_TENANT = _util.Sentinel(
+    "Constant to represent the absence of a tenant ID in Auth event triggers."
+)
+"""Constant to represent the absence of a tenant ID in Auth event triggers."""
+
 
 class VpcEgressSetting(str, _enum.Enum):
     """Valid settings for VPC egress."""
@@ -1062,9 +1067,12 @@ class AuthOptions(EventHandlerOptions):
     Internal use only.
     """
 
-    tenant_id: str | Expression[str] | None = None
+    tenant_id: str | Expression[str] | _util.Sentinel | None = None
     """
     An optional tenant ID to scope the trigger to.
+    If not set, the function triggers on users across all tenants.
+    Set to ``IS_NOT_TENANT`` to only trigger on users in the default
+    project (no tenant).
     """
 
     def _endpoint(
@@ -1073,7 +1081,10 @@ class AuthOptions(EventHandlerOptions):
     ) -> _manifest.ManifestEndpoint:
         assert kwargs["event_type"] is not None
         event_filters: dict[str, str | Expression[str]] = {}
-        if self.tenant_id is not None:
+        # Eventarc does not support empty-string filters to match "no tenant". When
+        # tenant_id is IS_NOT_TENANT (a Sentinel), we omit the Eventarc filter so all
+        # events are delivered and filter out tenant-scoped events at runtime instead.
+        if self.tenant_id is not None and not isinstance(self.tenant_id, _util.Sentinel):
             event_filters["tenantid"] = self.tenant_id
 
         endpoint = super()._endpoint(
