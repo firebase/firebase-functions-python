@@ -19,6 +19,7 @@ import json as _json
 import time as _time
 import typing as _typing
 
+import firebase_admin as _firebase_admin
 from flask import (
     Request as _Request,
 )
@@ -215,7 +216,13 @@ def _credential_from_token_data(token_data: dict[str, _typing.Any], time: float)
 
 
 def _auth_blocking_event_from_token_data(event_type: str, token_data: dict[str, _typing.Any]):
-    from firebase_functions.identity_fn import AuthBlockingEvent
+    from firebase_functions.identity_fn import AuthBlockingEvent, AuthBlockingResource
+
+    project_id = _firebase_admin.get_app().project_id
+    tenant_id = token_data.get("tenant_id")
+    resource_name = (
+        f"projects/{project_id}/tenants/{tenant_id}" if tenant_id else f"projects/{project_id}"
+    )
 
     return AuthBlockingEvent(
         data=_auth_user_record_from_token_data(token_data["user_record"]),
@@ -229,6 +236,11 @@ def _auth_blocking_event_from_token_data(event_type: str, token_data: dict[str, 
         credential=_credential_from_token_data(token_data, _time.time()),
         email_type=token_data.get("email_type"),
         sms_type=token_data.get("sms_type"),
+        auth_type="USER" if token_data.get("user_record") else "UNAUTHENTICATED",
+        resource=AuthBlockingResource(
+            service="identitytoolkit.googleapis.com",
+            name=resource_name,
+        ),
     )
 
 
