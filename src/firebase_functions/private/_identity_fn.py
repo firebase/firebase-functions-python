@@ -35,6 +35,7 @@ from flask import (
 )
 from functions_framework import logging as _logging
 
+import firebase_functions.options as _options
 import firebase_functions.private.token_verifier as _token_verifier
 import firebase_functions.private.util as _util
 from firebase_functions.core import _with_init
@@ -509,10 +510,20 @@ def _auth_event_from_ce(raw: _ce.CloudEvent):
 def user_event_handler(
     func: _typing.Callable,
     raw: _ce.CloudEvent,
+    options: _options.AuthOptions | None = None,
 ) -> None:
     """
     Runtime handler invoked by functions-framework for v2 Auth triggers
     (on_user_created and on_user_deleted).
     """
+    # Eventarc cannot filter for the absence of a tenant attribute, so when
+    # tenant_id=IS_NOT_TENANT we drop events belonging to any tenant at runtime
+    # before unpacking the CloudEvent payload.
+    if (
+        options is not None
+        and options.tenant_id == _options.IS_NOT_TENANT
+        and raw._get_attributes().get("tenantid") is not None
+    ):
+        return
     event = _auth_event_from_ce(raw)
     _with_init(func)(event)

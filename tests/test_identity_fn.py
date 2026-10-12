@@ -11,7 +11,7 @@ from cloudevents.http import CloudEvent
 from flask import Flask, Request
 from werkzeug.test import EnvironBuilder
 
-from firebase_functions import core, identity_fn, params
+from firebase_functions import core, identity_fn, options, params
 from firebase_functions.private import _identity_fn, serving
 
 token_verifier_mock = MagicMock()
@@ -356,3 +356,101 @@ class TestIdentity(unittest.TestCase):
         self.assertIsNone(captured_event.data.password_salt)
         self.assertIsNone(captured_event.data.tokens_valid_after_time)
         self.assertIsNone(captured_event.data.multi_factor)
+
+    def test_on_user_created_is_not_tenant(self) -> None:
+        called_uids: list[str] = []
+        init_calls = 0
+
+        @core.init
+        def init_fn() -> None:
+            nonlocal init_calls
+            init_calls += 1
+
+        @identity_fn.on_user_created(tenant_id=identity_fn.IS_NOT_TENANT)
+        def example(event: identity_fn.AuthEvent) -> None:
+            called_uids.append(event.data.uid)
+
+        endpoint = getattr(example, "__firebase_endpoint__", None)
+        assert endpoint is not None
+        self.assertEqual(endpoint.eventTrigger["eventFilters"], {})
+
+        rendered_yaml = yaml.safe_load(serving.functions_as_yaml({"example": example}))
+        self.assertEqual(
+            rendered_yaml["endpoints"]["example"]["eventTrigger"]["eventFilters"],
+            {},
+        )
+
+        # Should ignore events with top-level tenantid CloudEvent attribute
+        # before unpacking the payload (and not run @core.init)
+        tenant_attr_ce = CloudEvent(
+            attributes={
+                "specversion": "1.0",
+                "id": "event-tenant-attr",
+                "source": "//identitytoolkit.googleapis.com/projects/my-project",
+                "type": "google.firebase.auth.user.v2.created",
+                "time": "2023-01-01T00:00:00Z",
+                "tenantid": "some-tenant",
+            },
+            data=None,
+        )
+        example(tenant_attr_ce)  # type: ignore[arg-type]
+        self.assertEqual(called_uids, [])
+        self.assertEqual(init_calls, 0)
+
+        # Should execute for non-tenant events (and run @core.init)
+        non_tenant_ce = CloudEvent(
+            attributes={
+                "specversion": "1.0",
+                "id": "event-no-tenant",
+                "source": "//identitytoolkit.googleapis.com/projects/my-project",
+                "type": "google.firebase.auth.user.v2.created",
+                "time": "2023-01-01T00:00:00Z",
+            },
+            data={"value": {"uid": "user-no-tenant"}},
+        )
+        example(non_tenant_ce)  # type: ignore[arg-type]
+        self.assertEqual(called_uids, ["user-no-tenant"])
+        self.assertEqual(init_calls, 1)
+
+        # Also verify on_user_deleted with IS_NOT_TENANT
+        deleted_uids: list[str] = []
+
+        @identity_fn.on_user_deleted(tenant_id=identity_fn.IS_NOT_TENANT)
+        def example_deleted(event: identity_fn.AuthEvent) -> None:
+            deleted_uids.append(event.data.uid)
+
+        delete_endpoint = getattr(example_deleted, "__firebase_endpoint__", None)
+        assert delete_endpoint is not None
+        self.assertEqual(delete_endpoint.eventTrigger["eventFilters"], {})
+
+        non_tenant_deleted_ce = CloudEvent(
+            attributes={
+                "specversion": "1.0",
+                "id": "event-del-no-tenant",
+                "source": "//identitytoolkit.googleapis.com/projects/my-project",
+                "type": "google.firebase.auth.user.v2.deleted",
+                "time": "2023-01-01T00:00:00Z",
+            },
+            data={"value": None, "oldValue": {"uid": "deleted-no-tenant"}},
+        )
+        tenant_deleted_ce = CloudEvent(
+            attributes={
+                "specversion": "1.0",
+                "id": "event-del-tenant",
+                "source": "//identitytoolkit.googleapis.com/projects/my-project",
+                "type": "google.firebase.auth.user.v2.deleted",
+                "time": "2023-01-01T00:00:00Z",
+                "tenantid": "some-tenant",
+            },
+            data={"value": None, "oldValue": {"uid": "deleted-with-tenant"}},
+        )
+        example_deleted(non_tenant_deleted_ce)  # type: ignore[arg-type]
+        example_deleted(tenant_deleted_ce)  # type: ignore[arg-type]
+        self.assertEqual(deleted_uids, ["deleted-no-tenant"])
+
+        # Rejects other Sentinel instances such as RESET_VALUE
+        with self.assertRaises(ValueError):
+
+            @identity_fn.on_user_created(tenant_id=options.RESET_VALUE)  # type: ignore[arg-type]
+            def _invalid_sentinel(_event: identity_fn.AuthEvent) -> None:
+                pass
