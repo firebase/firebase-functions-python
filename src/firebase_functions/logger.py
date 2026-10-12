@@ -117,15 +117,22 @@ def _stack_trace_from_args(
     Returns the first available stack trace from logger arguments or active exception state.
     """
 
+    exception_passed = False
     for value in (*args, *kwargs.values()):
         if isinstance(value, BaseException):
+            exception_passed = True
             stack_trace = _stack_trace_from_exception(value)
             if stack_trace is not None:
                 return stack_trace
         elif isinstance(value, type) and issubclass(value, BaseException):
+            exception_passed = True
             stack_trace = _stack_trace_from_exception_type(value)
             if stack_trace is not None:
                 return stack_trace
+
+    # The active exception is unrelated to an exception the caller passed explicitly.
+    if exception_passed:
+        return None
 
     exc_type, exc_value, exc_traceback = _sys.exc_info()
     if exc_type is not None and exc_value is not None and exc_traceback is not None:

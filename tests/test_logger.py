@@ -165,37 +165,52 @@ class TestLogger:
         assert isinstance(log_output["error"], str)
         assert "ValueError" in log_output["error"]
 
-    def test_error_should_accept_exception_with_non_json_serializable_dict_key(
+    def test_should_stringify_non_json_serializable_dict_key(
         self, capsys: pytest.CaptureFixture[str]
     ):
-        payload = {object(): "value"}
-        exception = ValueError(payload)
+        key = object()
 
-        logger.error("failed", error=exception)
+        logger.info("failed", data={key: "value"})
+
+        raw_log_output = capsys.readouterr().out
+        log_output = json.loads(raw_log_output)
+
+        assert log_output["data"] == {repr(key): "value"}
+
+    def test_should_stringify_tuple_dict_key(self, capsys: pytest.CaptureFixture[str]):
+        logger.info({(1, "two"): "value"}, data={(1, "two"): "value"})
+
+        raw_log_output = capsys.readouterr().out
+        log_output = json.loads(raw_log_output)
+
+        assert log_output["message"] == '{"(1, \'two\')": "value"}'
+        assert log_output["data"] == {"(1, 'two')": "value"}
+
+    def test_error_should_not_attribute_active_trace_to_unraised_exception(
+        self, capsys: pytest.CaptureFixture[str]
+    ):
+        try:
+            raise KeyError("active")
+        except KeyError:
+            logger.error("failed", error=ValueError("unraised"))
 
         raw_log_output = capsys.readouterr().err
         log_output = json.loads(raw_log_output)
 
-        assert log_output["severity"] == "ERROR"
-        assert log_output["message"] == "failed"
-        assert isinstance(log_output["error"], str)
-        assert "ValueError" in log_output["error"]
+        assert "stack_trace" not in log_output
 
-    def test_error_should_accept_exception_with_tuple_dict_key(
+    def test_error_should_not_attribute_active_trace_to_other_exception_type(
         self, capsys: pytest.CaptureFixture[str]
     ):
-        payload = {(1, "two"): "value"}
-        exception = ValueError(payload)
-
-        logger.error("failed", error=exception)
+        try:
+            raise KeyError("active")
+        except KeyError:
+            logger.error("failed", error=ValueError)
 
         raw_log_output = capsys.readouterr().err
         log_output = json.loads(raw_log_output)
 
-        assert log_output["severity"] == "ERROR"
-        assert log_output["message"] == "failed"
-        assert isinstance(log_output["error"], str)
-        assert "ValueError" in log_output["error"]
+        assert "stack_trace" not in log_output
 
     def test_log_should_have_message(self, capsys: pytest.CaptureFixture[str]):
         logger.log("bar")
