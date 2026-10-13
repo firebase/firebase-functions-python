@@ -411,28 +411,25 @@ def _parse_auth_timestamp(value: _typing.Any) -> _dt.datetime | None:
 def _auth_user_info_from_ce_data(info_data: dict[str, _typing.Any]):
     """
     Converts a single entry from the CloudEvent 'providerData' array into an AuthUserInfo.
-    Supports both camelCase keys (Eventarc/Identity Platform JSON) and snake_case keys.
     """
     from firebase_functions.identity_fn import AuthUserInfo
 
     return AuthUserInfo(
         uid=info_data.get("uid", ""),
-        provider_id=info_data.get("providerId") or info_data.get("provider_id", ""),
-        display_name=info_data.get("displayName") or info_data.get("display_name"),
+        provider_id=info_data.get("providerId", ""),
+        display_name=info_data.get("displayName"),
         email=info_data.get("email"),
         # Identity Platform payloads use 'photoUrl' or 'photoURL' depending on the endpoint.
-        photo_url=(
-            info_data.get("photoURL") or info_data.get("photoUrl") or info_data.get("photo_url")
-        ),
-        phone_number=info_data.get("phoneNumber") or info_data.get("phone_number"),
+        photo_url=info_data.get("photoURL") or info_data.get("photoUrl"),
+        phone_number=info_data.get("phoneNumber"),
     )
 
 
 def _auth_user_metadata_from_ce_data(meta_data: dict[str, _typing.Any] | None):
     """
     Converts the CloudEvent 'metadata' dict into an AuthUserMetadata object.
-    Checks Eventarc keys ('createTime'/'lastSignInTime'), emulator/Admin keys
-    ('creationTime'/'createdAt'/'lastSignedInAt'), and snake_case keys.
+    Checks Eventarc keys ('createTime'/'lastSignInTime') and emulator/Admin keys
+    ('creationTime'/'createdAt'/'lastSignedInAt').
     """
     from firebase_functions.identity_fn import AuthUserMetadata
 
@@ -442,16 +439,9 @@ def _auth_user_metadata_from_ce_data(meta_data: dict[str, _typing.Any] | None):
         return AuthUserMetadata(creation_time=_EPOCH_START_UTC, last_sign_in_time=None)
 
     raw_creation = (
-        meta_data.get("createTime")
-        or meta_data.get("createdAt")
-        or meta_data.get("creationTime")
-        or meta_data.get("creation_time")
+        meta_data.get("createTime") or meta_data.get("createdAt") or meta_data.get("creationTime")
     )
-    raw_last_sign_in = (
-        meta_data.get("lastSignInTime")
-        or meta_data.get("lastSignedInAt")
-        or meta_data.get("last_sign_in_time")
-    )
+    raw_last_sign_in = meta_data.get("lastSignInTime") or meta_data.get("lastSignedInAt")
     return AuthUserMetadata(
         creation_time=_parse_auth_timestamp(raw_creation) or _EPOCH_START_UTC,
         last_sign_in_time=_parse_auth_timestamp(raw_last_sign_in),
@@ -464,14 +454,14 @@ def _auth_multi_factor_info_from_ce_data(factor_data: dict[str, _typing.Any]):
     """
     from firebase_functions.identity_fn import AuthMultiFactorInfo
 
-    raw_enrollment_time = factor_data.get("enrollmentTime") or factor_data.get("enrollment_time")
-    phone_number = factor_data.get("phoneNumber") or factor_data.get("phone_number")
-    raw_factor_id = factor_data.get("factorId") or factor_data.get("factor_id", "")
+    raw_enrollment_time = factor_data.get("enrollmentTime")
+    phone_number = factor_data.get("phoneNumber")
+    raw_factor_id = factor_data.get("factorId", "")
     # Default SMS factors that omit an explicit factorId to "phone".
     factor_id = raw_factor_id or ("phone" if phone_number else "")
     return AuthMultiFactorInfo(
         uid=factor_data.get("uid", ""),
-        display_name=factor_data.get("displayName") or factor_data.get("display_name"),
+        display_name=factor_data.get("displayName"),
         factor_id=factor_id,
         enrollment_time=_parse_auth_timestamp(raw_enrollment_time),
         phone_number=phone_number,
@@ -488,7 +478,7 @@ def _auth_multi_factor_settings_from_ce_data(mfa_data: dict[str, _typing.Any] | 
 
     from firebase_functions.identity_fn import AuthMultiFactorSettings
 
-    raw_factors = mfa_data.get("enrolledFactors") or mfa_data.get("enrolled_factors")
+    raw_factors = mfa_data.get("enrolledFactors")
     if not isinstance(raw_factors, list):
         raw_factors = []
     enrolled_factors = [
@@ -525,11 +515,7 @@ def _parse_custom_claims(user_data: dict[str, _typing.Any]) -> dict[str, _typing
     Extracts customClaims from a user dict, supporting both pre-parsed dicts
     and serialized JSON object strings.
     """
-    raw_claims = (
-        user_data.get("customClaims")
-        if "customClaims" in user_data
-        else user_data.get("custom_claims")
-    )
+    raw_claims = user_data.get("customClaims")
     if isinstance(raw_claims, dict):
         return raw_claims
     if isinstance(raw_claims, str) and raw_claims:
@@ -550,45 +536,29 @@ def _auth_user_record_from_ce_data(raw_data: _typing.Any):
 
     user_data = _unwrap_auth_event_data(raw_data)
 
-    raw_provider_data = (
-        user_data.get("providerData")
-        if "providerData" in user_data
-        else user_data.get("provider_data")
-    )
+    raw_provider_data = user_data.get("providerData")
     if not isinstance(raw_provider_data, list):
         raw_provider_data = []
     provider_data = [
         _auth_user_info_from_ce_data(info) for info in raw_provider_data if isinstance(info, dict)
     ]
 
-    email_verified = bool(user_data.get("emailVerified") or user_data.get("email_verified"))
-    raw_tokens_valid = user_data.get("tokensValidAfterTime") or user_data.get(
-        "tokens_valid_after_time"
-    )
-    raw_mfa = (
-        user_data.get("multiFactor")
-        if "multiFactor" in user_data
-        else user_data.get("multi_factor")
-    )
-
     return AuthUserRecord(
         uid=user_data.get("uid", ""),
         email=user_data.get("email"),
-        email_verified=email_verified,
-        display_name=user_data.get("displayName") or user_data.get("display_name"),
-        photo_url=(
-            user_data.get("photoURL") or user_data.get("photoUrl") or user_data.get("photo_url")
-        ),
-        phone_number=user_data.get("phoneNumber") or user_data.get("phone_number"),
+        email_verified=bool(user_data.get("emailVerified", False)),
+        display_name=user_data.get("displayName"),
+        photo_url=user_data.get("photoURL") or user_data.get("photoUrl"),
+        phone_number=user_data.get("phoneNumber"),
         disabled=bool(user_data.get("disabled", False)),
         metadata=_auth_user_metadata_from_ce_data(user_data.get("metadata")),
         provider_data=provider_data,
-        password_hash=user_data.get("passwordHash") or user_data.get("password_hash"),
-        password_salt=user_data.get("passwordSalt") or user_data.get("password_salt"),
+        password_hash=user_data.get("passwordHash"),
+        password_salt=user_data.get("passwordSalt"),
         custom_claims=_parse_custom_claims(user_data),
-        tenant_id=user_data.get("tenantId") or user_data.get("tenant_id") or None,
-        tokens_valid_after_time=_parse_auth_timestamp(raw_tokens_valid),
-        multi_factor=_auth_multi_factor_settings_from_ce_data(raw_mfa),
+        tenant_id=user_data.get("tenantId") or None,
+        tokens_valid_after_time=_parse_auth_timestamp(user_data.get("tokensValidAfterTime")),
+        multi_factor=_auth_multi_factor_settings_from_ce_data(user_data.get("multiFactor")),
     )
 
 
