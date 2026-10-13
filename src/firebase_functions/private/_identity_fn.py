@@ -428,8 +428,7 @@ def _auth_user_info_from_ce_data(info_data: dict[str, _typing.Any]):
 def _auth_user_metadata_from_ce_data(meta_data: dict[str, _typing.Any] | None):
     """
     Converts the CloudEvent 'metadata' dict into an AuthUserMetadata object.
-    Checks Eventarc keys ('createTime'/'lastSignInTime') and emulator/Admin keys
-    ('creationTime'/'createdAt'/'lastSignedInAt').
+    Checks 'createTime' (production Eventarc) and 'creationTime' (Auth Emulator).
     """
     from firebase_functions.identity_fn import AuthUserMetadata
 
@@ -438,10 +437,8 @@ def _auth_user_metadata_from_ce_data(meta_data: dict[str, _typing.Any] | None):
         # deletion payloads) so AuthUserMetadata.creation_time remains non-optional.
         return AuthUserMetadata(creation_time=_EPOCH_START_UTC, last_sign_in_time=None)
 
-    raw_creation = (
-        meta_data.get("createTime") or meta_data.get("createdAt") or meta_data.get("creationTime")
-    )
-    raw_last_sign_in = meta_data.get("lastSignInTime") or meta_data.get("lastSignedInAt")
+    raw_creation = meta_data.get("createTime") or meta_data.get("creationTime")
+    raw_last_sign_in = meta_data.get("lastSignInTime")
     return AuthUserMetadata(
         creation_time=_parse_auth_timestamp(raw_creation) or _EPOCH_START_UTC,
         last_sign_in_time=_parse_auth_timestamp(raw_last_sign_in),
