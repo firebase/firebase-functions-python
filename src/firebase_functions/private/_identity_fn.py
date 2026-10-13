@@ -579,14 +579,9 @@ def _auth_event_from_ce(raw: _ce.CloudEvent):
         if match:
             project = match.group(1)
 
-    # Support lowercase CloudEvent attribute (Eventarc standard), camelCase attribute,
-    # and fallback to the user record's tenant_id (used by the Auth Emulator).
-    tenant_id: str | None = (
-        event_attributes.get("tenantid")
-        or event_attributes.get("tenantId")
-        or user_record.tenant_id
-        or None
-    )
+    # Check the CloudEvent 'tenantid' attribute (Eventarc standard), falling back
+    # to the user record's tenant_id (used by the Auth Emulator).
+    tenant_id: str | None = event_attributes.get("tenantid") or user_record.tenant_id or None
 
     raw_time = event_attributes.get("time")
     event_time = _parse_auth_timestamp(raw_time) or _dt.datetime.now(_dt.timezone.utc)
