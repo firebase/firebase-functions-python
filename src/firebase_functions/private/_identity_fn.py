@@ -488,7 +488,9 @@ def _auth_multi_factor_settings_from_ce_data(mfa_data: dict[str, _typing.Any] | 
 
     from firebase_functions.identity_fn import AuthMultiFactorSettings
 
-    raw_factors = mfa_data.get("enrolledFactors") or mfa_data.get("enrolled_factors") or []
+    raw_factors = mfa_data.get("enrolledFactors") or mfa_data.get("enrolled_factors")
+    if not isinstance(raw_factors, list):
+        raw_factors = []
     enrolled_factors = [
         _auth_multi_factor_info_from_ce_data(factor)
         for factor in raw_factors
@@ -551,12 +553,12 @@ def _auth_user_record_from_ce_data(raw_data: _typing.Any):
     raw_provider_data = (
         user_data.get("providerData")
         if "providerData" in user_data
-        else user_data.get("provider_data", [])
+        else user_data.get("provider_data")
     )
+    if not isinstance(raw_provider_data, list):
+        raw_provider_data = []
     provider_data = [
-        _auth_user_info_from_ce_data(info)
-        for info in (raw_provider_data or [])
-        if isinstance(info, dict)
+        _auth_user_info_from_ce_data(info) for info in raw_provider_data if isinstance(info, dict)
     ]
 
     email_verified = bool(user_data.get("emailVerified") or user_data.get("email_verified"))
