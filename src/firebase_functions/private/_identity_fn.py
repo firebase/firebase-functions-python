@@ -419,7 +419,7 @@ def _auth_user_info_from_ce_data(info_data: dict[str, _typing.Any]):
         provider_id=info_data.get("providerId", ""),
         display_name=info_data.get("displayName"),
         email=info_data.get("email"),
-        # Identity Platform payloads use 'photoUrl' or 'photoURL' depending on the endpoint.
+        # Auth Emulator sends 'photoURL'; production Eventarc sends 'photoUrl'.
         photo_url=info_data.get("photoURL") or info_data.get("photoUrl"),
         phone_number=info_data.get("phoneNumber"),
     )
@@ -428,7 +428,6 @@ def _auth_user_info_from_ce_data(info_data: dict[str, _typing.Any]):
 def _auth_user_metadata_from_ce_data(meta_data: dict[str, _typing.Any] | None):
     """
     Converts the CloudEvent 'metadata' dict into an AuthUserMetadata object.
-    Checks 'createTime' (production Eventarc) and 'creationTime' (Auth Emulator).
     """
     from firebase_functions.identity_fn import AuthUserMetadata
 
@@ -437,6 +436,7 @@ def _auth_user_metadata_from_ce_data(meta_data: dict[str, _typing.Any] | None):
         # deletion payloads) so AuthUserMetadata.creation_time remains non-optional.
         return AuthUserMetadata(creation_time=_EPOCH_START_UTC, last_sign_in_time=None)
 
+    # Production Eventarc sends 'createTime'; Auth Emulator sends 'creationTime'.
     raw_creation = meta_data.get("createTime") or meta_data.get("creationTime")
     raw_last_sign_in = meta_data.get("lastSignInTime")
     return AuthUserMetadata(
@@ -491,17 +491,16 @@ def _auth_multi_factor_settings_from_ce_data(mfa_data: dict[str, _typing.Any] | 
 def _unwrap_auth_event_data(raw_data: _typing.Any) -> dict[str, _typing.Any]:
     """
     Extracts the inner user dictionary from an Eventarc AuthEventData payload.
-    Eventarc wraps user creation payloads in 'value' and user deletion payloads in
-    'oldValue' (or 'old_value'). Checks 'is not None' so protobuf-serialized dicts
-    like {'value': None, 'oldValue': {...}} do not shadow 'oldValue'.
     """
     if not raw_data or not isinstance(raw_data, dict):
         return {}
-    for envelope_key in ("value", "oldValue", "old_value"):
+    # 'on_user_created' wraps the user in 'value'; 'on_user_deleted' wraps it in 'oldValue'.
+    # Check isinstance(..., dict) so {'value': None, 'oldValue': {...}} does not shadow 'oldValue'.
+    for envelope_key in ("value", "oldValue"):
         if isinstance(raw_data.get(envelope_key), dict):
             return raw_data[envelope_key]
-    # If any envelope key is present with a non-dict (e.g. None), treat as empty payload.
-    if any(k in raw_data for k in ("value", "oldValue", "old_value")):
+    # If either envelope key is present with a non-dict (e.g. None), treat as empty payload.
+    if any(k in raw_data for k in ("value", "oldValue")):
         return {}
     # Otherwise, assume raw_data is already the top-level user dict (e.g. synthetic tests).
     return raw_data
@@ -513,6 +512,8 @@ def _parse_custom_claims(user_data: dict[str, _typing.Any]) -> dict[str, _typing
     and serialized JSON object strings.
     """
     raw_claims = user_data.get("customClaims")
+    # Eventarc and Auth Emulator send a parsed dict; Identity Toolkit REST responses
+    # sometimes serialize custom claims as a JSON string.
     if isinstance(raw_claims, dict):
         return raw_claims
     if isinstance(raw_claims, str) and raw_claims:
@@ -545,6 +546,7 @@ def _auth_user_record_from_ce_data(raw_data: _typing.Any):
         email=user_data.get("email"),
         email_verified=bool(user_data.get("emailVerified", False)),
         display_name=user_data.get("displayName"),
+        # Auth Emulator sends 'photoURL'; production Eventarc sends 'photoUrl'.
         photo_url=user_data.get("photoURL") or user_data.get("photoUrl"),
         phone_number=user_data.get("phoneNumber"),
         disabled=bool(user_data.get("disabled", False)),

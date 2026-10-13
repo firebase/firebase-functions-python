@@ -68,7 +68,7 @@ class AuthUserMetadata:
     creation_time: _dt.datetime
     """The date the user was created."""
 
-    last_sign_in_time: _dt.datetime | None = None
+    last_sign_in_time: _dt.datetime | None
     """The date the user last signed in."""
 
 
