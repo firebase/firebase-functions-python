@@ -96,3 +96,16 @@ class TestHttps(unittest.TestCase):
             decorated_func(request)
 
         self.assertEqual("world", hello)
+
+    def test_https_error_passes_message_to_super(self):
+        """
+        HttpsError should pass the message to the base Exception so that
+        str(err) and err.args contain the message.
+        """
+        err = https_fn.HttpsError(
+            code=https_fn.FunctionsErrorCode.INVALID_ARGUMENT,
+            message="something went wrong",
+        )
+
+        self.assertEqual(str(err), "something went wrong")
+        self.assertEqual(err.args, ("something went wrong",))
