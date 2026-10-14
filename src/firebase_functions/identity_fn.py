@@ -255,6 +255,31 @@ class SmsType(str, Enum):
     MULTI_FACTOR_ENROLLMENT = "MULTI_FACTOR_ENROLLMENT"
 
 
+AuthType = _typing.Literal["USER", "UNAUTHENTICATED"]
+"""
+Whether the event was triggered by a user or by an unauthenticated request.
+"""
+
+
+@_dataclasses.dataclass(frozen=True)
+class AuthBlockingResource:
+    """
+    The resource that emitted an auth blocking event.
+    """
+
+    service: str
+    """
+    The service that emitted the event.
+    Example: 'identitytoolkit.googleapis.com'
+    """
+
+    name: str
+    """
+    The project, or the tenant within it, the event belongs to.
+    Example: 'projects/my-project' or 'projects/my-project/tenants/my-tenant'
+    """
+
+
 @_dataclasses.dataclass(frozen=True)
 class AuthBlockingEvent:
     """
@@ -304,6 +329,12 @@ class AuthBlockingEvent:
 
     sms_type: SmsType | None
     """The type of SMS event."""
+
+    auth_type: AuthType
+    """Whether the event was triggered by a user or by an unauthenticated request."""
+
+    resource: AuthBlockingResource
+    """The resource that emitted the event."""
 
     timestamp: _dt.datetime
     """
