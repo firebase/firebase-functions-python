@@ -263,7 +263,7 @@ class HttpsError(Exception):
 
         self._http_error_code = _error_code_map[code]
 
-        super().__init__()
+        super().__init__(message)
 
     def _as_dict(self) -> _HttpErrorWireFormat:
         if self.details is None:
