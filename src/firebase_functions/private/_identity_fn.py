@@ -394,12 +394,15 @@ def _parse_auth_timestamp(value: _typing.Any) -> _dt.datetime | None:
     """
     if isinstance(value, _dt.datetime):
         return _ensure_utc(value)
+    if isinstance(value, str) and value.isdigit():
+        value = int(value)
     # Guard against bool because bool is a subclass of int in Python.
     if isinstance(value, int | float) and not isinstance(value, bool):
-        return _dt.datetime.fromtimestamp(value / 1000.0, tz=_dt.timezone.utc)
+        try:
+            return _dt.datetime.fromtimestamp(value / 1000.0, tz=_dt.timezone.utc)
+        except (OverflowError, OSError, ValueError):
+            return None
     if isinstance(value, str) and value:
-        if value.isdigit():
-            return _dt.datetime.fromtimestamp(int(value) / 1000.0, tz=_dt.timezone.utc)
         for parser in (_util.timestamp_conversion, _dt.datetime.fromisoformat):
             try:
                 return _ensure_utc(parser(value))
@@ -491,17 +494,18 @@ def _auth_multi_factor_settings_from_ce_data(mfa_data: dict[str, _typing.Any] | 
 def _unwrap_auth_event_data(raw_data: _typing.Any) -> dict[str, _typing.Any]:
     """
     Extracts the inner user dictionary from an Eventarc AuthEventData payload.
+    Raises ValueError if the payload is missing, null, or does not contain a user dictionary.
     """
     if not raw_data or not isinstance(raw_data, dict):
-        return {}
+        raise ValueError("Auth event data payload must be a non-empty dictionary.")
     # 'on_user_created' wraps the user in 'value'; 'on_user_deleted' wraps it in 'oldValue'.
     # Check isinstance(..., dict) so {'value': None, 'oldValue': {...}} does not shadow 'oldValue'.
     for envelope_key in ("value", "oldValue"):
-        if isinstance(raw_data.get(envelope_key), dict):
+        if isinstance(raw_data.get(envelope_key), dict) and raw_data[envelope_key]:
             return raw_data[envelope_key]
-    # If either envelope key is present with a non-dict (e.g. None), treat as empty payload.
+    # If either envelope key is present with a non-dict (e.g. None) or empty dict, reject it.
     if any(k in raw_data for k in ("value", "oldValue")):
-        return {}
+        raise ValueError("Auth event data envelope contains an empty or null user record.")
     # Otherwise, assume raw_data is already the top-level user dict (e.g. synthetic tests).
     return raw_data
 
@@ -533,6 +537,9 @@ def _auth_user_record_from_ce_data(raw_data: _typing.Any):
     from firebase_functions.identity_fn import AuthUserRecord
 
     user_data = _unwrap_auth_event_data(raw_data)
+    uid = user_data.get("uid")
+    if not isinstance(uid, str) or not uid:
+        raise ValueError("Auth event user record is missing a valid 'uid'.")
 
     raw_provider_data = user_data.get("providerData")
     if not isinstance(raw_provider_data, list):
@@ -542,7 +549,7 @@ def _auth_user_record_from_ce_data(raw_data: _typing.Any):
     ]
 
     return AuthUserRecord(
-        uid=user_data.get("uid", ""),
+        uid=uid,
         email=user_data.get("email"),
         email_verified=bool(user_data.get("emailVerified", False)),
         display_name=user_data.get("displayName"),

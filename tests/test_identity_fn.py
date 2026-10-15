@@ -233,46 +233,42 @@ class TestIdentity(unittest.TestCase):
         self.assertEqual(captured_event.data.email, "deleted@example.com")
         self.assertEqual(captured_event.data.photo_url, "http://example.com/legacy-photo.jpg")
 
-    def test_handles_null_or_empty_data_gracefully(self) -> None:
+    def test_raises_on_null_or_unrecognized_data(self) -> None:
         captured_events: list[identity_fn.AuthEvent] = []
 
         @identity_fn.on_user_created()
         def example(event: identity_fn.AuthEvent) -> None:
             captured_events.append(event)
 
-        raw_null_ce = CloudEvent(
-            attributes={
-                "specversion": "1.0",
-                "id": "event-null",
-                "source": "//identitytoolkit.googleapis.com/something-else",
-                "type": "google.firebase.auth.user.v2.created",
-                "time": "2023-01-01T00:00:00Z",
-            },
-            data=None,
-        )
-        raw_null_value_ce = CloudEvent(
-            attributes={
-                "specversion": "1.0",
-                "id": "event-null-value",
-                "source": "//identitytoolkit.googleapis.com/projects/my-project",
-                "type": "google.firebase.auth.user.v2.created",
-                "time": "2023-01-01T00:00:00Z",
-            },
-            data={"value": None},
-        )
+        invalid_payloads: list[object] = [
+            None,
+            {},
+            {"value": None},
+            {"value": {}},
+            {"unrecognized": "payload"},
+            {"value": {"email": "missing-uid@example.com"}},
+        ]
+        for invalid_data in invalid_payloads:
+            raw_invalid_ce = CloudEvent(
+                attributes={
+                    "specversion": "1.0",
+                    "id": "event-invalid",
+                    "source": "//identitytoolkit.googleapis.com/projects/my-project",
+                    "type": "google.firebase.auth.user.v2.created",
+                    "time": "2023-01-01T00:00:00Z",
+                },
+                data=invalid_data,
+            )
+            with self.assertRaises(ValueError):
+                example(raw_invalid_ce)  # type: ignore[arg-type]
 
-        example(raw_null_ce)  # type: ignore[arg-type]
-        example(raw_null_value_ce)  # type: ignore[arg-type]
-        self.assertEqual(len(captured_events), 2)
-        self.assertIsNone(captured_events[0].project)
-        self.assertEqual(captured_events[0].data.uid, "")
-        self.assertFalse(captured_events[0].data.disabled)
-        self.assertEqual(
-            captured_events[0].data.metadata.creation_time,
-            dt.datetime(1970, 1, 1, 0, 0, 0, tzinfo=dt.timezone.utc),
-        )
-        self.assertEqual(captured_events[1].project, "my-project")
-        self.assertEqual(captured_events[1].data.uid, "")
+        self.assertEqual(len(captured_events), 0)
+
+    def test_parse_auth_timestamp_handles_out_of_range_numbers(self) -> None:
+        self.assertIsNone(_identity_fn._parse_auth_timestamp(1e20))
+        self.assertIsNone(_identity_fn._parse_auth_timestamp("99999999999999999999"))
+        self.assertIsNone(_identity_fn._parse_auth_timestamp(float("inf")))
+        self.assertIsNone(_identity_fn._parse_auth_timestamp(float("nan")))
 
     def test_on_user_created_mfa_and_string_custom_claims(self) -> None:
         captured_event: identity_fn.AuthEvent | None = None
