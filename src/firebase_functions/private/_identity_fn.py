@@ -11,14 +11,16 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Cloud functions to handle Eventarc events."""
+"""Cloud functions to handle Firebase Authentication and Identity Platform events."""
 
 # pylint: disable=protected-access
 import datetime as _dt
 import json as _json
+import re as _re
 import time as _time
 import typing as _typing
 
+import cloudevents.http as _ce
 from flask import (
     Request as _Request,
 )
@@ -369,3 +371,250 @@ def before_operation_handler(
             exception = HttpsError(FunctionsErrorCode.INTERNAL, "INTERNAL")
         status = exception._http_error_code.status
         return _make_response(_jsonify(error=exception._as_dict()), status)
+
+
+event_type_user_created = "google.firebase.auth.user.v2.created"
+event_type_user_deleted = "google.firebase.auth.user.v2.deleted"
+# Matches both absolute (/projects/...) and relative (projects/...) CloudEvent source paths.
+_PROJECT_ID_REGEX = _re.compile(r"(?:^|/)projects/([^/]+)")
+_EPOCH_START_UTC = _dt.datetime.fromtimestamp(0, tz=_dt.timezone.utc)
+
+
+def _ensure_utc(value: _dt.datetime) -> _dt.datetime:
+    """Normalizes a naive or offset-aware datetime to timezone-aware UTC."""
+    if value.tzinfo is None:
+        return value.replace(tzinfo=_dt.timezone.utc)
+    return value.astimezone(_dt.timezone.utc)
+
+
+def _parse_auth_timestamp(value: _typing.Any) -> _dt.datetime | None:
+    """
+    Normalizes Auth event timestamps to timezone-aware UTC datetimes.
+    Supports epoch milliseconds (int, float, or numeric str) and ISO-8601 strings.
+    """
+    if isinstance(value, _dt.datetime):
+        return _ensure_utc(value)
+    if isinstance(value, str) and value.isdigit():
+        value = int(value)
+    # Guard against bool because bool is a subclass of int in Python.
+    if isinstance(value, int | float) and not isinstance(value, bool):
+        try:
+            return _dt.datetime.fromtimestamp(value / 1000.0, tz=_dt.timezone.utc)
+        except (OverflowError, OSError, ValueError):
+            return None
+    if isinstance(value, str) and value:
+        for parser in (_util.timestamp_conversion, _dt.datetime.fromisoformat):
+            try:
+                return _ensure_utc(parser(value))
+            except ValueError:
+                continue
+    return None
+
+
+def _auth_user_info_from_ce_data(info_data: dict[str, _typing.Any]):
+    """
+    Converts a single entry from the CloudEvent 'providerData' array into an AuthUserInfo.
+    """
+    from firebase_functions.identity_fn import AuthUserInfo
+
+    return AuthUserInfo(
+        uid=info_data.get("uid", ""),
+        provider_id=info_data.get("providerId", ""),
+        display_name=info_data.get("displayName"),
+        email=info_data.get("email"),
+        # Auth Emulator sends 'photoURL'; production Eventarc sends 'photoUrl'.
+        photo_url=info_data.get("photoURL") or info_data.get("photoUrl"),
+        phone_number=info_data.get("phoneNumber"),
+    )
+
+
+def _auth_user_metadata_from_ce_data(meta_data: dict[str, _typing.Any] | None):
+    """
+    Converts the CloudEvent 'metadata' dict into an AuthUserMetadata object.
+    """
+    from firebase_functions.identity_fn import AuthUserMetadata
+
+    if not meta_data or not isinstance(meta_data, dict):
+        # Default creation_time to UTC epoch 0 when metadata is omitted (e.g. partial
+        # deletion payloads) so AuthUserMetadata.creation_time remains non-optional.
+        return AuthUserMetadata(creation_time=_EPOCH_START_UTC, last_sign_in_time=None)
+
+    # Production Eventarc sends 'createTime'; Auth Emulator sends 'creationTime'.
+    raw_creation = meta_data.get("createTime") or meta_data.get("creationTime")
+    raw_last_sign_in = meta_data.get("lastSignInTime")
+    return AuthUserMetadata(
+        creation_time=_parse_auth_timestamp(raw_creation) or _EPOCH_START_UTC,
+        last_sign_in_time=_parse_auth_timestamp(raw_last_sign_in),
+    )
+
+
+def _auth_multi_factor_info_from_ce_data(factor_data: dict[str, _typing.Any]):
+    """
+    Converts a single enrolled MFA factor dict into an AuthMultiFactorInfo object.
+    """
+    from firebase_functions.identity_fn import AuthMultiFactorInfo
+
+    raw_enrollment_time = factor_data.get("enrollmentTime")
+    phone_number = factor_data.get("phoneNumber")
+    raw_factor_id = factor_data.get("factorId", "")
+    # Default SMS factors that omit an explicit factorId to "phone".
+    factor_id = raw_factor_id or ("phone" if phone_number else "")
+    return AuthMultiFactorInfo(
+        uid=factor_data.get("uid", ""),
+        display_name=factor_data.get("displayName"),
+        factor_id=factor_id,
+        enrollment_time=_parse_auth_timestamp(raw_enrollment_time),
+        phone_number=phone_number,
+    )
+
+
+def _auth_multi_factor_settings_from_ce_data(mfa_data: dict[str, _typing.Any] | None):
+    """
+    Converts the CloudEvent 'multiFactor' dict into AuthMultiFactorSettings,
+    returning None when no second factors are enrolled.
+    """
+    if not mfa_data or not isinstance(mfa_data, dict):
+        return None
+
+    from firebase_functions.identity_fn import AuthMultiFactorSettings
+
+    raw_factors = mfa_data.get("enrolledFactors")
+    if not isinstance(raw_factors, list):
+        raw_factors = []
+    enrolled_factors = [
+        _auth_multi_factor_info_from_ce_data(factor)
+        for factor in raw_factors
+        if isinstance(factor, dict)
+    ]
+    if not enrolled_factors:
+        return None
+    return AuthMultiFactorSettings(enrolled_factors=enrolled_factors)
+
+
+def _unwrap_auth_event_data(raw_data: _typing.Any) -> dict[str, _typing.Any]:
+    """
+    Extracts the inner user dictionary from an Eventarc AuthEventData payload.
+    Raises ValueError if the payload is missing, null, or does not contain a user dictionary.
+    """
+    if not raw_data or not isinstance(raw_data, dict):
+        raise ValueError("Auth event data payload must be a non-empty dictionary.")
+    # 'on_user_created' wraps the user in 'value'; 'on_user_deleted' wraps it in 'oldValue'.
+    # Check isinstance(..., dict) so {'value': None, 'oldValue': {...}} does not shadow 'oldValue'.
+    for envelope_key in ("value", "oldValue"):
+        if isinstance(raw_data.get(envelope_key), dict) and raw_data[envelope_key]:
+            return raw_data[envelope_key]
+    # If either envelope key is present with a non-dict (e.g. None) or empty dict, reject it.
+    if any(k in raw_data for k in ("value", "oldValue")):
+        raise ValueError("Auth event data envelope contains an empty or null user record.")
+    # Otherwise, assume raw_data is already the top-level user dict (e.g. synthetic tests).
+    return raw_data
+
+
+def _parse_custom_claims(user_data: dict[str, _typing.Any]) -> dict[str, _typing.Any] | None:
+    """
+    Extracts customClaims from a user dict, supporting both pre-parsed dicts
+    and serialized JSON object strings.
+    """
+    raw_claims = user_data.get("customClaims")
+    # Eventarc and Auth Emulator send a parsed dict; Identity Toolkit REST responses
+    # sometimes serialize custom claims as a JSON string.
+    if isinstance(raw_claims, dict):
+        return raw_claims
+    if isinstance(raw_claims, str) and raw_claims:
+        try:
+            parsed_claims = _json.loads(raw_claims)
+            if isinstance(parsed_claims, dict):
+                return parsed_claims
+        except _json.JSONDecodeError:
+            return None
+    return None
+
+
+def _auth_user_record_from_ce_data(raw_data: _typing.Any):
+    """
+    Unpacks and normalizes an AuthUserRecord from a v2 Eventarc CloudEvent data payload.
+    """
+    from firebase_functions.identity_fn import AuthUserRecord
+
+    user_data = _unwrap_auth_event_data(raw_data)
+    uid = user_data.get("uid")
+    if not isinstance(uid, str) or not uid:
+        raise ValueError("Auth event user record is missing a valid 'uid'.")
+
+    raw_provider_data = user_data.get("providerData")
+    if not isinstance(raw_provider_data, list):
+        raw_provider_data = []
+    provider_data = [
+        _auth_user_info_from_ce_data(info) for info in raw_provider_data if isinstance(info, dict)
+    ]
+
+    return AuthUserRecord(
+        uid=uid,
+        email=user_data.get("email"),
+        email_verified=bool(user_data.get("emailVerified", False)),
+        display_name=user_data.get("displayName"),
+        # Auth Emulator sends 'photoURL'; production Eventarc sends 'photoUrl'.
+        photo_url=user_data.get("photoURL") or user_data.get("photoUrl"),
+        phone_number=user_data.get("phoneNumber"),
+        disabled=bool(user_data.get("disabled", False)),
+        metadata=_auth_user_metadata_from_ce_data(user_data.get("metadata")),
+        provider_data=provider_data,
+        password_hash=user_data.get("passwordHash"),
+        password_salt=user_data.get("passwordSalt"),
+        custom_claims=_parse_custom_claims(user_data),
+        tenant_id=user_data.get("tenantId") or None,
+        tokens_valid_after_time=_parse_auth_timestamp(user_data.get("tokensValidAfterTime")),
+        multi_factor=_auth_multi_factor_settings_from_ce_data(user_data.get("multiFactor")),
+    )
+
+
+def _auth_event_from_ce(raw: _ce.CloudEvent):
+    """
+    Constructs a strongly-typed AuthEvent from a raw Eventarc CloudEvent,
+    extracting the project ID, tenant ID, and unpacked AuthUserRecord.
+    """
+    from firebase_functions.identity_fn import AuthEvent
+
+    event_attributes = raw._get_attributes()
+    event_data: _typing.Any = raw.get_data()
+    user_record = _auth_user_record_from_ce_data(event_data)
+
+    # Extract project ID from the CloudEvent source attribute
+    # (e.g. "//identitytoolkit.googleapis.com/projects/my-project").
+    source = event_attributes.get("source", "")
+    project: str | None = None
+    if source:
+        match = _PROJECT_ID_REGEX.search(source)
+        if match:
+            project = match.group(1)
+
+    # Check the CloudEvent 'tenantid' attribute (Eventarc standard), falling back
+    # to the user record's tenant_id (used by the Auth Emulator).
+    tenant_id: str | None = event_attributes.get("tenantid") or user_record.tenant_id or None
+
+    raw_time = event_attributes.get("time")
+    event_time = _parse_auth_timestamp(raw_time) or _dt.datetime.now(_dt.timezone.utc)
+
+    return AuthEvent(
+        specversion=event_attributes["specversion"],
+        id=event_attributes["id"],
+        source=source,
+        type=event_attributes["type"],
+        time=event_time,
+        data=user_record,
+        subject=event_attributes.get("subject"),
+        project=project,
+        tenant_id=tenant_id,
+    )
+
+
+def user_event_handler(
+    func: _typing.Callable,
+    raw: _ce.CloudEvent,
+) -> None:
+    """
+    Runtime handler invoked by functions-framework for v2 Auth triggers
+    (on_user_created and on_user_deleted).
+    """
+    event = _auth_event_from_ce(raw)
+    _with_init(func)(event)

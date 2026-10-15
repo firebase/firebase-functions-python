@@ -1056,6 +1056,38 @@ class BlockingOptions(RuntimeOptions):
 
 
 @_dataclasses.dataclass(frozen=True, kw_only=True)
+class AuthOptions(EventHandlerOptions):
+    """
+    Options that can be set on an Auth event trigger.
+    Internal use only.
+    """
+
+    tenant_id: str | Expression[str] | None = None
+    """
+    An optional tenant ID to scope the trigger to.
+    """
+
+    def _endpoint(
+        self,
+        **kwargs,
+    ) -> _manifest.ManifestEndpoint:
+        assert kwargs["event_type"] is not None
+        event_filters: dict[str, str | Expression[str]] = {}
+        if self.tenant_id is not None:
+            event_filters["tenantid"] = self.tenant_id
+
+        endpoint = super()._endpoint(
+            **kwargs,
+            event_filters=event_filters,
+        )
+        assert endpoint.eventTrigger is not None
+        # Firebase Auth event triggers are global by nature, so Eventarc requires
+        # the trigger region to be "global" even when the Cloud Function is regional.
+        endpoint.eventTrigger["region"] = "global"
+        return endpoint
+
+
+@_dataclasses.dataclass(frozen=True, kw_only=True)
 class FirestoreOptions(RuntimeOptions):
     """
     Options specific to Firestore function types.
