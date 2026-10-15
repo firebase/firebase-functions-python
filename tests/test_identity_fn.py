@@ -326,3 +326,124 @@ class TestIdentity(unittest.TestCase):
             dt.datetime(2023, 1, 1, 0, 0, 0, tzinfo=dt.timezone.utc),
         )
         self.assertEqual(factors[1].factor_id, "totp")
+
+    def test_on_user_created_is_not_tenant(self) -> None:
+        called_uids: list[str] = []
+        init_calls = 0
+
+        @core.init
+        def init_fn() -> None:
+            nonlocal init_calls
+            init_calls += 1
+
+        @identity_fn.on_user_created(tenant_id=identity_fn.IS_NOT_TENANT)
+        def example(event: identity_fn.AuthEvent) -> None:
+            called_uids.append(event.data.uid)
+
+        endpoint = getattr(example, "__firebase_endpoint__", None)
+        assert endpoint is not None
+        self.assertEqual(endpoint.eventTrigger["eventFilters"], {})
+
+        rendered_yaml = yaml.safe_load(serving.functions_as_yaml({"example": example}))
+        self.assertEqual(
+            rendered_yaml["endpoints"]["example"]["eventTrigger"]["eventFilters"],
+            {},
+        )
+
+        # Should ignore events with top-level tenantid CloudEvent attribute (and not run @core.init)
+        tenant_attr_ce = CloudEvent(
+            attributes={
+                "specversion": "1.0",
+                "id": "event-tenant-attr",
+                "source": "//identitytoolkit.googleapis.com/projects/my-project",
+                "type": "google.firebase.auth.user.v2.created",
+                "time": "2023-01-01T00:00:00Z",
+                "tenantid": "some-tenant",
+            },
+            data={"value": {"uid": "user-with-tenant-attr"}},
+        )
+        example(tenant_attr_ce)  # type: ignore[arg-type]
+        self.assertEqual(called_uids, [])
+        self.assertEqual(init_calls, 0)
+
+        # Should ignore events with tenantId inside the user payload
+        tenant_data_ce = CloudEvent(
+            attributes={
+                "specversion": "1.0",
+                "id": "event-tenant-data",
+                "source": "//identitytoolkit.googleapis.com/projects/my-project",
+                "type": "google.firebase.auth.user.v2.created",
+                "time": "2023-01-01T00:00:00Z",
+            },
+            data={"value": {"uid": "user-with-tenant-data", "tenantId": "some-tenant"}},
+        )
+        example(tenant_data_ce)  # type: ignore[arg-type]
+        self.assertEqual(called_uids, [])
+        self.assertEqual(init_calls, 0)
+
+        # Should execute for non-tenant events (and run @core.init)
+        non_tenant_ce = CloudEvent(
+            attributes={
+                "specversion": "1.0",
+                "id": "event-no-tenant",
+                "source": "//identitytoolkit.googleapis.com/projects/my-project",
+                "type": "google.firebase.auth.user.v2.created",
+                "time": "2023-01-01T00:00:00Z",
+            },
+            data={"value": {"uid": "user-no-tenant"}},
+        )
+        example(non_tenant_ce)  # type: ignore[arg-type]
+        self.assertEqual(called_uids, ["user-no-tenant"])
+        self.assertEqual(init_calls, 1)
+
+        # Also verify on_user_deleted with IS_NOT_TENANT
+        deleted_uids: list[str] = []
+
+        @identity_fn.on_user_deleted(tenant_id=identity_fn.IS_NOT_TENANT)
+        def example_deleted(event: identity_fn.AuthEvent) -> None:
+            deleted_uids.append(event.data.uid)
+
+        delete_endpoint = getattr(example_deleted, "__firebase_endpoint__", None)
+        assert delete_endpoint is not None
+        self.assertEqual(delete_endpoint.eventTrigger["eventFilters"], {})
+
+        example_deleted(non_tenant_ce)  # type: ignore[arg-type]
+        example_deleted(tenant_attr_ce)  # type: ignore[arg-type]
+        self.assertEqual(deleted_uids, ["user-no-tenant"])
+
+    def test_auth_emulator_rfc2822_timestamps(self) -> None:
+        captured_event: identity_fn.AuthEvent | None = None
+
+        @identity_fn.on_user_created()
+        def example(event: identity_fn.AuthEvent) -> None:
+            nonlocal captured_event
+            captured_event = event
+
+        emulator_ce = CloudEvent(
+            attributes={
+                "specversion": "1.0",
+                "id": "emu-event-1",
+                "source": "//identitytoolkit.googleapis.com/projects/my-project",
+                "type": "google.firebase.auth.user.v2.created",
+                "time": "2023-01-01T00:00:00.000Z",
+            },
+            data={
+                "value": {
+                    "uid": "emu-user-1",
+                    "metadata": {
+                        "creationTime": "Sun, 01 Jan 2023 00:00:00 GMT",
+                        "lastSignInTime": "1672662600000",
+                    },
+                }
+            },
+        )
+        example(emulator_ce)  # type: ignore[arg-type]
+        assert captured_event is not None
+        self.assertEqual(
+            captured_event.data.metadata.creation_time,
+            dt.datetime(2023, 1, 1, 0, 0, 0, tzinfo=dt.timezone.utc),
+        )
+        self.assertEqual(
+            captured_event.data.metadata.last_sign_in_time,
+            dt.datetime(2023, 1, 2, 12, 30, 0, tzinfo=dt.timezone.utc),
+        )
