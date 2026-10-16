@@ -14,13 +14,13 @@
 """Internal utilities for Firebase Alert function types."""
 
 # pylint: disable=protected-access,cyclic-import
+import datetime as _dt
 import typing as _typing
 
 import cloudevents.http as _ce
-from functions_framework import logging as _logging
-
 import firebase_functions.private.util as _util
 from firebase_functions.alerts import FirebaseAlertData
+from functions_framework import logging as _logging
 
 
 def plan_update_payload_from_ce_payload(payload: dict):
@@ -129,11 +129,39 @@ def trending_issue_details_from_ce_payload(payload: dict):
     )
 
 
+def _parse_digest_date(digest_date: _typing.Any) -> _dt.datetime:
+    """Parses a Crashlytics digestDate into a timezone-aware UTC datetime."""
+    if isinstance(digest_date, dict):
+        if "year" in digest_date and "month" in digest_date and "day" in digest_date:
+            year, month, day = (
+                digest_date["year"],
+                digest_date["month"],
+                digest_date["day"],
+            )
+            if year is None or month is None or day is None:
+                raise ValueError(f"Invalid calendar date fields cannot be None: {digest_date}")
+            try:
+                return _dt.datetime(
+                    int(year),
+                    int(month),
+                    int(day),
+                    tzinfo=_dt.timezone.utc,
+                )
+            except (ValueError, TypeError) as err:
+                raise ValueError(f"Invalid calendar date values in {digest_date}: {err}") from err
+        if "seconds" in digest_date and digest_date["seconds"] is not None:
+            return _util.timestamp_conversion(digest_date)
+        raise ValueError(f"Unrecognized dictionary format for digestDate: {digest_date}")
+    if isinstance(digest_date, str):
+        return _util.timestamp_conversion(digest_date)
+    raise ValueError(f"Invalid digestDate type: {type(digest_date)}")
+
+
 def stability_digest_payload_from_ce_payload(payload: dict):
     from firebase_functions.alerts.crashlytics_fn import StabilityDigestPayload
 
     return StabilityDigestPayload(
-        digest_date=_util.timestamp_conversion(payload["digestDate"]),
+        digest_date=_parse_digest_date(payload["digestDate"]),
         trending_issues=[
             trending_issue_details_from_ce_payload(issue) for issue in payload["trendingIssues"]
         ],
