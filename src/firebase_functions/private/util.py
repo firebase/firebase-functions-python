@@ -373,14 +373,24 @@ def timestamp_conversion(time: str | dict) -> _dt.datetime:
     """Converts an ISO 8601 timestamp or dictionary and returns a timezone-aware datetime object."""
     if isinstance(time, dict):
         seconds = time.get("seconds")
-        seconds = int(seconds) if seconds is not None else 0
+        if seconds is None:
+            raise ValueError(
+                f"Unrecognized timestamp dictionary format (missing 'seconds'): {time}"
+            )
+        try:
+            seconds_int = int(seconds)
+        except (ValueError, TypeError) as err:
+            raise ValueError(f"Invalid 'seconds' value in timestamp: {seconds}") from err
 
-        nanos = time.get("nanos")
-        if nanos is None:
-            nanos = time.get("nanoseconds")
-        nanos = int(nanos) if nanos is not None else 0
+        nanos_val = time.get("nanos")
+        if nanos_val is None:
+            nanos_val = time.get("nanoseconds")
+        try:
+            nanos = int(nanos_val) if nanos_val is not None else 0
+        except (ValueError, TypeError) as err:
+            raise ValueError(f"Invalid 'nanos' value in timestamp: {nanos_val}") from err
 
-        base_dt = _dt.datetime.fromtimestamp(seconds, tz=_dt.timezone.utc)
+        base_dt = _dt.datetime.fromtimestamp(seconds_int, tz=_dt.timezone.utc)
         return base_dt + _dt.timedelta(microseconds=nanos // 1000)
 
     normalized_time = normalize_timestamp_string(time)

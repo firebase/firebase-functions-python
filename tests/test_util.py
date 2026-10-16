@@ -18,6 +18,7 @@ Internal utils tests.
 import datetime as _dt
 from os import environ, path
 
+import pytest
 from firebase_functions.private.util import (
     _unsafe_decode_id_token,
     deep_merge,
@@ -63,6 +64,10 @@ def test_timestamp_conversion_supported_formats():
         ),
         (
             {"seconds": 1712750400, "nanos": 123456000},
+            _dt.datetime(2024, 4, 10, 12, 0, 0, 123456, tzinfo=_dt.timezone.utc),
+        ),
+        (
+            {"seconds": 1712750400, "nanoseconds": 123456000},
             _dt.datetime(2024, 4, 10, 12, 0, 0, 123456, tzinfo=_dt.timezone.utc),
         ),
         (
@@ -124,6 +129,23 @@ def test_timestamp_conversion_supported_formats():
 
     for input_timestamp, expected_datetime in timestamps:
         assert timestamp_conversion(input_timestamp) == expected_datetime
+
+
+def test_timestamp_conversion_unrecognized_dict_raises():
+    """
+    Testing that unrecognized or incomplete timestamp dictionaries raise ValueError.
+    """
+    unrecognized_dicts = [
+        {},
+        {"foo": "bar"},
+        {"nanos": 123456000},
+        {"seconds": None},
+        {"seconds": "invalid"},
+        {"seconds": 1712750400, "nanos": "invalid"},
+    ]
+    for d in unrecognized_dicts:
+        with pytest.raises(ValueError):
+            timestamp_conversion(d)
 
 
 def test_normalize_document_path():
