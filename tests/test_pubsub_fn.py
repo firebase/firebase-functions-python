@@ -151,3 +151,61 @@ class TestPubSub(unittest.TestCase):
         # pylint: disable=broad-except
         except Exception:
             self.fail("Datetime without microseconds should not throw an exception")
+
+
+def _raw_event(message: dict) -> _CloudEvent:
+    return _CloudEvent(
+        attributes={
+            "id": "test-message",
+            "source": "https://example.com/pubsub",
+            "specversion": "1.0",
+            "time": "2023-03-11T13:25:37.403Z",
+            "type": "com.example.pubsub.message",
+        },
+        data={
+            "message": {
+                "message_id": "message-id-123",
+                "publish_time": "2023-03-11T13:25:37.403Z",
+                **message,
+            },
+            "subscription": "my-subscription",
+        },
+    )
+
+
+def _handled_message(message: dict) -> Message:
+    func = MagicMock()
+    _message_handler(func, _raw_event(message))
+    func.assert_called_once()
+    return func.call_args.args[0].data.message
+
+
+class TestPubSubMessageData(unittest.TestCase):
+    def test_message_without_data_reaches_handler_with_none(self):
+        message = _handled_message({"attributes": {"key": "value"}})
+        self.assertIsNone(message.data)
+        self.assertIsNone(message.json)
+        self.assertEqual(message.attributes, {"key": "value"})
+        self.assertEqual(message.message_id, "message-id-123")
+
+    def test_message_with_data_decodes_json(self):
+        # base64 of '{"test": "value"}'
+        message = _handled_message({"data": "eyJ0ZXN0IjogInZhbHVlIn0="})
+        self.assertEqual(message.data, "eyJ0ZXN0IjogInZhbHVlIn0=")
+        self.assertEqual(message.json, {"test": "value"})
+        self.assertEqual(message.attributes, {})
+
+    def test_message_with_empty_string_data_keeps_it_and_json_raises(self):
+        message = _handled_message({"data": ""})
+        self.assertEqual(message.data, "")
+        with self.assertRaisesRegex(ValueError, "^Unable to parse Pub/Sub message data as JSON: "):
+            _ = message.json
+
+    def test_publish_time_is_timezone_aware_datetime(self):
+        message = _handled_message({"data": "eyJ0ZXN0IjogInZhbHVlIn0="})
+        self.assertIsInstance(message.publish_time, _dt.datetime)
+        self.assertEqual(
+            message.publish_time,
+            _dt.datetime(2023, 3, 11, 13, 25, 37, 403000, tzinfo=_dt.timezone.utc),
+        )
+        self.assertEqual(message.publish_time.utcoffset(), _dt.timedelta(0))
