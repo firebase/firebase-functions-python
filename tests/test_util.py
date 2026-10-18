@@ -19,6 +19,7 @@ import datetime as _dt
 from os import environ, path
 
 import pytest
+
 from firebase_functions.private.util import (
     _unsafe_decode_id_token,
     deep_merge,

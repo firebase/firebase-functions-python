@@ -18,6 +18,7 @@ Tests for internal alerts utility functions.
 import datetime as _dt
 
 import pytest
+
 from firebase_functions.private._alerts_fn import (
     _parse_digest_date,
     stability_digest_payload_from_ce_payload,
