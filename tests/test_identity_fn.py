@@ -165,7 +165,6 @@ class TestIdentity(unittest.TestCase):
                         }
                     ],
                     "customClaims": {"admin": True},
-                    "tenantId": "my-tenant",
                 }
             },
         )
@@ -193,7 +192,13 @@ class TestIdentity(unittest.TestCase):
             dt.datetime(2023, 1, 2, 12, 30, 0, tzinfo=dt.timezone.utc),
         )
         self.assertEqual(len(captured_event.data.provider_data), 1)
+        self.assertEqual(captured_event.data.provider_data[0].uid, "google-uid")
         self.assertEqual(captured_event.data.provider_data[0].provider_id, "google.com")
+        self.assertEqual(captured_event.data.provider_data[0].display_name, "Google User")
+        self.assertEqual(captured_event.data.provider_data[0].email, "testuser@example.com")
+        self.assertEqual(
+            captured_event.data.provider_data[0].photo_url, "http://example.com/google.jpg"
+        )
         self.assertEqual(captured_event.data.custom_claims, {"admin": True})
         self.assertEqual(captured_event.data.tenant_id, "my-tenant")
 
@@ -219,6 +224,17 @@ class TestIdentity(unittest.TestCase):
                     "uid": "deleted-user-uid",
                     "email": "deleted@example.com",
                     "photoURL": "http://example.com/legacy-photo.jpg",
+                    "tenantId": "emulator-tenant",
+                    "metadata": {
+                        "creationTime": "2023-01-01T00:00:00Z",
+                    },
+                    "providerData": [
+                        {
+                            "rawId": "github-raw-uid",
+                            "providerId": "github.com",
+                            "photoURL": "http://example.com/gh.jpg",
+                        }
+                    ],
                 },
             },
         )
@@ -227,11 +243,22 @@ class TestIdentity(unittest.TestCase):
         self.assertIsNotNone(captured_event)
         assert captured_event is not None
         self.assertEqual(captured_event.project, "my-project")
-        self.assertIsNone(captured_event.tenant_id)
+        self.assertEqual(captured_event.tenant_id, "emulator-tenant")
         assert captured_event.data is not None
         self.assertEqual(captured_event.data.uid, "deleted-user-uid")
         self.assertEqual(captured_event.data.email, "deleted@example.com")
         self.assertEqual(captured_event.data.photo_url, "http://example.com/legacy-photo.jpg")
+        self.assertEqual(captured_event.data.tenant_id, "emulator-tenant")
+        self.assertEqual(
+            captured_event.data.metadata.creation_time,
+            dt.datetime(2023, 1, 1, 0, 0, 0, tzinfo=dt.timezone.utc),
+        )
+        self.assertEqual(len(captured_event.data.provider_data), 1)
+        self.assertEqual(captured_event.data.provider_data[0].uid, "github-raw-uid")
+        self.assertEqual(captured_event.data.provider_data[0].provider_id, "github.com")
+        self.assertEqual(
+            captured_event.data.provider_data[0].photo_url, "http://example.com/gh.jpg"
+        )
 
     def test_raises_on_null_or_unrecognized_data(self) -> None:
         captured_events: list[identity_fn.AuthEvent] = []
@@ -262,6 +289,19 @@ class TestIdentity(unittest.TestCase):
             with self.assertRaises(ValueError):
                 example(raw_invalid_ce)  # type: ignore[arg-type]
 
+        raw_invalid_time_ce = CloudEvent(
+            attributes={
+                "specversion": "1.0",
+                "id": "event-invalid-time",
+                "source": "//identitytoolkit.googleapis.com/projects/my-project",
+                "type": "google.firebase.auth.user.v2.created",
+                "time": "not-a-timestamp",
+            },
+            data={"value": {"uid": "valid-uid"}},
+        )
+        with self.assertRaises(ValueError):
+            example(raw_invalid_time_ce)  # type: ignore[arg-type]
+
         self.assertEqual(len(captured_events), 0)
 
     def test_parse_auth_timestamp_handles_out_of_range_numbers(self) -> None:
@@ -269,6 +309,7 @@ class TestIdentity(unittest.TestCase):
         self.assertIsNone(_identity_fn._parse_auth_timestamp("99999999999999999999"))
         self.assertIsNone(_identity_fn._parse_auth_timestamp(float("inf")))
         self.assertIsNone(_identity_fn._parse_auth_timestamp(float("nan")))
+        self.assertIsNone(_identity_fn._parse_auth_timestamp("²"))
 
     def test_on_user_created_mfa_and_string_custom_claims(self) -> None:
         captured_event: identity_fn.AuthEvent | None = None

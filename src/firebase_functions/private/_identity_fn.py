@@ -394,7 +394,7 @@ def _parse_auth_timestamp(value: _typing.Any) -> _dt.datetime | None:
     """
     if isinstance(value, _dt.datetime):
         return _ensure_utc(value)
-    if isinstance(value, str) and value.isdigit():
+    if isinstance(value, str) and value.isascii() and value.isdecimal():
         value = int(value)
     # Guard against bool because bool is a subclass of int in Python.
     if isinstance(value, int | float) and not isinstance(value, bool):
@@ -418,11 +418,12 @@ def _auth_user_info_from_ce_data(info_data: dict[str, _typing.Any]):
     from firebase_functions.identity_fn import AuthUserInfo
 
     return AuthUserInfo(
-        uid=info_data.get("uid", ""),
-        provider_id=info_data.get("providerId", ""),
+        # Production Eventarc sends 'uid'; Auth Emulator sends 'rawId'.
+        uid=info_data.get("uid") or info_data.get("rawId") or "",
+        provider_id=info_data.get("providerId") or "",
         display_name=info_data.get("displayName"),
         email=info_data.get("email"),
-        # Auth Emulator sends 'photoURL'; production Eventarc sends 'photoUrl'.
+        # Eventarc proto json_name and Auth Emulator use 'photoURL'; also check 'photoUrl'.
         photo_url=info_data.get("photoURL") or info_data.get("photoUrl"),
         phone_number=info_data.get("phoneNumber"),
     )
@@ -460,7 +461,7 @@ def _auth_multi_factor_info_from_ce_data(factor_data: dict[str, _typing.Any]):
     # Default SMS factors that omit an explicit factorId to "phone".
     factor_id = raw_factor_id or ("phone" if phone_number else "")
     return AuthMultiFactorInfo(
-        uid=factor_data.get("uid", ""),
+        uid=factor_data.get("uid") or "",
         display_name=factor_data.get("displayName"),
         factor_id=factor_id,
         enrollment_time=_parse_auth_timestamp(raw_enrollment_time),
@@ -530,7 +531,7 @@ def _parse_custom_claims(user_data: dict[str, _typing.Any]) -> dict[str, _typing
     return None
 
 
-def _auth_user_record_from_ce_data(raw_data: _typing.Any):
+def _auth_user_record_from_ce_data(raw_data: _typing.Any, tenant_id: str | None = None):
     """
     Unpacks and normalizes an AuthUserRecord from a v2 Eventarc CloudEvent data payload.
     """
@@ -553,7 +554,7 @@ def _auth_user_record_from_ce_data(raw_data: _typing.Any):
         email=user_data.get("email"),
         email_verified=bool(user_data.get("emailVerified", False)),
         display_name=user_data.get("displayName"),
-        # Auth Emulator sends 'photoURL'; production Eventarc sends 'photoUrl'.
+        # Eventarc proto json_name and Auth Emulator use 'photoURL'; also check 'photoUrl'.
         photo_url=user_data.get("photoURL") or user_data.get("photoUrl"),
         phone_number=user_data.get("phoneNumber"),
         disabled=bool(user_data.get("disabled", False)),
@@ -562,7 +563,9 @@ def _auth_user_record_from_ce_data(raw_data: _typing.Any):
         password_hash=user_data.get("passwordHash"),
         password_salt=user_data.get("passwordSalt"),
         custom_claims=_parse_custom_claims(user_data),
-        tenant_id=user_data.get("tenantId") or None,
+        # Check the CloudEvent 'tenantid' attribute (Eventarc standard), falling back
+        # to the user record's 'tenantId' field (used by the Auth Emulator).
+        tenant_id=tenant_id or user_data.get("tenantId") or None,
         tokens_valid_after_time=_parse_auth_timestamp(user_data.get("tokensValidAfterTime")),
         multi_factor=_auth_multi_factor_settings_from_ce_data(user_data.get("multiFactor")),
     )
@@ -577,7 +580,10 @@ def _auth_event_from_ce(raw: _ce.CloudEvent):
 
     event_attributes = raw._get_attributes()
     event_data: _typing.Any = raw.get_data()
-    user_record = _auth_user_record_from_ce_data(event_data)
+    user_record = _auth_user_record_from_ce_data(
+        event_data,
+        tenant_id=event_attributes.get("tenantid"),
+    )
 
     # Extract project ID from the CloudEvent source attribute
     # (e.g. "//identitytoolkit.googleapis.com/projects/my-project").
@@ -588,12 +594,10 @@ def _auth_event_from_ce(raw: _ce.CloudEvent):
         if match:
             project = match.group(1)
 
-    # Check the CloudEvent 'tenantid' attribute (Eventarc standard), falling back
-    # to the user record's tenant_id (used by the Auth Emulator).
-    tenant_id: str | None = event_attributes.get("tenantid") or user_record.tenant_id or None
-
     raw_time = event_attributes.get("time")
-    event_time = _parse_auth_timestamp(raw_time) or _dt.datetime.now(_dt.timezone.utc)
+    event_time = _parse_auth_timestamp(raw_time)
+    if event_time is None:
+        raise ValueError(f"Invalid or missing CloudEvent 'time' attribute: {raw_time!r}")
 
     return AuthEvent(
         specversion=event_attributes["specversion"],
@@ -604,7 +608,7 @@ def _auth_event_from_ce(raw: _ce.CloudEvent):
         data=user_record,
         subject=event_attributes.get("subject"),
         project=project,
-        tenant_id=tenant_id,
+        tenant_id=user_record.tenant_id,
     )
 
 

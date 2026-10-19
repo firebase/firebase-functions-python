@@ -31,7 +31,7 @@ from flask import (
 import firebase_functions.core as _core
 import firebase_functions.options as _options
 import firebase_functions.private.util as _util
-from firebase_functions.options import AuthOptions  # noqa: F401
+from firebase_functions.options import AuthOptions
 
 
 @_dataclasses.dataclass(frozen=True)
@@ -500,7 +500,7 @@ The type of the callable for 'on_user_created' and 'on_user_deleted' Auth events
 """
 
 
-@_util.copy_func_kwargs(_options.AuthOptions)
+@_util.copy_func_kwargs(AuthOptions)
 def on_user_created(
     **kwargs,
 ) -> _typing.Callable[[AuthEventCallable], AuthEventCallable]:
@@ -523,7 +523,7 @@ def on_user_created(
             \\[ \\[ :exc:`firebase_functions.identity_fn.AuthEvent` \\], `None` \\]
             A function that takes an AuthEvent and returns ``None``.
     """
-    options = _options.AuthOptions(**kwargs)
+    options = AuthOptions(**kwargs)
 
     def on_user_created_decorator(func: AuthEventCallable):
         from firebase_functions.private._identity_fn import (
@@ -547,7 +547,7 @@ def on_user_created(
     return on_user_created_decorator
 
 
-@_util.copy_func_kwargs(_options.AuthOptions)
+@_util.copy_func_kwargs(AuthOptions)
 def on_user_deleted(
     **kwargs,
 ) -> _typing.Callable[[AuthEventCallable], AuthEventCallable]:
@@ -570,7 +570,7 @@ def on_user_deleted(
             \\[ \\[ :exc:`firebase_functions.identity_fn.AuthEvent` \\], `None` \\]
             A function that takes an AuthEvent and returns ``None``.
     """
-    options = _options.AuthOptions(**kwargs)
+    options = AuthOptions(**kwargs)
 
     def on_user_deleted_decorator(func: AuthEventCallable):
         from firebase_functions.private._identity_fn import (
