@@ -311,7 +311,7 @@ class TestIdentity(unittest.TestCase):
         self.assertIsNone(_identity_fn._parse_auth_timestamp(float("nan")))
         self.assertIsNone(_identity_fn._parse_auth_timestamp("²"))
 
-    def test_on_user_created_mfa_and_string_custom_claims(self) -> None:
+    def test_on_user_created_defaults_and_timezone_normalization(self) -> None:
         captured_event: identity_fn.AuthEvent | None = None
 
         @identity_fn.on_user_created()
@@ -322,30 +322,14 @@ class TestIdentity(unittest.TestCase):
         raw_ce = CloudEvent(
             attributes={
                 "specversion": "1.0",
-                "id": "event-mfa",
+                "id": "event-minimal",
                 "source": "//identitytoolkit.googleapis.com/projects/my-project",
                 "type": "google.firebase.auth.user.v2.created",
                 "time": "2023-01-01T02:00:00+02:00",
             },
             data={
                 "value": {
-                    "uid": "mfa-user",
-                    "customClaims": '{"role": "editor"}',
-                    "multiFactor": {
-                        "enrolledFactors": [
-                            {
-                                "uid": "factor-1",
-                                "displayName": "Personal Phone",
-                                "phoneNumber": "+15555550199",
-                                "enrollmentTime": "2023-01-01T00:00:00",
-                            },
-                            {
-                                "uid": "factor-2",
-                                "displayName": "Authenticator App",
-                                "factorId": "totp",
-                            },
-                        ]
-                    },
+                    "uid": "minimal-user",
                 }
             },
         )
@@ -356,14 +340,13 @@ class TestIdentity(unittest.TestCase):
             captured_event.time,
             dt.datetime(2023, 1, 1, 0, 0, 0, tzinfo=dt.timezone.utc),
         )
-        self.assertEqual(captured_event.data.custom_claims, {"role": "editor"})
-        assert captured_event.data.multi_factor is not None
-        factors = captured_event.data.multi_factor.enrolled_factors
-        self.assertEqual(len(factors), 2)
-        self.assertEqual(factors[0].factor_id, "phone")
-        self.assertEqual(factors[0].phone_number, "+15555550199")
         self.assertEqual(
-            factors[0].enrollment_time,
-            dt.datetime(2023, 1, 1, 0, 0, 0, tzinfo=dt.timezone.utc),
+            captured_event.data.metadata.creation_time,
+            dt.datetime(1970, 1, 1, 0, 0, 0, tzinfo=dt.timezone.utc),
         )
-        self.assertEqual(factors[1].factor_id, "totp")
+        self.assertIsNone(captured_event.data.metadata.last_sign_in_time)
+        self.assertIsNone(captured_event.data.custom_claims)
+        self.assertIsNone(captured_event.data.password_hash)
+        self.assertIsNone(captured_event.data.password_salt)
+        self.assertIsNone(captured_event.data.tokens_valid_after_time)
+        self.assertIsNone(captured_event.data.multi_factor)

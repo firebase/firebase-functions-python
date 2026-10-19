@@ -449,49 +449,6 @@ def _auth_user_metadata_from_ce_data(meta_data: dict[str, _typing.Any] | None):
     )
 
 
-def _auth_multi_factor_info_from_ce_data(factor_data: dict[str, _typing.Any]):
-    """
-    Converts a single enrolled MFA factor dict into an AuthMultiFactorInfo object.
-    """
-    from firebase_functions.identity_fn import AuthMultiFactorInfo
-
-    raw_enrollment_time = factor_data.get("enrollmentTime")
-    phone_number = factor_data.get("phoneNumber")
-    raw_factor_id = factor_data.get("factorId", "")
-    # Default SMS factors that omit an explicit factorId to "phone".
-    factor_id = raw_factor_id or ("phone" if phone_number else "")
-    return AuthMultiFactorInfo(
-        uid=factor_data.get("uid") or "",
-        display_name=factor_data.get("displayName"),
-        factor_id=factor_id,
-        enrollment_time=_parse_auth_timestamp(raw_enrollment_time),
-        phone_number=phone_number,
-    )
-
-
-def _auth_multi_factor_settings_from_ce_data(mfa_data: dict[str, _typing.Any] | None):
-    """
-    Converts the CloudEvent 'multiFactor' dict into AuthMultiFactorSettings,
-    returning None when no second factors are enrolled.
-    """
-    if not mfa_data or not isinstance(mfa_data, dict):
-        return None
-
-    from firebase_functions.identity_fn import AuthMultiFactorSettings
-
-    raw_factors = mfa_data.get("enrolledFactors")
-    if not isinstance(raw_factors, list):
-        raw_factors = []
-    enrolled_factors = [
-        _auth_multi_factor_info_from_ce_data(factor)
-        for factor in raw_factors
-        if isinstance(factor, dict)
-    ]
-    if not enrolled_factors:
-        return None
-    return AuthMultiFactorSettings(enrolled_factors=enrolled_factors)
-
-
 def _unwrap_auth_event_data(raw_data: _typing.Any) -> dict[str, _typing.Any]:
     """
     Extracts the inner user dictionary from an Eventarc AuthEventData payload.
@@ -509,26 +466,6 @@ def _unwrap_auth_event_data(raw_data: _typing.Any) -> dict[str, _typing.Any]:
         raise ValueError("Auth event data envelope contains an empty or null user record.")
     # Otherwise, assume raw_data is already the top-level user dict (e.g. synthetic tests).
     return raw_data
-
-
-def _parse_custom_claims(user_data: dict[str, _typing.Any]) -> dict[str, _typing.Any] | None:
-    """
-    Extracts customClaims from a user dict, supporting both pre-parsed dicts
-    and serialized JSON object strings.
-    """
-    raw_claims = user_data.get("customClaims")
-    # Eventarc and Auth Emulator send a parsed dict; Identity Toolkit REST responses
-    # sometimes serialize custom claims as a JSON string.
-    if isinstance(raw_claims, dict):
-        return raw_claims
-    if isinstance(raw_claims, str) and raw_claims:
-        try:
-            parsed_claims = _json.loads(raw_claims)
-            if isinstance(parsed_claims, dict):
-                return parsed_claims
-        except _json.JSONDecodeError:
-            return None
-    return None
 
 
 def _auth_user_record_from_ce_data(raw_data: _typing.Any, tenant_id: str | None = None):
@@ -549,6 +486,9 @@ def _auth_user_record_from_ce_data(raw_data: _typing.Any, tenant_id: str | None 
         _auth_user_info_from_ce_data(info) for info in raw_provider_data if isinstance(info, dict)
     ]
 
+    raw_claims = user_data.get("customClaims")
+    custom_claims = raw_claims if isinstance(raw_claims, dict) else None
+
     return AuthUserRecord(
         uid=uid,
         email=user_data.get("email"),
@@ -560,14 +500,16 @@ def _auth_user_record_from_ce_data(raw_data: _typing.Any, tenant_id: str | None 
         disabled=bool(user_data.get("disabled", False)),
         metadata=_auth_user_metadata_from_ce_data(user_data.get("metadata")),
         provider_data=provider_data,
-        password_hash=user_data.get("passwordHash"),
-        password_salt=user_data.get("passwordSalt"),
-        custom_claims=_parse_custom_claims(user_data),
+        custom_claims=custom_claims,
         # Check the CloudEvent 'tenantid' attribute (Eventarc standard), falling back
         # to the user record's 'tenantId' field (used by the Auth Emulator).
         tenant_id=tenant_id or user_data.get("tenantId") or None,
-        tokens_valid_after_time=_parse_auth_timestamp(user_data.get("tokensValidAfterTime")),
-        multi_factor=_auth_multi_factor_settings_from_ce_data(user_data.get("multiFactor")),
+        # The following fields on AuthUserRecord are populated only by Auth Blocking
+        # JWTs and are not part of the v2 Eventarc User proto (google.events.firebase.auth.v2).
+        password_hash=None,
+        password_salt=None,
+        tokens_valid_after_time=None,
+        multi_factor=None,
     )
 
 
