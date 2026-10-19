@@ -108,6 +108,12 @@ class TestIdentity(unittest.TestCase):
         assert endpoint is not None
         self.assertEqual(endpoint.eventTrigger["eventFilters"], {"tenantid": "my-tenant"})
 
+        with self.assertRaises(ValueError):
+
+            @identity_fn.on_user_created(tenant_id="")
+            def _empty_tenant(_event: identity_fn.AuthEvent) -> None:
+                pass
+
     def test_on_user_created_tenant_id_expression(self) -> None:
         tenant_param = params.StringParam("MY_TENANT")
 
@@ -274,6 +280,16 @@ class TestIdentity(unittest.TestCase):
             {"value": {}},
             {"unrecognized": "payload"},
             {"value": {"email": "missing-uid@example.com"}},
+            {"value": {"uid": "valid-uid", "metadata": {"createTime": "not-a-timestamp"}}},
+            {
+                "value": {
+                    "uid": "valid-uid",
+                    "metadata": {
+                        "createTime": "2023-01-01T00:00:00Z",
+                        "lastSignInTime": "not-a-timestamp",
+                    },
+                }
+            },
         ]
         for invalid_data in invalid_payloads:
             raw_invalid_ce = CloudEvent(

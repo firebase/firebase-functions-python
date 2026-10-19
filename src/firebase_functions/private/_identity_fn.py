@@ -403,11 +403,10 @@ def _parse_auth_timestamp(value: _typing.Any) -> _dt.datetime | None:
         except (OverflowError, OSError, ValueError):
             return None
     if isinstance(value, str) and value:
-        for parser in (_util.timestamp_conversion, _dt.datetime.fromisoformat):
-            try:
-                return _ensure_utc(parser(value))
-            except ValueError:
-                continue
+        try:
+            return _ensure_utc(_util.timestamp_conversion(value))
+        except ValueError:
+            return None
     return None
 
 
@@ -442,10 +441,24 @@ def _auth_user_metadata_from_ce_data(meta_data: dict[str, _typing.Any] | None):
 
     # Production Eventarc sends 'createTime'; Auth Emulator sends 'creationTime'.
     raw_creation = meta_data.get("createTime") or meta_data.get("creationTime")
+    if raw_creation not in (None, ""):
+        creation_time = _parse_auth_timestamp(raw_creation)
+        if creation_time is None:
+            raise ValueError(f"Invalid Auth metadata creationTime: {raw_creation!r}")
+    else:
+        creation_time = _EPOCH_START_UTC
+
     raw_last_sign_in = meta_data.get("lastSignInTime")
+    if raw_last_sign_in not in (None, ""):
+        last_sign_in_time = _parse_auth_timestamp(raw_last_sign_in)
+        if last_sign_in_time is None:
+            raise ValueError(f"Invalid Auth metadata lastSignInTime: {raw_last_sign_in!r}")
+    else:
+        last_sign_in_time = None
+
     return AuthUserMetadata(
-        creation_time=_parse_auth_timestamp(raw_creation) or _EPOCH_START_UTC,
-        last_sign_in_time=_parse_auth_timestamp(raw_last_sign_in),
+        creation_time=creation_time,
+        last_sign_in_time=last_sign_in_time,
     )
 
 
@@ -457,13 +470,11 @@ def _unwrap_auth_event_data(raw_data: _typing.Any) -> dict[str, _typing.Any]:
     if not raw_data or not isinstance(raw_data, dict):
         raise ValueError("Auth event data payload must be a non-empty dictionary.")
     # 'on_user_created' wraps the user in 'value'; 'on_user_deleted' wraps it in 'oldValue'.
-    # Check isinstance(..., dict) so {'value': None, 'oldValue': {...}} does not shadow 'oldValue'.
-    for envelope_key in ("value", "oldValue"):
-        if isinstance(raw_data.get(envelope_key), dict) and raw_data[envelope_key]:
-            return raw_data[envelope_key]
-    # If either envelope key is present with a non-dict (e.g. None) or empty dict, reject it.
-    if any(k in raw_data for k in ("value", "oldValue")):
-        raise ValueError("Auth event data envelope contains an empty or null user record.")
+    if "value" in raw_data or "oldValue" in raw_data:
+        user_data = raw_data.get("value") or raw_data.get("oldValue")
+        if not isinstance(user_data, dict) or not user_data:
+            raise ValueError("Auth event data envelope contains an empty or null user record.")
+        return user_data
     # Otherwise, assume raw_data is already the top-level user dict (e.g. synthetic tests).
     return raw_data
 
@@ -529,12 +540,9 @@ def _auth_event_from_ce(raw: _ce.CloudEvent):
 
     # Extract project ID from the CloudEvent source attribute
     # (e.g. "//identitytoolkit.googleapis.com/projects/my-project").
-    source = event_attributes.get("source", "")
-    project: str | None = None
-    if source:
-        match = _PROJECT_ID_REGEX.search(source)
-        if match:
-            project = match.group(1)
+    source: str = event_attributes["source"]
+    match = _PROJECT_ID_REGEX.search(source)
+    project: str | None = match.group(1) if match else None
 
     raw_time = event_attributes.get("time")
     event_time = _parse_auth_timestamp(raw_time)

@@ -1074,6 +1074,8 @@ class AuthOptions(EventHandlerOptions):
         assert kwargs["event_type"] is not None
         event_filters: dict[str, str | Expression[str]] = {}
         if self.tenant_id is not None:
+            if self.tenant_id == "":
+                raise ValueError("AuthOptions: tenant_id cannot be an empty string.")
             event_filters["tenantid"] = self.tenant_id
 
         endpoint = super()._endpoint(
