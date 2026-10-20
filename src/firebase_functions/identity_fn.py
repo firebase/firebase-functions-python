@@ -65,10 +65,10 @@ class AuthUserMetadata:
     Additional metadata about the user.
     """
 
-    creation_time: _dt.datetime
-    """The date the user was created."""
+    creation_time: _dt.datetime | None = None
+    """The date the user was created, or None if omitted."""
 
-    last_sign_in_time: _dt.datetime | None
+    last_sign_in_time: _dt.datetime | None = None
     """The date the user last signed in."""
 
 

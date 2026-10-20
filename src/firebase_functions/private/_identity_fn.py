@@ -377,37 +377,6 @@ event_type_user_created = "google.firebase.auth.user.v2.created"
 event_type_user_deleted = "google.firebase.auth.user.v2.deleted"
 # Matches both absolute (/projects/...) and relative (projects/...) CloudEvent source paths.
 _PROJECT_ID_REGEX = _re.compile(r"(?:^|/)projects/([^/]+)")
-_EPOCH_START_UTC = _dt.datetime.fromtimestamp(0, tz=_dt.timezone.utc)
-
-
-def _ensure_utc(value: _dt.datetime) -> _dt.datetime:
-    """Normalizes a naive or offset-aware datetime to timezone-aware UTC."""
-    if value.tzinfo is None:
-        return value.replace(tzinfo=_dt.timezone.utc)
-    return value.astimezone(_dt.timezone.utc)
-
-
-def _parse_auth_timestamp(value: _typing.Any) -> _dt.datetime | None:
-    """
-    Normalizes Auth event timestamps to timezone-aware UTC datetimes.
-    Supports epoch milliseconds (int, float, or numeric str) and ISO-8601 strings.
-    """
-    if isinstance(value, _dt.datetime):
-        return _ensure_utc(value)
-    if isinstance(value, str) and value.isascii() and value.isdecimal():
-        value = int(value)
-    # Guard against bool because bool is a subclass of int in Python.
-    if isinstance(value, int | float) and not isinstance(value, bool):
-        try:
-            return _dt.datetime.fromtimestamp(value / 1000.0, tz=_dt.timezone.utc)
-        except (OverflowError, OSError, ValueError):
-            return None
-    if isinstance(value, str) and value:
-        try:
-            return _ensure_utc(_util.timestamp_conversion(value))
-        except ValueError:
-            return None
-    return None
 
 
 def _auth_user_info_from_ce_data(info_data: dict[str, _typing.Any]):
@@ -417,14 +386,11 @@ def _auth_user_info_from_ce_data(info_data: dict[str, _typing.Any]):
     from firebase_functions.identity_fn import AuthUserInfo
 
     return AuthUserInfo(
-        # Production Eventarc sends 'uid'; Auth Emulator sends 'rawId'.
-        uid=info_data.get("uid") or info_data.get("rawId") or "",
+        uid=info_data.get("uid") or "",
         provider_id=info_data.get("providerId") or "",
         display_name=info_data.get("displayName"),
         email=info_data.get("email"),
-        # Eventarc proto json_name and Auth Emulator use 'photoURL'; also check 'photoUrl'.
-        photo_url=info_data.get("photoURL") or info_data.get("photoUrl"),
-        phone_number=info_data.get("phoneNumber"),
+        photo_url=info_data.get("photoURL"),
     )
 
 
@@ -435,26 +401,13 @@ def _auth_user_metadata_from_ce_data(meta_data: dict[str, _typing.Any] | None):
     from firebase_functions.identity_fn import AuthUserMetadata
 
     if not meta_data or not isinstance(meta_data, dict):
-        # Default creation_time to UTC epoch 0 when metadata is omitted (e.g. partial
-        # deletion payloads) so AuthUserMetadata.creation_time remains non-optional.
-        return AuthUserMetadata(creation_time=_EPOCH_START_UTC, last_sign_in_time=None)
+        return AuthUserMetadata()
 
-    # Production Eventarc sends 'createTime'; Auth Emulator sends 'creationTime'.
-    raw_creation = meta_data.get("createTime") or meta_data.get("creationTime")
-    if raw_creation not in (None, ""):
-        creation_time = _parse_auth_timestamp(raw_creation)
-        if creation_time is None:
-            raise ValueError(f"Invalid Auth metadata creationTime: {raw_creation!r}")
-    else:
-        creation_time = _EPOCH_START_UTC
+    raw_creation = meta_data.get("createTime")
+    creation_time = _util.timestamp_conversion(raw_creation) if raw_creation else None
 
     raw_last_sign_in = meta_data.get("lastSignInTime")
-    if raw_last_sign_in not in (None, ""):
-        last_sign_in_time = _parse_auth_timestamp(raw_last_sign_in)
-        if last_sign_in_time is None:
-            raise ValueError(f"Invalid Auth metadata lastSignInTime: {raw_last_sign_in!r}")
-    else:
-        last_sign_in_time = None
+    last_sign_in_time = _util.timestamp_conversion(raw_last_sign_in) if raw_last_sign_in else None
 
     return AuthUserMetadata(
         creation_time=creation_time,
@@ -470,13 +423,10 @@ def _unwrap_auth_event_data(raw_data: _typing.Any) -> dict[str, _typing.Any]:
     if not raw_data or not isinstance(raw_data, dict):
         raise ValueError("Auth event data payload must be a non-empty dictionary.")
     # 'on_user_created' wraps the user in 'value'; 'on_user_deleted' wraps it in 'oldValue'.
-    if "value" in raw_data or "oldValue" in raw_data:
-        user_data = raw_data.get("value") or raw_data.get("oldValue")
-        if not isinstance(user_data, dict) or not user_data:
-            raise ValueError("Auth event data envelope contains an empty or null user record.")
-        return user_data
-    # Otherwise, assume raw_data is already the top-level user dict (e.g. synthetic tests).
-    return raw_data
+    user_data = raw_data.get("value") or raw_data.get("oldValue")
+    if not isinstance(user_data, dict) or not user_data:
+        raise ValueError("Auth event data envelope contains an empty or null user record.")
+    return user_data
 
 
 def _auth_user_record_from_ce_data(raw_data: _typing.Any, tenant_id: str | None = None):
@@ -505,16 +455,13 @@ def _auth_user_record_from_ce_data(raw_data: _typing.Any, tenant_id: str | None 
         email=user_data.get("email"),
         email_verified=bool(user_data.get("emailVerified", False)),
         display_name=user_data.get("displayName"),
-        # Eventarc proto json_name and Auth Emulator use 'photoURL'; also check 'photoUrl'.
-        photo_url=user_data.get("photoURL") or user_data.get("photoUrl"),
+        photo_url=user_data.get("photoURL"),
         phone_number=user_data.get("phoneNumber"),
         disabled=bool(user_data.get("disabled", False)),
         metadata=_auth_user_metadata_from_ce_data(user_data.get("metadata")),
         provider_data=provider_data,
         custom_claims=custom_claims,
-        # Check the CloudEvent 'tenantid' attribute (Eventarc standard), falling back
-        # to the user record's 'tenantId' field (used by the Auth Emulator).
-        tenant_id=tenant_id or user_data.get("tenantId") or None,
+        tenant_id=tenant_id,
         # The following fields on AuthUserRecord are populated only by Auth Blocking
         # JWTs and are not part of the v2 Eventarc User proto (google.events.firebase.auth.v2).
         password_hash=None,
@@ -544,10 +491,7 @@ def _auth_event_from_ce(raw: _ce.CloudEvent):
     match = _PROJECT_ID_REGEX.search(source)
     project: str | None = match.group(1) if match else None
 
-    raw_time = event_attributes.get("time")
-    event_time = _parse_auth_timestamp(raw_time)
-    if event_time is None:
-        raise ValueError(f"Invalid or missing CloudEvent 'time' attribute: {raw_time!r}")
+    event_time = _util.timestamp_conversion(event_attributes["time"])
 
     return AuthEvent(
         specversion=event_attributes["specversion"],

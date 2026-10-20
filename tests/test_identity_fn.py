@@ -154,7 +154,7 @@ class TestIdentity(unittest.TestCase):
                     "email": "testuser@example.com",
                     "emailVerified": True,
                     "displayName": "Test User",
-                    "photoUrl": "http://example.com/photo.jpg",
+                    "photoURL": "http://example.com/photo.jpg",
                     "phoneNumber": "+15555550100",
                     "disabled": False,
                     "metadata": {
@@ -167,7 +167,7 @@ class TestIdentity(unittest.TestCase):
                             "providerId": "google.com",
                             "displayName": "Google User",
                             "email": "testuser@example.com",
-                            "photoUrl": "http://example.com/google.jpg",
+                            "photoURL": "http://example.com/google.jpg",
                         }
                     ],
                     "customClaims": {"admin": True},
@@ -223,6 +223,7 @@ class TestIdentity(unittest.TestCase):
                 "source": "//identitytoolkit.googleapis.com/projects/my-project",
                 "type": "google.firebase.auth.user.v2.deleted",
                 "time": "2023-01-01T00:00:00Z",
+                "tenantid": "my-tenant",
             },
             data={
                 "value": None,
@@ -230,13 +231,12 @@ class TestIdentity(unittest.TestCase):
                     "uid": "deleted-user-uid",
                     "email": "deleted@example.com",
                     "photoURL": "http://example.com/legacy-photo.jpg",
-                    "tenantId": "emulator-tenant",
                     "metadata": {
-                        "creationTime": "2023-01-01T00:00:00Z",
+                        "createTime": "2023-01-01T00:00:00Z",
                     },
                     "providerData": [
                         {
-                            "rawId": "github-raw-uid",
+                            "uid": "github-raw-uid",
                             "providerId": "github.com",
                             "photoURL": "http://example.com/gh.jpg",
                         }
@@ -249,12 +249,12 @@ class TestIdentity(unittest.TestCase):
         self.assertIsNotNone(captured_event)
         assert captured_event is not None
         self.assertEqual(captured_event.project, "my-project")
-        self.assertEqual(captured_event.tenant_id, "emulator-tenant")
+        self.assertEqual(captured_event.tenant_id, "my-tenant")
         assert captured_event.data is not None
         self.assertEqual(captured_event.data.uid, "deleted-user-uid")
         self.assertEqual(captured_event.data.email, "deleted@example.com")
         self.assertEqual(captured_event.data.photo_url, "http://example.com/legacy-photo.jpg")
-        self.assertEqual(captured_event.data.tenant_id, "emulator-tenant")
+        self.assertEqual(captured_event.data.tenant_id, "my-tenant")
         self.assertEqual(
             captured_event.data.metadata.creation_time,
             dt.datetime(2023, 1, 1, 0, 0, 0, tzinfo=dt.timezone.utc),
@@ -320,13 +320,6 @@ class TestIdentity(unittest.TestCase):
 
         self.assertEqual(len(captured_events), 0)
 
-    def test_parse_auth_timestamp_handles_out_of_range_numbers(self) -> None:
-        self.assertIsNone(_identity_fn._parse_auth_timestamp(1e20))
-        self.assertIsNone(_identity_fn._parse_auth_timestamp("99999999999999999999"))
-        self.assertIsNone(_identity_fn._parse_auth_timestamp(float("inf")))
-        self.assertIsNone(_identity_fn._parse_auth_timestamp(float("nan")))
-        self.assertIsNone(_identity_fn._parse_auth_timestamp("²"))
-
     def test_on_user_created_defaults_and_timezone_normalization(self) -> None:
         captured_event: identity_fn.AuthEvent | None = None
 
@@ -356,10 +349,7 @@ class TestIdentity(unittest.TestCase):
             captured_event.time,
             dt.datetime(2023, 1, 1, 0, 0, 0, tzinfo=dt.timezone.utc),
         )
-        self.assertEqual(
-            captured_event.data.metadata.creation_time,
-            dt.datetime(1970, 1, 1, 0, 0, 0, tzinfo=dt.timezone.utc),
-        )
+        self.assertIsNone(captured_event.data.metadata.creation_time)
         self.assertIsNone(captured_event.data.metadata.last_sign_in_time)
         self.assertIsNone(captured_event.data.custom_claims)
         self.assertIsNone(captured_event.data.password_hash)
