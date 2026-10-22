@@ -31,7 +31,10 @@ from flask import (
 import firebase_functions.core as _core
 import firebase_functions.options as _options
 import firebase_functions.private.util as _util
-from firebase_functions.options import AuthOptions
+from firebase_functions.options import (
+    IS_NOT_TENANT,  # noqa: F401
+    AuthOptions,
+)
 
 
 @_dataclasses.dataclass(frozen=True)
@@ -506,6 +509,8 @@ def on_user_created(
 ) -> _typing.Callable[[AuthEventCallable], AuthEventCallable]:
     """
     Handles an event that is triggered when a user is created in Firebase Authentication.
+    Pass ``tenant_id=identity_fn.IS_NOT_TENANT`` to only trigger on users in the
+    default project (not scoped to any Identity Platform tenant).
 
     Example:
 
@@ -533,7 +538,7 @@ def on_user_created(
 
         @_functools.wraps(func)
         def on_user_created_wrapped(raw: _ce.CloudEvent):
-            return user_event_handler(func, raw)
+            return user_event_handler(func, raw, options)
 
         _util.set_func_endpoint_attr(
             on_user_created_wrapped,
@@ -553,6 +558,8 @@ def on_user_deleted(
 ) -> _typing.Callable[[AuthEventCallable], AuthEventCallable]:
     """
     Handles an event that is triggered when a user is deleted in Firebase Authentication.
+    Pass ``tenant_id=identity_fn.IS_NOT_TENANT`` to only trigger on users in the
+    default project (not scoped to any Identity Platform tenant).
 
     Example:
 
@@ -580,7 +587,7 @@ def on_user_deleted(
 
         @_functools.wraps(func)
         def on_user_deleted_wrapped(raw: _ce.CloudEvent):
-            return user_event_handler(func, raw)
+            return user_event_handler(func, raw, options)
 
         _util.set_func_endpoint_attr(
             on_user_deleted_wrapped,
