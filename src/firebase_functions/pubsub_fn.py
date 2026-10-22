@@ -51,15 +51,16 @@ class Message(_typing.Generic[T]):
     User-defined attributes published with the message, if any.
     """
 
-    data: str | None
+    data: str | None = None
     """
     The data payload of this message object as a base64-encoded string,
     or `None` if the message was published without a payload.
     """
 
-    ordering_key: str
+    ordering_key: str | None = None
     """
-    User-defined key used to ensure ordering amongst messages with the same key.
+    User-defined key used to ensure ordering amongst messages with the same key,
+    or `None` if the message was published without one.
     """
 
     @property
@@ -137,8 +138,6 @@ def _message_handler(
 
     # Include empty attributes property if missing
     message_dict["attributes"] = message_dict.get("attributes", {})
-    # Pub/Sub omits `data` when the message has an empty payload.
-    message_dict.setdefault("data", None)
 
     message: MessagePublishedData = MessagePublishedData(
         message=Message(

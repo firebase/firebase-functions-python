@@ -201,6 +201,16 @@ class TestPubSubMessageData(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "^Unable to parse Pub/Sub message data as JSON: "):
             _ = message.json
 
+    def test_message_built_directly_defaults_data_and_ordering_key_to_none(self):
+        message = Message(
+            message_id="message-id-123",
+            publish_time=_dt.datetime(2023, 3, 11, tzinfo=_dt.timezone.utc),
+            attributes={},
+        )
+        self.assertIsNone(message.data)
+        self.assertIsNone(message.ordering_key)
+        self.assertIsNone(message.json)
+
     def test_publish_time_is_timezone_aware_datetime(self):
         message = _handled_message({"data": "eyJ0ZXN0IjogInZhbHVlIn0="})
         self.assertIsInstance(message.publish_time, _dt.datetime)
