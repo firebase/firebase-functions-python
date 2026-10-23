@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Cloud functions to handle Eventarc events."""
+"""Cloud functions to handle Firebase Authentication and Identity Platform events."""
 
 # pylint: disable=protected-access,cyclic-import
 import dataclasses as _dataclasses
@@ -20,6 +20,7 @@ import functools as _functools
 import typing as _typing
 from enum import Enum
 
+import cloudevents.http as _ce
 from flask import (
     Request as _Request,
 )
@@ -27,8 +28,13 @@ from flask import (
     Response as _Response,
 )
 
+import firebase_functions.core as _core
 import firebase_functions.options as _options
 import firebase_functions.private.util as _util
+from firebase_functions.options import (
+    IS_NOT_TENANT,  # noqa: F401
+    AuthOptions,
+)
 
 
 @_dataclasses.dataclass(frozen=True)
@@ -62,10 +68,10 @@ class AuthUserMetadata:
     Additional metadata about the user.
     """
 
-    creation_time: _dt.datetime
-    """The date the user was created."""
+    creation_time: _dt.datetime | None = None
+    """The date the user was created, or None if omitted."""
 
-    last_sign_in_time: _dt.datetime | None
+    last_sign_in_time: _dt.datetime | None = None
     """The date the user last signed in."""
 
 
@@ -116,7 +122,7 @@ class AuthMultiFactorSettings:
 @_dataclasses.dataclass(frozen=True)
 class AuthUserRecord:
     """
-    The UserRecord passed to auth blocking functions from the identity platform.
+    The UserRecord passed to auth blocking and event functions from the identity platform.
     """
 
     uid: str
@@ -472,3 +478,124 @@ def before_user_created(
         return before_user_created_wrapped
 
     return before_user_created_decorator
+
+
+@_dataclasses.dataclass(frozen=True)
+class AuthEvent(_core.CloudEvent[AuthUserRecord]):
+    """
+    A CloudEvent that contains an AuthUserRecord when a user is created or deleted.
+    """
+
+    project: str | None = None
+    """
+    The project identifier.
+    """
+
+    tenant_id: str | None = None
+    """
+    The ID of the Identity Platform tenant associated with the event, if applicable.
+    """
+
+
+AuthEventCallable = _typing.Callable[[AuthEvent], None]
+"""
+The type of the callable for 'on_user_created' and 'on_user_deleted' Auth events.
+"""
+
+
+@_util.copy_func_kwargs(AuthOptions)
+def on_user_created(
+    **kwargs,
+) -> _typing.Callable[[AuthEventCallable], AuthEventCallable]:
+    """
+    Handles an event that is triggered when a user is created in Firebase Authentication.
+    Pass ``tenant_id=identity_fn.IS_NOT_TENANT`` to only trigger on users in the
+    default project (not scoped to any Identity Platform tenant).
+
+    Example:
+
+    .. code-block:: python
+
+      from firebase_functions import identity_fn
+
+      @identity_fn.on_user_created()
+      def example(event: identity_fn.AuthEvent) -> None:
+          pass
+
+    :param \\*\\*kwargs: Options.
+    :type \\*\\*kwargs: as :exc:`firebase_functions.options.AuthOptions`
+    :rtype: :exc:`typing.Callable`
+            \\[ \\[ :exc:`firebase_functions.identity_fn.AuthEvent` \\], `None` \\]
+            A function that takes an AuthEvent and returns ``None``.
+    """
+    options = AuthOptions(**kwargs)
+
+    def on_user_created_decorator(func: AuthEventCallable):
+        from firebase_functions.private._identity_fn import (
+            event_type_user_created,
+            user_event_handler,
+        )
+
+        @_functools.wraps(func)
+        def on_user_created_wrapped(raw: _ce.CloudEvent):
+            return user_event_handler(func, raw, options)
+
+        _util.set_func_endpoint_attr(
+            on_user_created_wrapped,
+            options._endpoint(
+                func_name=func.__name__,
+                event_type=event_type_user_created,
+            ),
+        )
+        return on_user_created_wrapped
+
+    return on_user_created_decorator
+
+
+@_util.copy_func_kwargs(AuthOptions)
+def on_user_deleted(
+    **kwargs,
+) -> _typing.Callable[[AuthEventCallable], AuthEventCallable]:
+    """
+    Handles an event that is triggered when a user is deleted in Firebase Authentication.
+    Pass ``tenant_id=identity_fn.IS_NOT_TENANT`` to only trigger on users in the
+    default project (not scoped to any Identity Platform tenant).
+
+    Example:
+
+    .. code-block:: python
+
+      from firebase_functions import identity_fn
+
+      @identity_fn.on_user_deleted()
+      def example(event: identity_fn.AuthEvent) -> None:
+          pass
+
+    :param \\*\\*kwargs: Options.
+    :type \\*\\*kwargs: as :exc:`firebase_functions.options.AuthOptions`
+    :rtype: :exc:`typing.Callable`
+            \\[ \\[ :exc:`firebase_functions.identity_fn.AuthEvent` \\], `None` \\]
+            A function that takes an AuthEvent and returns ``None``.
+    """
+    options = AuthOptions(**kwargs)
+
+    def on_user_deleted_decorator(func: AuthEventCallable):
+        from firebase_functions.private._identity_fn import (
+            event_type_user_deleted,
+            user_event_handler,
+        )
+
+        @_functools.wraps(func)
+        def on_user_deleted_wrapped(raw: _ce.CloudEvent):
+            return user_event_handler(func, raw, options)
+
+        _util.set_func_endpoint_attr(
+            on_user_deleted_wrapped,
+            options._endpoint(
+                func_name=func.__name__,
+                event_type=event_type_user_deleted,
+            ),
+        )
+        return on_user_deleted_wrapped
+
+    return on_user_deleted_decorator

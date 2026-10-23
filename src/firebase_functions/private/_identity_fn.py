@@ -11,14 +11,16 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Cloud functions to handle Eventarc events."""
+"""Cloud functions to handle Firebase Authentication and Identity Platform events."""
 
 # pylint: disable=protected-access
 import datetime as _dt
 import json as _json
+import re as _re
 import time as _time
 import typing as _typing
 
+import cloudevents.http as _ce
 from flask import (
     Request as _Request,
 )
@@ -33,6 +35,7 @@ from flask import (
 )
 from functions_framework import logging as _logging
 
+import firebase_functions.options as _options
 import firebase_functions.private.token_verifier as _token_verifier
 import firebase_functions.private.util as _util
 from firebase_functions.core import _with_init
@@ -369,3 +372,158 @@ def before_operation_handler(
             exception = HttpsError(FunctionsErrorCode.INTERNAL, "INTERNAL")
         status = exception._http_error_code.status
         return _make_response(_jsonify(error=exception._as_dict()), status)
+
+
+event_type_user_created = "google.firebase.auth.user.v2.created"
+event_type_user_deleted = "google.firebase.auth.user.v2.deleted"
+# Matches both absolute (/projects/...) and relative (projects/...) CloudEvent source paths.
+_PROJECT_ID_REGEX = _re.compile(r"(?:^|/)projects/([^/]+)")
+
+
+def _auth_user_info_from_ce_data(info_data: dict[str, _typing.Any]):
+    """
+    Converts a single entry from the CloudEvent 'providerData' array into an AuthUserInfo.
+    """
+    from firebase_functions.identity_fn import AuthUserInfo
+
+    return AuthUserInfo(
+        uid=info_data.get("uid") or "",
+        provider_id=info_data.get("providerId") or "",
+        display_name=info_data.get("displayName"),
+        email=info_data.get("email"),
+        photo_url=info_data.get("photoURL"),
+    )
+
+
+def _auth_user_metadata_from_ce_data(meta_data: dict[str, _typing.Any] | None):
+    """
+    Converts the CloudEvent 'metadata' dict into an AuthUserMetadata object.
+    """
+    from firebase_functions.identity_fn import AuthUserMetadata
+
+    if not meta_data or not isinstance(meta_data, dict):
+        return AuthUserMetadata()
+
+    raw_creation = meta_data.get("createTime")
+    creation_time = _util.timestamp_conversion(raw_creation) if raw_creation else None
+
+    raw_last_sign_in = meta_data.get("lastSignInTime")
+    last_sign_in_time = _util.timestamp_conversion(raw_last_sign_in) if raw_last_sign_in else None
+
+    return AuthUserMetadata(
+        creation_time=creation_time,
+        last_sign_in_time=last_sign_in_time,
+    )
+
+
+def _unwrap_auth_event_data(raw_data: _typing.Any) -> dict[str, _typing.Any]:
+    """
+    Extracts the inner user dictionary from an Eventarc AuthEventData payload.
+    Raises ValueError if the payload is missing, null, or does not contain a user dictionary.
+    """
+    if not raw_data or not isinstance(raw_data, dict):
+        raise ValueError("Auth event data payload must be a non-empty dictionary.")
+    # 'on_user_created' wraps the user in 'value'; 'on_user_deleted' wraps it in 'oldValue'.
+    user_data = raw_data.get("value") or raw_data.get("oldValue")
+    if not isinstance(user_data, dict) or not user_data:
+        raise ValueError("Auth event data envelope contains an empty or null user record.")
+    return user_data
+
+
+def _auth_user_record_from_ce_data(raw_data: _typing.Any, tenant_id: str | None = None):
+    """
+    Unpacks and normalizes an AuthUserRecord from a v2 Eventarc CloudEvent data payload.
+    """
+    from firebase_functions.identity_fn import AuthUserRecord
+
+    user_data = _unwrap_auth_event_data(raw_data)
+    uid = user_data.get("uid")
+    if not isinstance(uid, str) or not uid:
+        raise ValueError("Auth event user record is missing a valid 'uid'.")
+
+    raw_provider_data = user_data.get("providerData")
+    if not isinstance(raw_provider_data, list):
+        raw_provider_data = []
+    provider_data = [
+        _auth_user_info_from_ce_data(info) for info in raw_provider_data if isinstance(info, dict)
+    ]
+
+    raw_claims = user_data.get("customClaims")
+    custom_claims = raw_claims if isinstance(raw_claims, dict) else None
+
+    return AuthUserRecord(
+        uid=uid,
+        email=user_data.get("email"),
+        email_verified=bool(user_data.get("emailVerified", False)),
+        display_name=user_data.get("displayName"),
+        photo_url=user_data.get("photoURL"),
+        phone_number=user_data.get("phoneNumber"),
+        disabled=bool(user_data.get("disabled", False)),
+        metadata=_auth_user_metadata_from_ce_data(user_data.get("metadata")),
+        provider_data=provider_data,
+        custom_claims=custom_claims,
+        tenant_id=tenant_id,
+        # The following fields on AuthUserRecord are populated only by Auth Blocking
+        # JWTs and are not part of the v2 Eventarc User proto (google.events.firebase.auth.v2).
+        password_hash=None,
+        password_salt=None,
+        tokens_valid_after_time=None,
+        multi_factor=None,
+    )
+
+
+def _auth_event_from_ce(raw: _ce.CloudEvent):
+    """
+    Constructs a strongly-typed AuthEvent from a raw Eventarc CloudEvent,
+    extracting the project ID, tenant ID, and unpacked AuthUserRecord.
+    """
+    from firebase_functions.identity_fn import AuthEvent
+
+    event_attributes = raw._get_attributes()
+    event_data: _typing.Any = raw.get_data()
+    user_record = _auth_user_record_from_ce_data(
+        event_data,
+        tenant_id=event_attributes.get("tenantid"),
+    )
+
+    # Extract project ID from the CloudEvent source attribute
+    # (e.g. "//identitytoolkit.googleapis.com/projects/my-project").
+    source: str = event_attributes["source"]
+    match = _PROJECT_ID_REGEX.search(source)
+    project: str | None = match.group(1) if match else None
+
+    event_time = _util.timestamp_conversion(event_attributes["time"])
+
+    return AuthEvent(
+        specversion=event_attributes["specversion"],
+        id=event_attributes["id"],
+        source=source,
+        type=event_attributes["type"],
+        time=event_time,
+        data=user_record,
+        subject=event_attributes.get("subject"),
+        project=project,
+        tenant_id=user_record.tenant_id,
+    )
+
+
+def user_event_handler(
+    func: _typing.Callable,
+    raw: _ce.CloudEvent,
+    options: _options.AuthOptions | None = None,
+) -> None:
+    """
+    Runtime handler invoked by functions-framework for v2 Auth triggers
+    (on_user_created and on_user_deleted).
+    """
+    # Eventarc cannot filter for the absence of a tenant attribute, so when
+    # tenant_id=IS_NOT_TENANT we drop events belonging to any tenant at runtime
+    # before unpacking the CloudEvent payload.
+    if (
+        options is not None
+        and options.tenant_id == _options.IS_NOT_TENANT
+        and raw._get_attributes().get("tenantid") is not None
+    ):
+        return
+    event = _auth_event_from_ce(raw)
+    _with_init(func)(event)
