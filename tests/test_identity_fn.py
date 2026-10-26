@@ -531,3 +531,9 @@ class TestIdentity(unittest.TestCase):
             captured_event.credential.expiration_time,
             dt.datetime(2023, 1, 1, 1, 0, 0, tzinfo=dt.timezone.utc),
         )
+        self.assertEqual(
+            _identity_fn._auth_user_metadata_from_token_data(
+                {"creation_time": None, "last_sign_in_time": None}
+            ),
+            identity_fn.AuthUserMetadata(creation_time=None, last_sign_in_time=None),
+        )
