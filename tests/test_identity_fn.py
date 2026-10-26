@@ -454,3 +454,80 @@ class TestIdentity(unittest.TestCase):
             @identity_fn.on_user_created(tenant_id=options.RESET_VALUE)  # type: ignore[arg-type]
             def _invalid_sentinel(_event: identity_fn.AuthEvent) -> None:
                 pass
+
+    def test_blocking_event_timestamps_are_timezone_aware_utc(self) -> None:
+        captured_event: identity_fn.AuthBlockingEvent | None = None
+
+        @identity_fn.before_user_signed_in()
+        def example(
+            event: identity_fn.AuthBlockingEvent,
+        ) -> identity_fn.BeforeSignInResponse | None:
+            nonlocal captured_event
+            captured_event = event
+            return None
+
+        mock_verifier = MagicMock()
+        mock_verifier.verify_auth_blocking_token = Mock(
+            return_value={
+                "user_record": {
+                    "uid": "user-123",
+                    "metadata": {
+                        "creation_time": 1672531200000,
+                        "last_sign_in_time": 1672662600000,
+                    },
+                    "provider_data": [],
+                    "tokens_valid_after_time": 1672531200,
+                    "multi_factor": {
+                        "enrolled_factors": [
+                            {
+                                "uid": "mfa-1",
+                                "factor_id": "phone",
+                                "enrollment_time": "2023-01-01T00:00:00.000Z",
+                                "phone_number": "+15555550100",
+                            }
+                        ]
+                    },
+                },
+                "event_id": "event-id",
+                "ip_address": "127.0.0.1",
+                "user_agent": "test-agent",
+                "iat": 1672531200,
+                "sign_in_method": "google.com",
+                "oauth_access_token": "token-abc",
+                "oauth_expires_in": 3600,
+            }
+        )
+
+        with (
+            patch.object(_identity_fn, "_token_verifier", mock_verifier),
+            patch.object(_identity_fn._time, "time", return_value=1672531200.0),
+        ):
+            app = Flask(__name__)
+            with app.test_request_context("/"):
+                environ = EnvironBuilder(
+                    method="POST",
+                    json={"data": {"jwt": "jwt"}},
+                ).get_environ()
+                request = Request(environ)
+                example(request)  # type: ignore[arg-type]
+
+        self.assertIsNotNone(captured_event)
+        assert captured_event is not None
+        expected_epoch = dt.datetime(2023, 1, 1, 0, 0, 0, tzinfo=dt.timezone.utc)
+        self.assertEqual(captured_event.timestamp, expected_epoch)
+        self.assertEqual(captured_event.data.metadata.creation_time, expected_epoch)
+        self.assertEqual(
+            captured_event.data.metadata.last_sign_in_time,
+            dt.datetime(2023, 1, 2, 12, 30, 0, tzinfo=dt.timezone.utc),
+        )
+        self.assertEqual(captured_event.data.tokens_valid_after_time, expected_epoch)
+        assert captured_event.data.multi_factor is not None
+        self.assertEqual(
+            captured_event.data.multi_factor.enrolled_factors[0].enrollment_time,
+            expected_epoch,
+        )
+        assert captured_event.credential is not None
+        self.assertEqual(
+            captured_event.credential.expiration_time,
+            dt.datetime(2023, 1, 1, 1, 0, 0, tzinfo=dt.timezone.utc),
+        )

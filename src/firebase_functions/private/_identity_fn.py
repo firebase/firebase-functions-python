@@ -77,11 +77,13 @@ def _auth_user_info_from_token_data(token_data: dict[str, _typing.Any]):
 def _auth_user_metadata_from_token_data(token_data: dict[str, _typing.Any]):
     from firebase_functions.identity_fn import AuthUserMetadata
 
-    creation_time = _dt.datetime.utcfromtimestamp(int(token_data["creation_time"]) / 1000.0)
+    creation_time = _dt.datetime.fromtimestamp(
+        int(token_data["creation_time"]) / 1000.0, tz=_dt.timezone.utc
+    )
     last_sign_in_time = None
     if "last_sign_in_time" in token_data:
-        last_sign_in_time = _dt.datetime.utcfromtimestamp(
-            int(token_data["last_sign_in_time"]) / 1000.0
+        last_sign_in_time = _dt.datetime.fromtimestamp(
+            int(token_data["last_sign_in_time"]) / 1000.0, tz=_dt.timezone.utc
         )
 
     return AuthUserMetadata(creation_time=creation_time, last_sign_in_time=last_sign_in_time)
@@ -92,7 +94,7 @@ def _auth_multi_factor_info_from_token_data(token_data: dict[str, _typing.Any]):
 
     enrollment_time = token_data.get("enrollment_time")
     if enrollment_time:
-        enrollment_time = _dt.datetime.fromisoformat(enrollment_time)
+        enrollment_time = _util.timestamp_conversion(enrollment_time)
     factor_id = token_data["factor_id"] if not token_data.get("phone_number") else "phone"
     return AuthMultiFactorInfo(
         uid=token_data["uid"],
@@ -139,7 +141,9 @@ def _auth_user_record_from_token_data(token_data: dict[str, _typing.Any]):
         password_salt=token_data.get("password_salt"),
         custom_claims=token_data.get("custom_claims"),
         tenant_id=token_data.get("tenant_id"),
-        tokens_valid_after_time=_dt.datetime.utcfromtimestamp(token_data["tokens_valid_after_time"])
+        tokens_valid_after_time=_dt.datetime.fromtimestamp(
+            token_data["tokens_valid_after_time"], tz=_dt.timezone.utc
+        )
         if token_data.get("tokens_valid_after_time")
         else None,
         multi_factor=_auth_multi_factor_settings_from_token_data(token_data["multi_factor"])
@@ -196,7 +200,9 @@ def _credential_from_token_data(token_data: dict[str, _typing.Any], time: float)
 
     oauth_expires_in = token_data.get("oauth_expires_in")
     expiration_time = (
-        _dt.datetime.utcfromtimestamp(time + oauth_expires_in) if oauth_expires_in else None
+        _dt.datetime.fromtimestamp(time + oauth_expires_in, tz=_dt.timezone.utc)
+        if oauth_expires_in
+        else None
     )
 
     provider_id: str = (
@@ -227,7 +233,7 @@ def _auth_blocking_event_from_token_data(event_type: str, token_data: dict[str, 
         event_id=token_data["event_id"],
         ip_address=token_data["ip_address"],
         user_agent=token_data["user_agent"],
-        timestamp=_dt.datetime.fromtimestamp(token_data["iat"]),
+        timestamp=_dt.datetime.fromtimestamp(token_data["iat"], tz=_dt.timezone.utc),
         additional_user_info=_additional_user_info_from_token_data(token_data),
         credential=_credential_from_token_data(token_data, _time.time()),
         email_type=token_data.get("email_type"),
