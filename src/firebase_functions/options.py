@@ -1311,7 +1311,7 @@ def set_global_options(
     min_instances: int | Expression[int] | _util.Sentinel | None = None,
     max_instances: int | Expression[int] | _util.Sentinel | None = None,
     concurrency: int | Expression[int] | _util.Sentinel | None = None,
-    cpu: int | _typing.Literal["gcf_gen1"] | _util.Sentinel = "gcf_gen1",
+    cpu: int | _typing.Literal["gcf_gen1"] | _util.Sentinel | None = None,
     vpc_connector: str | Expression[str] | _util.Sentinel | None = None,
     vpc_connector_egress_settings: VpcEgressSetting | _util.Sentinel | None = None,
     service_account: str | _util.Sentinel | None = None,
