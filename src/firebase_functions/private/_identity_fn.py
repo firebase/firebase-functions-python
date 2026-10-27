@@ -94,9 +94,8 @@ def _auth_user_metadata_from_token_data(token_data: dict[str, _typing.Any]):
 def _auth_multi_factor_info_from_token_data(token_data: dict[str, _typing.Any]):
     from firebase_functions.identity_fn import AuthMultiFactorInfo
 
-    enrollment_time = token_data.get("enrollment_time")
-    if enrollment_time:
-        enrollment_time = _util.timestamp_conversion(enrollment_time)
+    raw_enrollment = token_data.get("enrollment_time")
+    enrollment_time = _util.timestamp_conversion(raw_enrollment) if raw_enrollment else None
     factor_id = token_data["factor_id"] if not token_data.get("phone_number") else "phone"
     return AuthMultiFactorInfo(
         uid=token_data["uid"],
@@ -200,7 +199,8 @@ def _credential_from_token_data(token_data: dict[str, _typing.Any], time: float)
 
     from firebase_functions.identity_fn import Credential
 
-    oauth_expires_in = token_data.get("oauth_expires_in")
+    raw_expires_in = token_data.get("oauth_expires_in")
+    oauth_expires_in = float(raw_expires_in) if raw_expires_in else 0.0
     expiration_time = (
         _dt.datetime.fromtimestamp(time + oauth_expires_in, tz=_dt.timezone.utc)
         if oauth_expires_in
