@@ -488,8 +488,14 @@ class TestIdentity(unittest.TestCase):
                             {
                                 "uid": "mfa-2",
                                 "factor_id": "phone",
-                                "enrollment_time": "",
+                                "enrollment_time": "2023-01-04T08:15:30+02:00",
                                 "phone_number": "+15555550101",
+                            },
+                            {
+                                "uid": "mfa-3",
+                                "factor_id": "phone",
+                                "enrollment_time": "",
+                                "phone_number": "+15555550102",
                             },
                         ]
                     },
@@ -519,38 +525,64 @@ class TestIdentity(unittest.TestCase):
 
         self.assertIsNotNone(captured_event)
         assert captured_event is not None
+        assert captured_event.data.metadata.creation_time is not None
         self.assertEqual(
             captured_event.data.metadata.creation_time,
             dt.datetime(2023, 1, 1, 0, 0, 0, tzinfo=dt.timezone.utc),
         )
+        self.assertEqual(captured_event.data.metadata.creation_time.tzinfo, dt.timezone.utc)
+
+        assert captured_event.data.metadata.last_sign_in_time is not None
         self.assertEqual(
             captured_event.data.metadata.last_sign_in_time,
             dt.datetime(2023, 1, 2, 12, 30, 0, tzinfo=dt.timezone.utc),
         )
+        self.assertEqual(captured_event.data.metadata.last_sign_in_time.tzinfo, dt.timezone.utc)
+
+        assert captured_event.data.tokens_valid_after_time is not None
         self.assertEqual(
             captured_event.data.tokens_valid_after_time,
             dt.datetime(2023, 1, 3, 0, 0, 0, tzinfo=dt.timezone.utc),
         )
+        self.assertEqual(captured_event.data.tokens_valid_after_time.tzinfo, dt.timezone.utc)
+
         assert captured_event.data.multi_factor is not None
+        factor_0_time = captured_event.data.multi_factor.enrolled_factors[0].enrollment_time
+        assert factor_0_time is not None
         self.assertEqual(
-            captured_event.data.multi_factor.enrolled_factors[0].enrollment_time,
+            factor_0_time,
             dt.datetime(2023, 1, 4, 6, 15, 30, 123456, tzinfo=dt.timezone.utc),
         )
-        self.assertIsNone(
-            captured_event.data.multi_factor.enrolled_factors[1].enrollment_time,
+        self.assertEqual(factor_0_time.tzinfo, dt.timezone.utc)
+
+        factor_1_time = captured_event.data.multi_factor.enrolled_factors[1].enrollment_time
+        assert factor_1_time is not None
+        self.assertEqual(
+            factor_1_time,
+            dt.datetime(2023, 1, 4, 6, 15, 30, tzinfo=dt.timezone.utc),
         )
+        self.assertEqual(factor_1_time.tzinfo, dt.timezone.utc)
+
+        self.assertIsNone(
+            captured_event.data.multi_factor.enrolled_factors[2].enrollment_time,
+        )
+
         self.assertEqual(
             captured_event.timestamp,
             dt.datetime(2023, 1, 5, 0, 0, 0, tzinfo=dt.timezone.utc),
         )
+        self.assertEqual(captured_event.timestamp.tzinfo, dt.timezone.utc)
+
         assert captured_event.credential is not None
+        assert captured_event.credential.expiration_time is not None
         self.assertEqual(
             captured_event.credential.expiration_time,
             dt.datetime(2023, 1, 6, 1, 0, 0, tzinfo=dt.timezone.utc),
         )
+        self.assertEqual(captured_event.credential.expiration_time.tzinfo, dt.timezone.utc)
 
-        # Verify None/omitted metadata timestamps and Auth Emulator string oauth_expires_in
-        # ("3600" and "0") via the public @before_user_created() decorator.
+        # Verify None/omitted metadata timestamps and Auth Emulator string/omitted oauth_expires_in
+        # ("3600", "0", and omitted) via the public @before_user_created() decorator.
         created_events: list[identity_fn.AuthBlockingEvent] = []
 
         @identity_fn.before_user_created()
@@ -579,7 +611,6 @@ class TestIdentity(unittest.TestCase):
                 {
                     "user_record": {
                         "uid": "user-emulated-2",
-                        "metadata": {},
                         "provider_data": [],
                     },
                     "event_id": "event-emulated-2",
@@ -590,6 +621,18 @@ class TestIdentity(unittest.TestCase):
                     "oauth_access_token": "token-abc",
                     "oauth_expires_in": "0",
                 },
+                {
+                    "user_record": {
+                        "uid": "user-emulated-3",
+                        "provider_data": [],
+                    },
+                    "event_id": "event-emulated-3",
+                    "ip_address": "127.0.0.1",
+                    "user_agent": "test-agent",
+                    "iat": 1672876800,
+                    "sign_in_method": "google.com",
+                    "oauth_access_token": "token-abc",
+                },
             ]
         )
 
@@ -599,14 +642,14 @@ class TestIdentity(unittest.TestCase):
         ):
             app = Flask(__name__)
             with app.test_request_context("/"):
-                for _ in range(2):
+                for _ in range(3):
                     environ = EnvironBuilder(
                         method="POST",
                         json={"data": {"jwt": "jwt"}},
                     ).get_environ()
                     on_before_create(Request(environ))  # type: ignore[arg-type]
 
-        self.assertEqual(len(created_events), 2)
+        self.assertEqual(len(created_events), 3)
         self.assertEqual(
             created_events[0].data.metadata,
             identity_fn.AuthUserMetadata(creation_time=None, last_sign_in_time=None),
@@ -622,3 +665,5 @@ class TestIdentity(unittest.TestCase):
         )
         assert created_events[1].credential is not None
         self.assertIsNone(created_events[1].credential.expiration_time)
+        assert created_events[2].credential is not None
+        self.assertIsNone(created_events[2].credential.expiration_time)
