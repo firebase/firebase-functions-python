@@ -139,6 +139,9 @@ def _message_handler(
     # Include empty attributes property if missing
     message_dict["attributes"] = message_dict.get("attributes", {})
 
+    # The emulator sends "" for an attribute-only message.
+    message_dict["data"] = message_dict.get("data") or None
+
     message: MessagePublishedData = MessagePublishedData(
         message=Message(
             **message_dict,

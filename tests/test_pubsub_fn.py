@@ -149,9 +149,9 @@ class TestPubSubMessageData(unittest.TestCase):
         self.assertEqual(message.json, {"test": "value"})
         self.assertEqual(message.attributes, {})
 
-    def test_message_with_empty_string_data_returns_none_json(self):
+    def test_message_with_empty_string_data_reaches_handler_with_none(self):
         message = _handled_message({"data": ""})
-        self.assertEqual(message.data, "")
+        self.assertIsNone(message.data)
         self.assertIsNone(message.json)
 
     def test_message_with_invalid_data_json_raises(self):
