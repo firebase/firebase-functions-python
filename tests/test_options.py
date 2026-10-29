@@ -74,6 +74,66 @@ def test_global_options_merged_with_provider_options():
     )
 
 
+def _endpoint_cpu(**fn_options):
+    @https_fn.on_request(**fn_options)
+    def fn(_):
+        return "hello world"
+
+    return fn.__firebase_endpoint__.cpu
+
+
+def test_set_global_options_without_cpu_leaves_cpu_unset():
+    options.set_global_options(region="europe-west1")
+
+    assert options._GLOBAL_OPTIONS.cpu is None, "global cpu should not be set"
+    assert "cpu" not in options.HttpsOptions()._asdict_with_global_options()
+    assert _endpoint_cpu() is None, "endpoint cpu should not be set"
+
+
+def test_set_global_options_without_cpu_omits_cpu_from_yaml():
+    options.set_global_options(region="europe-west1")
+
+    @https_fn.on_request()
+    def fn(_):
+        return "hello world"
+
+    assert "cpu" not in functions_as_yaml({"fn": fn})
+
+
+def test_set_global_options_explicit_gcf_gen1_cpu_is_kept():
+    options.set_global_options(cpu="gcf_gen1")
+
+    assert _endpoint_cpu() == "gcf_gen1"
+
+
+def test_set_global_options_numeric_cpu_is_kept():
+    options.set_global_options(cpu=2)
+
+    assert _endpoint_cpu() == 2
+
+
+def test_function_cpu_overrides_global_cpu():
+    options.set_global_options(cpu=2)
+
+    assert _endpoint_cpu(cpu=4) == 4
+    assert _endpoint_cpu(cpu="gcf_gen1") == "gcf_gen1"
+
+
+def test_set_global_options_reset_value_cpu_is_kept():
+    options.set_global_options(cpu=options.RESET_VALUE)
+
+    @https_fn.on_request()
+    def fn(_):
+        return "hello world"
+
+    assert fn.__firebase_endpoint__.cpu == options.RESET_VALUE
+    assert "    cpu: null\n" in functions_as_yaml({"fn": fn})
+
+
+def test_cpu_unset_without_global_options():
+    assert _endpoint_cpu() is None
+
+
 @pytest.mark.parametrize(
     "vpc_connector_expr_factory",
     [
