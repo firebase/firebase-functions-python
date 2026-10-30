@@ -178,12 +178,17 @@ def _valid_body(body: str) -> bool:
         return _on_call_valid_body(ctx.request)
 
 
-def test_on_call_valid_body_does_not_log_extra_field_keys_or_values(caplog):
+def test_on_call_valid_body_logs_extra_field_keys_without_values(caplog):
     with caplog.at_level(logging.WARNING):
-        assert not _valid_body('{"data": {}, "secretKey": "secretValue"}')
-    assert "Request body has extra fields (count=1)." in caplog.text
-    assert "secretKey" not in caplog.text
+        assert not _valid_body('{"data": {}, "extraKey": "secretValue"}')
+    assert "Request body has extra fields: ['extraKey']" in caplog.text
     assert "secretValue" not in caplog.text
+
+
+def test_on_call_valid_body_escapes_newlines_in_extra_field_keys(caplog):
+    with caplog.at_level(logging.WARNING):
+        assert not _valid_body('{"data": {}, "a\\nFAKE LOG LINE": 1}')
+    assert "\n" not in caplog.text.rstrip("\n")
 
 
 def test_on_call_valid_body_does_not_log_body_when_data_is_missing(caplog):

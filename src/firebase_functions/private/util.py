@@ -124,10 +124,11 @@ def _on_call_valid_body(request: _Request) -> bool:
         _logging.warning("Request body is missing data.")
         return False
 
-    # Request content is logged before auth is checked, so log neither keys nor values.
-    extra_field_count = sum(1 for key in request.json.keys() if key != "data")
-    if extra_field_count:
-        _logging.warning("Request body has extra fields (count=%d).", extra_field_count)
+    # Logged before auth is checked: key names only, never values. %r escapes
+    # newlines so a key cannot forge extra log lines.
+    extra_keys = [key for key in request.json.keys() if key != "data"]
+    if extra_keys:
+        _logging.warning("Request body has extra fields: %r", extra_keys)
         return False
     return True
 
