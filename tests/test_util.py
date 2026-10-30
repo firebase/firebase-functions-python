@@ -16,9 +16,13 @@ Internal utils tests.
 """
 
 import datetime as _dt
+import logging
 from os import environ, path
 
+from flask import Flask
+
 from firebase_functions.private.util import (
+    _on_call_valid_body,
     _unsafe_decode_id_token,
     deep_merge,
     firebase_config,
@@ -165,3 +169,27 @@ def test_unsafe_decode_token():
     result = _unsafe_decode_id_token(test_token)
     assert result["sub"] == "firebase"
     assert result["name"] == "John Doe"
+
+
+def _valid_body(body: str) -> bool:
+    with Flask(__name__).test_request_context(
+        method="POST", data=body, content_type="application/json"
+    ) as ctx:
+        return _on_call_valid_body(ctx.request)
+
+
+def test_on_call_valid_body_does_not_log_extra_field_keys_or_values(caplog):
+    with caplog.at_level(logging.WARNING):
+        assert not _valid_body('{"data": {}, "secretKey": "secretValue"}')
+    assert "Request body has extra fields (count=1)." in caplog.text
+    assert "secretKey" not in caplog.text
+    assert "secretValue" not in caplog.text
+
+
+def test_on_call_valid_body_does_not_log_body_when_data_is_missing(caplog):
+    for body in ('{"secretKey": "secretValue"}', '["secretValue"]'):
+        caplog.clear()
+        with caplog.at_level(logging.WARNING):
+            assert not _valid_body(body)
+        assert "Request body is missing data." in caplog.text
+        assert "secretValue" not in caplog.text
