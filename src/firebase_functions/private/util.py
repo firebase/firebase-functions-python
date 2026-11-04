@@ -123,13 +123,15 @@ def _on_call_valid_body(request: _Request) -> bool:
             _logging.warning("Request is missing body.")
         return False
 
-    # The body must have data.
-    if not isinstance(body, dict) or "data" not in body:
-        _logging.warning("Request body is missing data.")
-        return False
-
     # Logged before auth is checked: key names only, never values. %r escapes
     # newlines so a key cannot forge extra log lines.
+    if not isinstance(body, dict):
+        _logging.warning("Request body is missing data.")
+        return False
+    if "data" not in body:
+        _logging.warning("Request body is missing data. Fields: %r", list(body.keys()))
+        return False
+
     extra_keys = [key for key in body.keys() if key != "data"]
     if extra_keys:
         _logging.warning("Request body has extra fields: %r", extra_keys)

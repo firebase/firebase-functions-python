@@ -191,9 +191,15 @@ def test_on_call_valid_body_escapes_newlines_in_extra_field_keys(caplog):
     assert "\n" not in caplog.text.rstrip("\n")
 
 
-def test_on_call_valid_body_does_not_log_body_when_data_is_missing(caplog):
+def test_on_call_valid_body_logs_only_key_names_when_data_is_missing(caplog):
+    with caplog.at_level(logging.WARNING):
+        assert not _valid_body('{"secretKey": "secretValue"}')
+    assert "Request body is missing data. Fields: ['secretKey']" in caplog.text
+    assert "secretValue" not in caplog.text
+
+
+def test_on_call_valid_body_does_not_log_non_object_body_when_data_is_missing(caplog):
     for body in (
-        '{"secretKey": "secretValue"}',
         '["secretValue"]',
         '["data", "secretValue"]',
         '"data secretValue"',
