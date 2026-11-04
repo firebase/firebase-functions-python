@@ -515,6 +515,7 @@ class TestIdentity(unittest.TestCase):
 
         with (
             patch.object(_identity_fn, "_token_verifier", mock_verifier),
+            patch.object(_identity_fn._firebase_admin, "get_app", return_value=app_mock),
             patch.object(_identity_fn._time, "time", return_value=1672963200.0),
         ):
             app = Flask(__name__)
@@ -641,6 +642,7 @@ class TestIdentity(unittest.TestCase):
 
         with (
             patch.object(_identity_fn, "_token_verifier", mock_verifier),
+            patch.object(_identity_fn._firebase_admin, "get_app", return_value=app_mock),
             patch.object(_identity_fn._time, "time", return_value=1672963200.0),
         ):
             app = Flask(__name__)
