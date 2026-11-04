@@ -64,6 +64,7 @@ class EventTrigger(_typing.TypedDict):
     channel: _typing_extensions.NotRequired[str]
     eventType: _typing_extensions.Required[str]
     retry: _typing_extensions.Required[bool | _params.Expression[bool] | _util.Sentinel]
+    region: _typing_extensions.NotRequired[str]
 
 
 class RetryConfigBase(_typing.TypedDict):

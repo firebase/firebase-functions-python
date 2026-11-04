@@ -74,6 +74,66 @@ def test_global_options_merged_with_provider_options():
     )
 
 
+def _endpoint_cpu(**fn_options):
+    @https_fn.on_request(**fn_options)
+    def fn(_):
+        return "hello world"
+
+    return fn.__firebase_endpoint__.cpu
+
+
+def test_set_global_options_without_cpu_leaves_cpu_unset():
+    options.set_global_options(region="europe-west1")
+
+    assert options._GLOBAL_OPTIONS.cpu is None, "global cpu should not be set"
+    assert "cpu" not in options.HttpsOptions()._asdict_with_global_options()
+    assert _endpoint_cpu() is None, "endpoint cpu should not be set"
+
+
+def test_set_global_options_without_cpu_omits_cpu_from_yaml():
+    options.set_global_options(region="europe-west1")
+
+    @https_fn.on_request()
+    def fn(_):
+        return "hello world"
+
+    assert "cpu" not in functions_as_yaml({"fn": fn})
+
+
+def test_set_global_options_explicit_gcf_gen1_cpu_is_kept():
+    options.set_global_options(cpu="gcf_gen1")
+
+    assert _endpoint_cpu() == "gcf_gen1"
+
+
+def test_set_global_options_numeric_cpu_is_kept():
+    options.set_global_options(cpu=2)
+
+    assert _endpoint_cpu() == 2
+
+
+def test_function_cpu_overrides_global_cpu():
+    options.set_global_options(cpu=2)
+
+    assert _endpoint_cpu(cpu=4) == 4
+    assert _endpoint_cpu(cpu="gcf_gen1") == "gcf_gen1"
+
+
+def test_set_global_options_reset_value_cpu_is_kept():
+    options.set_global_options(cpu=options.RESET_VALUE)
+
+    @https_fn.on_request()
+    def fn(_):
+        return "hello world"
+
+    assert fn.__firebase_endpoint__.cpu == options.RESET_VALUE
+    assert "    cpu: null\n" in functions_as_yaml({"fn": fn})
+
+
+def test_cpu_unset_without_global_options():
+    assert _endpoint_cpu() is None
+
+
 @pytest.mark.parametrize(
     "vpc_connector_expr_factory",
     [
@@ -381,3 +441,26 @@ def test_firebase_alert_options_preserved_in_alert_endpoint():
         "crashlytics.newFatalIssue",
         expect_app_id="app-123",
     )
+
+
+def test_auth_options_preserved_in_endpoint():
+    from firebase_functions import identity_fn
+
+    @identity_fn.on_user_created(
+        secrets=[ALERT_SECRET],
+        region="europe-west1",
+        max_instances=1,
+        retry=True,
+        tenant_id="tenant-123",
+    )
+    def sample(_event):
+        return None
+
+    endpoint = sample.__firebase_endpoint__
+    assert endpoint.region == ["europe-west1"]
+    assert endpoint.maxInstances == 1
+    assert endpoint.secretEnvironmentVariables == [{"key": "GITLAB_PERSONAL_ACCESS_TOKEN"}]
+    assert endpoint.eventTrigger["retry"] is True
+    assert endpoint.eventTrigger["region"] == "global"
+    assert endpoint.eventTrigger["eventType"] == "google.firebase.auth.user.v2.created"
+    assert endpoint.eventTrigger["eventFilters"]["tenantid"] == "tenant-123"
