@@ -192,9 +192,23 @@ def test_on_call_valid_body_escapes_newlines_in_extra_field_keys(caplog):
 
 
 def test_on_call_valid_body_does_not_log_body_when_data_is_missing(caplog):
-    for body in ('{"secretKey": "secretValue"}', '["secretValue"]'):
+    for body in (
+        '{"secretKey": "secretValue"}',
+        '["secretValue"]',
+        '["data", "secretValue"]',
+        '"data secretValue"',
+        "123",
+    ):
         caplog.clear()
         with caplog.at_level(logging.WARNING):
             assert not _valid_body(body)
         assert "Request body is missing data." in caplog.text
         assert "secretValue" not in caplog.text
+
+
+def test_on_call_valid_body_rejects_empty_or_malformed_json(caplog):
+    for body in ("", "{bad"):
+        caplog.clear()
+        with caplog.at_level(logging.WARNING):
+            assert not _valid_body(body)
+        assert "Request is missing body." in caplog.text

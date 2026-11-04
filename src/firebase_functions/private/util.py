@@ -115,18 +115,19 @@ def convert_keys_to_camel_case(data: dict[str, _typing.Any]) -> dict[str, _typin
 
 def _on_call_valid_body(request: _Request) -> bool:
     """The body must not be empty."""
-    if request.json is None:
+    body = request.get_json(silent=True)
+    if body is None:
         _logging.warning("Request is missing body.")
         return False
 
     # The body must have data.
-    if "data" not in request.json:
+    if not isinstance(body, dict) or "data" not in body:
         _logging.warning("Request body is missing data.")
         return False
 
     # Logged before auth is checked: key names only, never values. %r escapes
     # newlines so a key cannot forge extra log lines.
-    extra_keys = [key for key in request.json.keys() if key != "data"]
+    extra_keys = [key for key in body.keys() if key != "data"]
     if extra_keys:
         _logging.warning("Request body has extra fields: %r", extra_keys)
         return False
