@@ -206,9 +206,15 @@ def test_on_call_valid_body_does_not_log_body_when_data_is_missing(caplog):
         assert "secretValue" not in caplog.text
 
 
-def test_on_call_valid_body_rejects_empty_or_malformed_json(caplog):
-    for body in ("", "{bad"):
-        caplog.clear()
-        with caplog.at_level(logging.WARNING):
-            assert not _valid_body(body)
-        assert "Request is missing body." in caplog.text
+def test_on_call_valid_body_rejects_empty_body(caplog):
+    with caplog.at_level(logging.WARNING):
+        assert not _valid_body("")
+    assert "Request is missing body." in caplog.text
+
+
+def test_on_call_valid_body_rejects_malformed_json_without_logging_it(caplog):
+    with caplog.at_level(logging.WARNING):
+        assert not _valid_body("{secretValue")
+    assert "Request body is not valid JSON." in caplog.text
+    assert "Request is missing body." not in caplog.text
+    assert "secretValue" not in caplog.text

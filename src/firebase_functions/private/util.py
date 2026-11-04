@@ -117,7 +117,10 @@ def _on_call_valid_body(request: _Request) -> bool:
     """The body must not be empty."""
     body = request.get_json(silent=True)
     if body is None:
-        _logging.warning("Request is missing body.")
+        if request.get_data():
+            _logging.warning("Request body is not valid JSON.")
+        else:
+            _logging.warning("Request is missing body.")
         return False
 
     # The body must have data.
