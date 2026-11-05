@@ -18,6 +18,8 @@ import unittest
 from unittest.mock import MagicMock
 
 from cloudevents.http import CloudEvent as _CloudEvent
+from flask import Flask, request
+from functions_framework import event_conversion
 
 from firebase_functions import core
 from firebase_functions.pubsub_fn import (
@@ -182,3 +184,29 @@ class TestPubSubMessageData(unittest.TestCase):
             _dt.datetime(2023, 3, 11, 13, 25, 37, 403000, tzinfo=_dt.timezone.utc),
         )
         self.assertEqual(message.publish_time.utcoffset(), _dt.timedelta(0))
+
+    def test_push_body_without_cloudevent_headers_reaches_handler(self):
+        push_body = {
+            "message": {
+                "attributes": {"key": "value"},
+                "data": "eyJ0ZXN0IjogInZhbHVlIn0=",
+                "messageId": "message-id-123",
+                "publishTime": "2023-03-11T13:25:37.403Z",
+            },
+            "subscription": "projects/p/subscriptions/s",
+        }
+        with Flask(__name__).test_request_context("/", method="POST", json=push_body):
+            raw = event_conversion.background_event_to_cloud_event(request)
+
+        func = MagicMock()
+        _message_handler(func, raw)
+
+        data = func.call_args.args[0].data
+        self.assertEqual(data.message.message_id, "message-id-123")
+        self.assertEqual(
+            data.message.publish_time,
+            _dt.datetime(2023, 3, 11, 13, 25, 37, 403000, tzinfo=_dt.timezone.utc),
+        )
+        self.assertEqual(data.message.attributes, {"key": "value"})
+        self.assertEqual(data.message.json, {"test": "value"})
+        self.assertIsNone(data.subscription)
