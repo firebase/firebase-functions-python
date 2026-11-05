@@ -132,8 +132,8 @@ def _on_call_valid_body(request: _Request) -> bool:
         _logging.warning("Request body is missing data. Fields: %r", list(body.keys()))
         return False
 
-    extra_keys = [key for key in body.keys() if key != "data"]
-    if extra_keys:
+    if len(body) > 1:
+        extra_keys = [key for key in body.keys() if key != "data"]
         _logging.warning("Request body has extra fields: %r", extra_keys)
         return False
     return True
