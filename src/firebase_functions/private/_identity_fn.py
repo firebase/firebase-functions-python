@@ -16,6 +16,7 @@
 # pylint: disable=protected-access
 import datetime as _dt
 import json as _json
+import os as _os
 import re as _re
 import time as _time
 import typing as _typing
@@ -229,8 +230,17 @@ def _credential_from_token_data(token_data: dict[str, _typing.Any], time: float)
     )
 
 
-def _auth_blocking_event_from_token_data(event_type: str, token_data: dict[str, _typing.Any]):
-    from firebase_functions.identity_fn import AuthBlockingEvent
+def _auth_blocking_event_from_token_data(
+    event_type: str,
+    token_data: dict[str, _typing.Any],
+    project_id: str | None,
+):
+    from firebase_functions.identity_fn import AuthBlockingEvent, AuthBlockingResource
+
+    tenant_id = token_data.get("tenant_id")
+    resource_name = (
+        f"projects/{project_id}/tenants/{tenant_id}" if tenant_id else f"projects/{project_id}"
+    )
 
     return AuthBlockingEvent(
         data=_auth_user_record_from_token_data(token_data["user_record"]),
@@ -244,6 +254,11 @@ def _auth_blocking_event_from_token_data(event_type: str, token_data: dict[str, 
         credential=_credential_from_token_data(token_data, _time.time()),
         email_type=token_data.get("email_type"),
         sms_type=token_data.get("sms_type"),
+        auth_type="USER" if token_data.get("user_record") else "UNAUTHENTICATED",
+        resource=AuthBlockingResource(
+            service="identitytoolkit.googleapis.com",
+            name=resource_name,
+        ),
     )
 
 
@@ -363,7 +378,9 @@ def before_operation_handler(
             raise HttpsError(FunctionsErrorCode.INVALID_ARGUMENT, "Bad Request")
         jwt_token = request.json["data"]["jwt"]
         decoded_token = _token_verifier.verify_auth_blocking_token(jwt_token)
-        event = _auth_blocking_event_from_token_data(event_type, decoded_token)
+        event = _auth_blocking_event_from_token_data(
+            event_type, decoded_token, _os.environ.get("GCLOUD_PROJECT")
+        )
         auth_response: BeforeCreateResponse | BeforeSignInResponse | None = _with_init(func)(event)
         if not auth_response:
             return _jsonify({})
