@@ -87,9 +87,9 @@ class MessagePublishedData(_typing.Generic[T]):
     Google Cloud Pub/Sub message.
     """
 
-    subscription: str
+    subscription: str | None
     """
-    A subscription resource.
+    A subscription resource. ``None`` when the request had no CloudEvent headers.
     """
 
 
@@ -106,6 +106,12 @@ def _message_handler(
     event_dict = {"data": event_data, **event_attributes}
     data = event_dict["data"]
     message_dict = data["message"]
+
+    # When a request has no CloudEvent headers, functions-framework builds the
+    # message itself with camelCase keys only, an "@type" key and no subscription.
+    message_dict.setdefault("message_id", message_dict.get("messageId"))
+    message_dict.setdefault("publish_time", message_dict.get("publishTime"))
+    message_dict.pop("@type", None)
 
     # if no microseconds are present, we should set them to 0 to prevent parsing from failing
     if "." not in event_dict["time"]:
@@ -147,7 +153,7 @@ def _message_handler(
             **message_dict,
             ordering_key=ordering_key,
         ),
-        subscription=data["subscription"],
+        subscription=data.get("subscription"),
     )
 
     event_dict["data"] = message
