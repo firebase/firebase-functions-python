@@ -74,7 +74,7 @@ class CorsOptions:
     https://flask-cors.corydolphin.com/en/latest/configuration.html
     """
 
-    cors_origins: str | list[str] | _re.Pattern | None = None
+    cors_origins: str | list[str] | _re.Pattern[str] | None = None
     """
     The origin(s) to allow requests from. An origin configured here that matches the value of
     the ``Origin`` header in a preflight ``OPTIONS`` request is returned as the value of the
