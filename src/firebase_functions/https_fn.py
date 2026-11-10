@@ -435,21 +435,23 @@ def on_request(**kwargs) -> _typing.Callable[[_C1], _C1]:
         func_with_init = _core._with_init(func)
 
         if options.cors is not None:
+            # Omit unset fields rather than passing None, which overrides flask-cors defaults.
             if options.cors.cors_methods is not None and options.cors.cors_origins is not None:
-                wrapped_function = _cross_origin(
+                cors_decorator = _cross_origin(
                     methods=options.cors.cors_methods,
                     origins=options.cors.cors_origins,
-                )(func_with_init)
+                )
             elif options.cors.cors_methods is not None:
-                wrapped_function = _cross_origin(
+                cors_decorator = _cross_origin(
                     methods=options.cors.cors_methods,
-                )(func_with_init)
+                )
             elif options.cors.cors_origins is not None:
-                wrapped_function = _cross_origin(
+                cors_decorator = _cross_origin(
                     origins=options.cors.cors_origins,
-                )(func_with_init)
+                )
             else:
-                wrapped_function = _cross_origin()(func_with_init)
+                cors_decorator = _cross_origin()
+            wrapped_function = cors_decorator(func_with_init)
         else:
             wrapped_function = func_with_init
 

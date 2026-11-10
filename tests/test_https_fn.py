@@ -109,3 +109,54 @@ class TestHttps(unittest.TestCase):
 
         self.assertEqual(str(err), "something went wrong")
         self.assertEqual(err.args, ("something went wrong",))
+
+    def test_on_request_cors_options_branches(self):
+        """
+        CorsOptions with either or both fields unset should fall back to
+        flask-cors defaults on preflight requests instead of passing None.
+        """
+        cases = [
+            (
+                CorsOptions(cors_origins="https://example.com", cors_methods=["GET", "POST"]),
+                "https://example.com",
+                {"GET", "POST"},
+            ),
+            (
+                CorsOptions(cors_origins="https://example.com"),
+                "https://example.com",
+                {"DELETE", "GET", "HEAD", "OPTIONS", "PATCH", "POST", "PUT"},
+            ),
+            (
+                CorsOptions(cors_methods=["GET"]),
+                "https://example.com",
+                {"GET"},
+            ),
+            (
+                CorsOptions(),
+                "https://example.com",
+                {"DELETE", "GET", "HEAD", "OPTIONS", "PATCH", "POST", "PUT"},
+            ),
+        ]
+
+        for cors_opts, expected_origin, expected_methods in cases:
+            with self.subTest(cors=cors_opts):
+                app = Flask(__name__)
+
+                @https_fn.on_request(cors=cors_opts)
+                def handler(_req: Request):
+                    return "OK"
+
+                headers = {
+                    "Origin": "https://example.com",
+                    "Access-Control-Request-Method": "GET",
+                }
+                with app.test_request_context("/", method="OPTIONS", headers=headers):
+                    environ = EnvironBuilder(method="OPTIONS", headers=headers).get_environ()
+                    resp = handler(Request(environ))
+
+                self.assertEqual(resp.headers.get("Access-Control-Allow-Origin"), expected_origin)
+                allow_methods = resp.headers.get("Access-Control-Allow-Methods", "")
+                self.assertEqual(
+                    {m.strip() for m in allow_methods.split(",") if m.strip()},
+                    expected_methods,
+                )
