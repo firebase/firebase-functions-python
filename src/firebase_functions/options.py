@@ -87,7 +87,8 @@ class CorsOptions:
     The method(s) which the allowed origins are allowed to access.
     These are included in the ``Access-Control-Allow-Methods`` response headers
     to the preflight ``OPTIONS`` requests.
-    Defaults to all standard HTTP methods when not specified.
+    Defaults to all standard HTTP methods when not specified (for ``on_request``;
+    ``on_call`` handlers always restrict allowed methods to POST).
     """
 
 
