@@ -136,6 +136,11 @@ class TestHttps(unittest.TestCase):
                 "https://example.com",
                 {"DELETE", "GET", "HEAD", "OPTIONS", "PATCH", "POST", "PUT"},
             ),
+            (
+                CorsOptions(cors_origins="https://allowed.example.com"),
+                None,
+                set(),
+            ),
         ]
 
         for cors_opts, expected_origin, expected_methods in cases:
