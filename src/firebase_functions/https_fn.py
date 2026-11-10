@@ -27,6 +27,7 @@ from flask import Request, Response
 from flask import jsonify as _jsonify
 from flask import make_response as _make_response
 from flask_cors import cross_origin as _cross_origin
+from flask_cors.core import CrossOriginOptionsInput as _CrossOriginOptionsInput
 from functions_framework import logging as _logging
 
 import firebase_functions.core as _core
@@ -435,7 +436,7 @@ def on_request(**kwargs) -> _typing.Callable[[_C1], _C1]:
         func_with_init = _core._with_init(func)
 
         if options.cors is not None:
-            cors_kwargs: _typing.Any = {}
+            cors_kwargs: _CrossOriginOptionsInput = {}
             if options.cors.cors_methods is not None:
                 cors_kwargs["methods"] = options.cors.cors_methods
             if options.cors.cors_origins is not None:

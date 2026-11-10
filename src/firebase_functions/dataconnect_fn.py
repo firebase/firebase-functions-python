@@ -198,7 +198,7 @@ _E1 = Event[MutationEventData]
 _C1 = _typing.Callable[[_E1], None]
 
 
-def _dataconnect_endpoint_handler(
+def _dataconnect_endpoint_handler(  # noqa: PLR0917
     func: _C1,
     event_type: str,
     service_pattern: _path_pattern.PathPattern | None,
