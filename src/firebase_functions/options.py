@@ -74,11 +74,12 @@ class CorsOptions:
     https://flask-cors.corydolphin.com/en/latest/configuration.html
     """
 
-    cors_origins: str | list[str] | _re.Pattern | None = None
+    cors_origins: str | list[str] | _re.Pattern[str] | None = None
     """
     The origin(s) to allow requests from. An origin configured here that matches the value of
     the ``Origin`` header in a preflight ``OPTIONS`` request is returned as the value of the
     ``Access-Control-Allow-Origin`` response header.
+    Defaults to ``"*"`` (all origins) when not specified.
     """
 
     cors_methods: str | list[str] | None = None
@@ -86,6 +87,8 @@ class CorsOptions:
     The method(s) which the allowed origins are allowed to access.
     These are included in the ``Access-Control-Allow-Methods`` response headers
     to the preflight ``OPTIONS`` requests.
+    Defaults to all standard HTTP methods when not specified (for ``on_request``;
+    ``on_call`` handlers always restrict allowed methods to POST).
     """
 
 
