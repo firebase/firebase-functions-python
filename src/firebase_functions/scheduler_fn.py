@@ -42,7 +42,7 @@ from firebase_functions.options import Timezone  # noqa: F401
 @_dataclasses.dataclass(frozen=True)
 class ScheduledEvent:
     """
-    A ``ScheduleEvent`` that is passed to the function handler.
+    A ``ScheduledEvent`` that is passed to the function handler.
     """
 
     job_name: str | None
@@ -69,8 +69,8 @@ _C = _typing.Callable[[ScheduledEvent], None]
 @_util.copy_func_kwargs(_options.ScheduleOptions)
 def on_schedule(**kwargs) -> _typing.Callable[[_C], _Response]:
     """
-    Creates a handler for tasks sent to a Google Cloud Tasks queue.
-    Requires a function that takes a ``CallableRequest``.
+    Creates a handler that runs on a schedule, triggered by a Cloud Scheduler job.
+    Requires a function that takes a ``ScheduledEvent``.
 
     Example:
 
@@ -91,7 +91,7 @@ def on_schedule(**kwargs) -> _typing.Callable[[_C], _Response]:
     :param \\*\\*kwargs: `ScheduleOptions` options.
     :type \\*\\*kwargs: as :exc:`firebase_functions.options.ScheduleOptions`
     :rtype: :exc:`typing.Callable`
-            \\[ \\[ :exc:`firebase_functions.schedule_fn.ScheduledEvent` \\], :exc:`None` \\]
+            \\[ \\[ :exc:`firebase_functions.scheduler_fn.ScheduledEvent` \\], :exc:`None` \\]
             A function that takes a ``ScheduledEvent`` and returns nothing.
     """
     options = _options.ScheduleOptions(**kwargs)
