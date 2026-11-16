@@ -128,5 +128,22 @@ jobs:
         draft: false
         prerelease: false
 
-    - name: Publish to Pypi
-      uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33 # v1.14.2
+    - name: Authenticate to Google Cloud (OSS Exit Gate)
+      id: auth
+      uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3.0.0
+      with:
+        workload_identity_provider: 'projects/305452601764/locations/global/workloadIdentityPools/builders/providers/github'
+        token_format: 'access_token'
+
+    - name: Publish to PyPI via OSS Exit Gate
+      env:
+        TWINE_USERNAME: oauth2accesstoken
+        TWINE_PASSWORD: ${{ steps.auth.outputs.access_token }}
+        VERSION: ${{ steps.preflight.outputs.version }}
+      run: |
+        python3 -m pip install --upgrade twine
+        python3 -m twine check --strict dist/*
+        python3 -m twine upload --repository-url https://us-python.pkg.dev/oss-exit-gate-prod/firebase-functions-python--pypi/ dist/*
+        VERSION_CLEAN="${VERSION#v}"
+        printf '{"package":"firebase-functions","version":"%s"}\n' "$VERSION_CLEAN" > manifest.json
+        gcloud storage cp manifest.json "gs://oss-exit-gate-prod-firebase-functions-python--pypi-manifests/firebase-functions/${VERSION_CLEAN}/manifest.json"
