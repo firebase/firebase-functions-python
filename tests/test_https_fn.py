@@ -98,6 +98,58 @@ class TestHttps(unittest.TestCase):
 
         self.assertEqual("world", hello)
 
+    def test_on_call_decodes_wrapped_longs(self):
+        """
+        The iOS and Android SDKs send 64-bit integers as Int64Value/UInt64Value
+        wrappers; on_call should pass them to the handler as ints.
+        """
+        app = Flask(__name__)
+        long_type = "type.googleapis.com/google.protobuf.Int64Value"
+        ulong_type = "type.googleapis.com/google.protobuf.UInt64Value"
+        received = []
+
+        @https_fn.on_call()
+        def handler(req: https_fn.CallableRequest):
+            received.append(req.data)
+            return req.data["count"] + 1
+
+        cases = [
+            ({"count": 42}, {"count": 42}, 43),
+            ({"count": {"@type": long_type, "value": "42"}}, {"count": 42}, 43),
+            (
+                {"count": {"@type": long_type, "value": "9007199254740993"}},
+                {"count": 9007199254740993},
+                9007199254740994,
+            ),
+            (
+                {"count": 1, "ids": [{"@type": ulong_type, "value": "7"}]},
+                {"count": 1, "ids": [7]},
+                2,
+            ),
+            (
+                {"count": 1, "other": {"@type": "example.Thing", "value": "x"}},
+                {"count": 1, "other": {"@type": "example.Thing", "value": "x"}},
+                2,
+            ),
+        ]
+        for data, expected_data, expected_result in cases:
+            with self.subTest(data=data):
+                received.clear()
+                with app.test_request_context("/", method="POST", json={"data": data}) as ctx:
+                    resp = handler(ctx.request)
+                self.assertEqual(resp.status_code, 200)
+                self.assertEqual(resp.get_json(), {"result": expected_result})
+                self.assertEqual(received, [expected_data])
+
+        with app.test_request_context(
+            "/",
+            method="POST",
+            json={"data": {"count": {"@type": long_type, "value": "abc"}}},
+        ) as ctx:
+            resp = handler(ctx.request)
+        self.assertEqual(resp.status_code, 400)
+        self.assertEqual(resp.get_json()["error"]["status"], "INVALID_ARGUMENT")
+
     def test_https_error_passes_message_to_super(self):
         """
         HttpsError should pass the message to the base Exception so that

@@ -350,6 +350,28 @@ class CallableRequest(_typing.Generic[_core.T]):
 _C1 = _typing.Callable[[Request], Response]
 _C2 = _typing.Callable[[CallableRequest[_typing.Any]], _typing.Any]
 
+_LONG_TYPE = "type.googleapis.com/google.protobuf.Int64Value"
+_UNSIGNED_LONG_TYPE = "type.googleapis.com/google.protobuf.UInt64Value"
+
+
+def _decode(data: _typing.Any) -> _typing.Any:
+    """
+    Decodes the callable protocol's JSON encoding into native Python types.
+    The client SDKs send 64-bit integers as typed proto3 wrappers, e.g.
+    ``{"@type": "type.googleapis.com/google.protobuf.Int64Value", "value": "42"}``.
+    Maps with any other ``@type`` are left as maps.
+    """
+    if isinstance(data, list):
+        return [_decode(item) for item in data]
+    if isinstance(data, dict):
+        if data.get("@type") in (_LONG_TYPE, _UNSIGNED_LONG_TYPE):
+            try:
+                return int(data["value"])
+            except (KeyError, TypeError, ValueError) as err:
+                raise HttpsError(FunctionsErrorCode.INVALID_ARGUMENT, "Bad Request") from err
+        return {key: _decode(value) for key, value in data.items()}
+    return data
+
 
 def _on_call_handler(func: _C2, request: Request, enforce_app_check: bool) -> Response:
     try:
@@ -358,7 +380,7 @@ def _on_call_handler(func: _C2, request: Request, enforce_app_check: bool) -> Re
             raise HttpsError(FunctionsErrorCode.INVALID_ARGUMENT, "Bad Request")
         context: CallableRequest = CallableRequest(
             raw_request=request,
-            data=_json.loads(request.data)["data"],
+            data=_decode(_json.loads(request.data)["data"]),
         )
 
         token_status = _util.on_call_check_tokens(request)
